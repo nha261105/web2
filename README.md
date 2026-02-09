@@ -104,6 +104,8 @@ Step 3:
 
 ### Setup Backend
 
+```text
+
 cd Backend
 1.Cài đặt các gói thư viện PHP
 composer install
@@ -131,7 +133,11 @@ php artisan migrate
 7. Backend port
    PORT: http://localhost:8000
 
+```
+
 ### Setup Frontend
+
+```text
 
 1.Vào folder frontend
 cd frontend
@@ -145,13 +151,15 @@ npm run dev
 4.Frontend port
 PORT: http://localhost:5173
 
+```
+
 # WORKFLOW
 
-- main: Chỉ chứa code ổn định để demo / release
-- dev: Nhánh phát triển chính
+**main**: Chỉ chứa code ổn định để demo / release
+**dev**: Nhánh phát triển chính
 
-Quy tắc:
+**Quy tắc:**
 
-- Feature mới → tạo nhánh từ develop (vd: feat/login)
-- Hoàn thành → tạo Pull Request vào dev
-- Không push trực tiếp vào main
+Feature mới → tạo nhánh từ develop (vd: feat/login)
+Hoàn thành → tạo Pull Request vào dev
+Không push trực tiếp vào main
