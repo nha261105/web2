@@ -9,7 +9,7 @@ Dự án là một nền tảng chuyên dụng cho các cửa hàng cho thuê th
 - **Cơ chế Phạt & Đền bù:** Tự động tính phí trễ hạn (Late Fee) và phí đền bù hư hỏng dựa trên Policy động.
 - **Đặt lịch thông minh:** Kiểm tra tồn kho theo thời gian thực (Real-time Availability Check) để tránh trùng lịch.
 
-## 👥 Thành viên nhóm (Team Members)
+##  Thành viên nhóm (Team Members)
 
 | STT | Họ và Tên                 | MSSV       |
 | :-- | :------------------------ | ---------- |
@@ -20,19 +20,21 @@ Dự án là một nền tảng chuyên dụng cho các cửa hàng cho thuê th
 
 ---
 
-## 🛠 Công nghệ sử dụng (Tech Stack)
+##  Công nghệ sử dụng (Tech Stack)
 
 ### Frontend (Client-side)
 
 - **Framework:** ReactJS (Vite)
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS
-- **State Management:** React Hooks / Context API / Zustand / ReactQuery
+- **State Management:** Zustand
+- **Data Fetching:** React Query (@tanstack/react-query)
+- **Routing:** React Router DOM
 - **HTTP Client:** Axios
 
 ### Backend (Server-side)
 
-- **Framework:** Laravel 11
+- **Framework:** Laravel 12
 - **Language:** PHP >= 8.2
 - **Dependency Manager:** Composer 2.x
 - **Architecture:** MVC + Service Layer Pattern
@@ -50,34 +52,126 @@ Dự án là một nền tảng chuyên dụng cho các cửa hàng cho thuê th
 
 ### 1. Frontend Architecture (Feature-based)
 
-```text
-frontend/src/
-├── pages/
-│   ├── auth/
-│   ├── admin/
-│   └── client/
-├── components/
-├── services/   ← gọi API
-├── layouts/
-├── hooks/
-└── utils/
+### FRONTEND
 
-backend/app/
-├── Http/Controllers/
-├── Services/        ← Logic chính
-├── Models/
-├── Requests/
-├── Resources/
+```text
+frontend/
+├── src/                         # Mã nguồn chính
+│   ├── components/              # Reusable UI components
+│   │   ├── common/             # Common components (Button, Input, Modal...)
+│   │   └── layout/             # Layout components (Header, Footer, Sidebar...)
+│   │
+│   ├── pages/                   # Page components (màn hình)
+│   │   ├── auth/               # Login, Register, ForgotPassword
+│   │   ├── users/              # User management
+│   │   ├── products/           # Product management
+│   │   ├── rentals/            # Rental management
+│   │   └── dashboard/          # Dashboard
+│   │
+│   ├── services/                # API calls (axios instances)
+│   │   ├── api.ts              # Axios config
+│   │   ├── authService.ts      # Auth APIs
+│   │   ├── userService.ts      # User APIs
+│   │   └── ...
+│   │
+│   ├── stores/                  # Zustand state management
+│   │   ├── authStore.ts        # Auth state
+│   │   ├── userStore.ts        # User state
+│   │   └── ...
+│   │
+│   ├── hooks/                   # Custom React hooks
+│   │   ├── useAuth.ts          # Auth hook
+│   │   ├── useUsers.ts         # User hook (React Query)
+│   │   └── ...
+│   │
+│   ├── types/                   # TypeScript types/interfaces
+│   │   ├── user.ts             # User types
+│   │   ├── product.ts          # Product types
+│   │   └── ...
+│   │
+│   ├── utils/                   # Utility functions
+│   │   ├── validation.ts       # Validation helpers
+│   │   ├── formatters.ts       # Format data
+│   │   └── ...
+│   │
+│   ├── routes/                  # React Router config
+│   │   └── index.tsx           # Routes definition
+│   │
+│   ├── assets/                  # Static files (images, fonts)
+│   ├── App.tsx                  # Root component
+│   ├── main.tsx                 # Entry point
+│   └── index.css                # Global styles
+│
+├── public/                      # Static assets (không qua build)
+├── dist/                        # Build output (production)
+└── node_modules/                # Dependencies từ npm
 
 ```
 
+### BACKEND
+
+```text
+
+backend/
+├── app/                          # Mã nguồn chính của ứng dụng
+│   ├── Http/
+│   │   ├── Controllers/         # Xử lý HTTP requests
+│   │   ├── Requests/            # Validation rules (Form Requests)
+│   │   ├── Resources/           # Format JSON responses (API Resources)
+│   │   └── Middleware/          # Xử lý trước/sau request
+│   ├── Models/                  # Eloquent ORM models (tương tác database)
+│   ├── Services/                # Business logic layer
+│   └── Providers/               # Service providers (config services)
+│
+├── bootstrap/                   # Khởi tạo framework
+│   ├── app.php                  # Bootstrap ứng dụng
+│   └── cache/                   # Cache bootstrap
+│
+├── config/                      # Các file cấu hình
+│   ├── app.php                  # Config ứng dụng
+│   ├── database.php             # Config database
+│   ├── auth.php                 # Config authentication
+│   └── ...
+│
+├── database/
+│   ├── migrations/              # Database schema (tạo/sửa bảng)
+│   ├── seeders/                 # Dữ liệu mẫu
+│   └── factories/               # Tạo fake data cho testing
+│
+├── routes/
+│   ├── api.php                  # API routes (prefix: /api)
+│   ├── web.php                  # Web routes
+│   └── console.php              # Artisan commands
+│
+├── storage/                     # Files được tạo bởi app
+│   ├── app/                     # Files upload
+│   ├── logs/                    # Log files
+│   └── framework/               # Cache, sessions, views
+│
+├── public/                      # Public assets (entry point)
+│   └── index.php                # Entry point
+│
+├── resources/                   # Views và assets chưa compile
+├── tests/                       # Unit & Feature tests
+└── vendor/                      # Dependencies từ Composer
+
+```
+
+
+
 ### Hướng dẫn Cài đặt & Chạy dự án (Setup Guide)
+
+```text
 
 Yêu cầu:
 Node.js (v18 trở lên)
 PHP (v8.2 trở lên)
 Composer (v2 trở lên)
 MySQL/MariaDB Server
+
+```
+
+```text
 
 Step 1: Clone project
 tạo folder (tùy ae)
@@ -103,8 +197,6 @@ Step 2: Setup database
 Step 3:
 
 ### Setup Backend
-
-```text
 
 cd Backend
 1.Cài đặt các gói thư viện PHP
