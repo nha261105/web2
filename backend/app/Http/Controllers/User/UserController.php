@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\User;
 
+use App\Http\Controllers\Controller;
 use App\Services\User\UserService;
 use App\Http\Requests\User\CreateUserRequest;
 use App\Http\Resources\UserResource;
@@ -11,9 +12,6 @@ class UserController extends Controller
 {
     protected UserService $userService;
 
-    /**
-     * Inject Service vào Controller
-     */
     public function __construct(UserService $userService)
     {
         $this->userService = $userService;

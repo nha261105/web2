@@ -63,10 +63,8 @@ frontend/
 │   │
 │   ├── pages/                   # Page components (màn hình)
 │   │   ├── auth/               # Login, Register, ForgotPassword
-│   │   ├── users/              # User management
-│   │   ├── products/           # Product management
-│   │   ├── rentals/            # Rental management
-│   │   └── dashboard/          # Dashboard
+│   │   ├── admin/              # admin management      
+│   │   ├── client/             # end user management
 │   │
 │   ├── services/                # API calls (axios instances)
 │   │   ├── api.ts              # Axios config
@@ -157,6 +155,63 @@ backend/
 
 ```
 
+## Backend Flow
+
+```text
+Request → Route → Controller → Request Validation → Service → Model → Database
+                                                     ↓
+Response ← Resource (JSON Format) ← Controller ← Service ←┘
+
+1. CLIENT gửi request
+   ↓
+2. ROUTE (routes/api.php) - Định tuyến request đến Controller
+   ↓
+3. CONTROLLER (app/Http/Controllers/) - Nhận request
+   ↓
+4. REQUEST VALIDATION (app/Http/Requests/) - Validate dữ liệu
+   ↓
+5. SERVICE (app/Services/) - Xử lý business logic
+   ↓
+6. MODEL (app/Models/) - Tương tác với database (Eloquent ORM)
+   ↓
+7. DATABASE - Thực hiện query (SELECT, INSERT, UPDATE, DELETE)
+   ↓
+8. MODEL trả kết quả về SERVICE
+   ↓
+9. SERVICE trả kết quả về CONTROLLER
+   ↓
+10. RESOURCE (app/Http/Resources/) - Format dữ liệu thành JSON
+   ↓
+11. CONTROLLER trả response về CLIENT
+
+```
+
+## Frontend Flow
+
+```text
+UI Event → Service (API Call) → Backend → Response → Store/State → UI Update
+
+1. USER tương tác với UI (click button, submit form)
+   ↓
+2. COMPONENT (pages/users/CreateUser.tsx) - Xử lý event
+   ↓
+3. CUSTOM HOOK (hooks/useUsers.ts) - React Query hook
+   ↓
+4. SERVICE (services/userService.ts) - Gọi API qua Axios
+   ↓
+5. BACKEND API - Xử lý request
+   ↓
+6. RESPONSE trả về từ Backend
+   ↓
+7. REACT QUERY - Cache và update data
+   ↓
+8. STORE (stores/userStore.ts - Zustand) - Update global state (optional)
+   ↓
+9. COMPONENT re-render với data mới
+   ↓
+10. UI cập nhật hiển thị cho user
+
+```
 
 
 ### Hướng dẫn Cài đặt & Chạy dự án (Setup Guide)
@@ -247,11 +302,14 @@ PORT: http://localhost:5173
 
 # WORKFLOW
 
+## Github
+- **feature/abcd**: tạo nhánh để code(cd: code trang giỏ hàng -> feature/cart)
+- **feature/admin-abcd**: tạo nhánh code trong trang admin
 - **main**: Chỉ chứa code ổn định để demo / release
 - **dev**: Nhánh phát triển chính
 
 **Quy tắc:**
 
-- Feature mới → tạo nhánh từ develop (vd: feat/login)
+- Feature mới → tạo nhánh từ nhánh dev( chuyển sang nhánh dev xong mới tạo nhánh)
 - Done → tạo Pull Request vào dev
 - Không push trực tiếp vào main
