@@ -26,7 +26,7 @@ Dự án là một nền tảng chuyên dụng cho các cửa hàng cho thuê th
 
 - **Framework:** ReactJS (Vite)
 - **Language:** TypeScript
-- **Styling:** Tailwind CSS
+- **Styling:** Tailwind CSS,react-hot-toast,lucid-react(icon),swiper(hero slide)
 - **State Management:** Zustand
 - **Data Fetching:** React Query (@tanstack/react-query)
 - **Routing:** React Router DOM
@@ -44,7 +44,7 @@ Dự án là một nền tảng chuyên dụng cho các cửa hàng cho thuê th
 ### Tools & DevOps
 
 - **Database Management:** DBeaver, phpMyAdmin.
-- **Design:** v0.dev / gooddesign
+- **Design:** figma
 - **Version Control:** Git & GitHub.
 - **API Testing:** Postman / SwaggerUI.
 

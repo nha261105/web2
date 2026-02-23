@@ -1,7 +1,7 @@
 import { Routes,Route } from "react-router-dom";
 
-import ClientLayout from "../layouts/ClientLayout";
-import AdminLayout from "../layouts/AdminLayout";
+import ClientLayout from "../layouts/client/ClientLayout";
+import AdminLayout from "../layouts/admin/AdminLayout";
 
 // Client Page
 import HomePage from "../pages/client/HomePage";
