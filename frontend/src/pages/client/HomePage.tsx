@@ -1,6 +1,7 @@
 import { Autoplay } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/swiper.css";
+
 export default function HomePage() {
   return (
     <div className="bg-white">
@@ -26,9 +27,7 @@ export default function HomePage() {
         </Swiper>
       </div>
 
-      <div className="max-w-7xl mx-auto">
-        {/* OTHER SECTIONS */}
-      </div>
+      <div className="max-w-7xl mx-auto">{/* OTHER SECTIONS */}</div>
     </div>
   );
 }
