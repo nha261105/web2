@@ -9,7 +9,7 @@ Dự án là một nền tảng chuyên dụng cho các cửa hàng cho thuê th
 - **Cơ chế Phạt & Đền bù:** Tự động tính phí trễ hạn (Late Fee) và phí đền bù hư hỏng dựa trên Policy động.
 - **Đặt lịch thông minh:** Kiểm tra tồn kho theo thời gian thực (Real-time Availability Check) để tránh trùng lịch.
 
-##  Thành viên nhóm (Team Members)
+## Thành viên nhóm (Team Members)
 
 | STT | Họ và Tên                 | MSSV       |
 | :-- | :------------------------ | ---------- |
@@ -20,7 +20,7 @@ Dự án là một nền tảng chuyên dụng cho các cửa hàng cho thuê th
 
 ---
 
-##  Công nghệ sử dụng (Tech Stack)
+## Công nghệ sử dụng (Tech Stack)
 
 ### Frontend (Client-side)
 
@@ -63,7 +63,7 @@ frontend/
 │   │
 │   ├── pages/                   # Page components (màn hình)
 │   │   ├── auth/               # Login, Register, ForgotPassword
-│   │   ├── admin/              # admin management      
+│   │   ├── admin/              # admin management
 │   │   ├── client/             # end user management
 │   │
 │   ├── services/                # API calls (axios instances)
@@ -213,7 +213,6 @@ UI Event → Service (API Call) → Backend → Response → Store/State → UI 
 
 ```
 
-
 ### Hướng dẫn Cài đặt & Chạy dự án (Setup Guide)
 
 ```text
@@ -303,6 +302,7 @@ PORT: http://localhost:5173
 # WORKFLOW
 
 ## Github
+
 - **feature/abcd**: tạo nhánh để code(cd: code trang giỏ hàng -> feature/cart)
 - **feature/admin-abcd**: tạo nhánh code trong trang admin
 - **main**: Chỉ chứa code ổn định để demo / release
