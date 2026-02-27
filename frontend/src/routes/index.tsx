@@ -8,6 +8,7 @@ import HomePage from "../pages/client/HomePage";
 // Admin Page
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import CartPage from "@/pages/client/CartPage";
+import CheckoutPage from "@/pages/client/CheckoutPage";
 
 export const AppRoutes = () => {
     return (
@@ -16,6 +17,7 @@ export const AppRoutes = () => {
             <Route element={<ClientLayout />}>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/cart" element={<CartPage />} />
+                <Route path="/checkout" element={<CheckoutPage />} />
             </Route>
 
             {/* Route cho admin */}
