@@ -1,5 +1,5 @@
 import MyTrash2 from "@/components/icons/my-trash2";
-import MyButton from "@/components/ui/my-button";
+import { MyButton } from "@/components/ui/my-button";
 import MyHref from "@/components/ui/my-href";
 import { MyInputText } from "@/components/ui/my-input-text";
 import MyNavigateLink from "@/components/ui/my-navigate-link";
