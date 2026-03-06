@@ -106,7 +106,7 @@ export default function CartPage() {
                 defaultValue=""
                 placeholder="Enter promo code (try RENT10)"
               />
-              <MyButton text="Apply" />
+              <MyButton text="Apply"  classname="px-3"/>
             </div>
             <div className="text-sm text-gray-500">
               Try: RENT10, FIRST15, SAVE20

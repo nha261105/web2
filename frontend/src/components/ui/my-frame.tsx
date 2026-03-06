@@ -4,8 +4,14 @@ type MyFrameType = {
 };
 
 type MyFrameWithInfoType = {
-  title: string;
+  title?: string;
   txts: string[];
+};
+
+type MyFrameWithInfoType2 = {
+  title?: string;
+  txts: string[];
+  txts2: string[];
 };
 
 function MyFrameWithTextButton({ txt, onHandle }: MyFrameType) {
@@ -24,18 +30,49 @@ function MyFrameWithTextButton({ txt, onHandle }: MyFrameType) {
 }
 
 function MyFrameWithInfo({ title, txts }: MyFrameWithInfoType) {
-  return (
-    <div className="w-full p-5 flex flex-col bg-gray-100 gap-3 rounded-lg">
-      <div className="text-base font-medium">{title}</div>
-      <div className="w-full flex flex-col gap-1">
-        {txts.map((item, index) => (
-          <div className="text-base text-gray-600" key={index}>
-            {item}
-          </div>
-        ))}
+  const content = txts.map((item, index) => (
+    <div className="w-full flex flex-col gap-1">
+      <div className="text-base text-gray-600" key={index}>
+        {item}
       </div>
+    </div>
+  ));
+  if (title)
+    return (
+      <div className="w-full p-5 flex flex-col bg-gray-100 gap-3 rounded-lg">
+        <div className="text-base font-medium">{title}</div>
+        {content}
+      </div>
+    );
+  return (
+    <div className="w-full p-5 flex flex-col bg-gray-100 gap-1 rounded-lg">
+      {content}
     </div>
   );
 }
 
-export { MyFrameWithTextButton, MyFrameWithInfo };
+function MyFrameWithInfo2({ title, txts, txts2 }: MyFrameWithInfoType2) {
+  const content = txts.map((item, index) => (
+    <div className="w-full flex flex-col gap-1" key={index}>
+      <div className="w-full flex flex-row justify-between">
+        <div className="text-base text-gray-600">{item}</div>
+        <div className="text-base text-black font-semibold">{txts2[index]}</div>
+      </div>
+    </div>
+  ));
+
+  if (title)
+    return (
+      <div className="w-full p-5 flex flex-col bg-gray-100 gap-3 rounded-lg">
+        <div className="text-base font-medium">{title}</div>
+        {content}
+      </div>
+    );
+  return (
+    <div className="w-full p-5 flex flex-col bg-gray-100 gap-1 rounded-lg">
+      {content}
+    </div>
+  );
+}
+
+export { MyFrameWithTextButton, MyFrameWithInfo, MyFrameWithInfo2 };

@@ -76,19 +76,19 @@ function ButtonIcon({
   );
 }
 
-function MyBackButton({text, className, onHandle}: MyBackButtonType) {
+function MyBackButton({ text, className, onHandle }: MyBackButtonType) {
   return (
     <div
-      className={`${className}
+      className={`
             flex justify-center items-center
-            py-3 rounded-lg 
-            bg-gray-200
-            hover:bg-gray-300 transition-colors cursor-pointer 
-            active:bg-gray-100
+            py-3 rounded-lg cursor-pointer border-2
+            bg-white hover:bg-gray-50 active:bg-gray-100
+            transition-colors 
+            ${className}
         `}
       onClick={onHandle}
     >
-      <ChevronLeft className="text-800"/>
+      <ChevronLeft className="text-800" />
       <div className="text-gray-800 text-sm font-medium">{text}</div>
     </div>
   );
