@@ -106,7 +106,7 @@ export default function CartPage() {
                 defaultValue=""
                 placeholder="Enter promo code (try RENT10)"
               />
-              <MyButton text="Apply"  classname="px-3"/>
+              <MyButton text="Apply" classname="px-3" />
             </div>
             <div className="text-sm text-gray-500">
               Try: RENT10, FIRST15, SAVE20
@@ -135,14 +135,8 @@ export default function CartPage() {
               <MyButton
                 text="Proceed to Checkout"
                 classname="flex-1 py-2"
-                icon={
-                  <ArrowRight
-                    size={20}
-                    strokeWidth="2.25px"
-                    className="text-white"
-                  />
-                }
                 src="/checkout"
+                icon={ArrowRight}
               />
               <MyHref text="← Continue Shopping" src="/" />
             </div>

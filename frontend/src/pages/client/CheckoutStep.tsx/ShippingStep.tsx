@@ -110,9 +110,7 @@ export default function ShippingStep({ onChange }: ShippingStepType) {
           text="Tiếp tục thanh toán"
           classname="flex-1 py-2"
           onClick={() => onChange(2)}
-          icon={
-            <ArrowRight size={20} strokeWidth="2.25px" className="text-white" />
-          }
+          icon={ArrowRight}
           src="/checkout"
         />
       </div>

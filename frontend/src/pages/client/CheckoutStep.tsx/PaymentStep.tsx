@@ -120,7 +120,7 @@ export default function PaymentStep({ onChange }: PaymentStepType) {
             text="Xác nhận"
             classname="flex-1"
             onClick={() => onChange(3)}
-            icon={<ArrowRight size={20} className="text-white" />}
+            icon={ArrowRight}
           />
         </div>
       </div>
