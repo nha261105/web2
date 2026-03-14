@@ -90,9 +90,10 @@ export default function ConfirmStep({ onChange, onSuccess }: ConfirmStepType) {
           />
           <MyButton
             text="Thanh toán"
-            classname="flex-1 bg-orange-400 hover:bg-orange-500 active:bg-orange-600"
+            classname="flex-1"
+            color="orange"
             onClick={() => onSuccess(true)}
-            icon={<ArrowRight size={20} className="text-white" />}
+            icon={ArrowRight}
           />
         </div>
       </div>
