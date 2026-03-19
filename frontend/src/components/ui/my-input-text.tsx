@@ -21,6 +21,7 @@ type MyInputForTextIcon = {
   placeholder: string;
   title: string;
   htmlFor: string;
+  onChange?: (value: string) => void;
 };
 
 function MyInputText({ defaultValue, placeholder }: MyInputTextType) {
@@ -79,8 +80,8 @@ function MyInputForTextIcon({
   placeholder,
   title,
   htmlFor,
+  onChange,
 }: MyInputForTextIcon) {
-  const [value, setValue] = useState(defaultValue);
   return (
     <div className={`w-full flex flex-col gap-1 ${className}`}>
       <label htmlFor={`${htmlFor}`} className="text-sm font-semibold w-fit">
@@ -90,9 +91,9 @@ function MyInputForTextIcon({
         {Icon && <Icon size={18} className="text-gray-400" />}
         <input
           type="text"
-          value={value}
+          defaultValue={defaultValue}
           id={htmlFor}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => onChange?.(e.target.value)}
           placeholder={placeholder}
           className={`text-sm outline-0 w-full`}
         />
@@ -107,8 +108,8 @@ function MyInputForTextPass({
   placeholder,
   title,
   htmlFor,
+  onChange,
 }: MyInputForTextIcon) {
-  const [value, setValue] = useState(defaultValue);
   const [isClosed, setIsClosed] = useState(true);
   return (
     <div className={`w-full flex flex-col gap-1 ${className}`}>
@@ -119,9 +120,9 @@ function MyInputForTextPass({
         <Lock size={18} className="text-gray-400" />
         <input
           type={`${isClosed ? "password" : "text"}`}
-          value={value}
+          defaultValue={defaultValue}
           id={htmlFor}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => onChange?.(e.target.value)}
           placeholder={placeholder}
           className={`text-sm outline-0 w-full`}
         />

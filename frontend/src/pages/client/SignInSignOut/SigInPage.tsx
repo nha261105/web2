@@ -6,10 +6,36 @@ import {
   MyInputForTextIcon,
   MyInputForTextPass,
 } from "@/components/ui/my-input-text";
+import { signin } from "@/services/usersService";
+import { checkToken } from "@/services/userTokensService";
 import { ArrowRight, Check, Mail } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Fragment } from "react/jsx-runtime";
 
 export default function SignInPage() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    async function validateToken() {
+      const res = await checkToken();
+      if (res.success) navigate("/");
+    }
+    validateToken();
+  }, [navigate]);
+
+  const handleSignIn = async () => {
+    const result = await signin(email, password);
+
+    if (result.success) {
+      navigate("/"); // login thành công → quay về /
+    } else {
+      alert(result.message); // hiển thị lỗi
+    }
+  };
+
   const textLeftPanel = [
     "500+ professional tech products",
     "Flexible daily, weekly & monthly plans",
@@ -62,6 +88,7 @@ export default function SignInPage() {
             <div className="flex w-full flex-col">
               <MyInputForTextIcon
                 defaultValue=""
+                onChange={setEmail}
                 htmlFor="email"
                 icon={Mail}
                 placeholder="Nhập email của bạn"
@@ -73,6 +100,7 @@ export default function SignInPage() {
               <MyInputForTextPass
                 defaultValue=""
                 htmlFor="password"
+                onChange={setPassword}
                 placeholder="Nhập mật khẩu của bạn"
                 title="Mật khẩu"
                 className=""
@@ -85,7 +113,11 @@ export default function SignInPage() {
                 <MyHref text="Quên mật khẩu" src="#" />
               </div>
             </div>
-            <MyButton text="Đăng nhập" icon={ArrowRight} />
+            <MyButton
+              text="Đăng nhập"
+              icon={ArrowRight}
+              onClick={handleSignIn}
+            />
             <MyHrefText text="Hoặc đăng nhập với" />
             <MyGoogleButton className="" onHandle={() => {}} />
           </div>
