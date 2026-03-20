@@ -18,7 +18,47 @@ export interface Product {
 }
 
 export type ProductCardType = "default" | "list" | "cart";
+export const steps = [
+  {
+    id: "01",
+    title: "Choose Your Gear",
+    desc: "Browse 500+ professional tech products. Filter by category, brand, price, and availability.",
+  },
+  {
+    id: "02",
+    title: "Book Your Dates",
+    desc: "Select rental duration and quantity that fit your project timeline.",
+  },
+  {
+    id: "03",
+    title: "Get It Delivered",
+    desc: "Receive your equipment quickly and start building right away.",
+  },
+];
 
+export const reviews = [
+  {
+    used_id : 1,
+    user_name: "Sarah Chen",
+    user_img: "",
+    star: 5,
+    desc: "RentalTech saved my wedding shoot! I needed a backup Sony A7 IV last minute, and they delivered same-day. The equipment was immaculate, and the price was incredibly fair",
+  },
+  {
+    used_id : 2,
+    user_name: "Marcus Williams",
+    user_img: "",
+    star: 4,
+    desc: "RentalTech saved my wedding shoot! I needed a backup Sony A7 IV last minute, and they delivered same-day. The equipment was immaculate, and the price was incredibly fair",
+  },
+  {
+    user_id : 3,
+    user_name: "Aisha Patel",
+    user_img: "",
+    star: 5,
+    desc: "RentalTech saved my wedding shoot! I needed a backup Sony A7 IV last minute, and they delivered same-day. The equipment was immaculate, and the price was incredibly fair",
+  },
+];
 export const PRODUCTS: Product[] = [
   {
     id: "1",
