@@ -10,6 +10,7 @@ import { signin } from "@/services/usersService";
 import { checkToken } from "@/services/userTokensService";
 import { ArrowRight, Check, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { Fragment } from "react/jsx-runtime";
 
@@ -17,6 +18,7 @@ export default function SignInPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isRemember, setIsRemember] = useState(false);
 
   useEffect(() => {
     async function validateToken() {
@@ -27,10 +29,11 @@ export default function SignInPage() {
   }, [navigate]);
 
   const handleSignIn = async () => {
-    const result = await signin(email, password);
+    const result = await signin(email, password, isRemember);
 
     if (result.success) {
       navigate("/"); // login thành công → quay về /
+      toast.success("Đăng nhập thành công");
     } else {
       alert(result.message); // hiển thị lỗi
     }
@@ -108,7 +111,9 @@ export default function SignInPage() {
               <div className="flex w-full flex-row justify-between items-center">
                 <MyInputCheckbox
                   htmlFor="save-account"
-                  text="Ghi nhớ tài khoản"
+                  text="Ghi nhớ 30 ngày"
+                  checked={isRemember}
+                  onChange={setIsRemember}
                 />
                 <MyHref text="Quên mật khẩu" src="#" />
               </div>

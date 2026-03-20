@@ -7,11 +7,15 @@ import axios from "axios";
  * @param string password: password của user
  * @return json
  */
-export async function signin(email: string, password: string) {
+export async function signin(
+  email: string,
+  password: string,
+  isRemember: boolean,
+) {
   try {
     const response = await axios.post(
       "http://127.0.0.1:8000/api/users/sign-in",
-      { email, password },
+      { email, password, isRemember },
     );
 
     if (response.data.success)

@@ -9,7 +9,7 @@ use App\Models\Users;
 class UserTokens extends Model
 {
     protected $table = 'user_tokens';
-    protected $fillable = ['user_id', 'token', 'expires_at'];
+    protected $fillable = ['user_id', 'token', 'expires_at', 'lastused_at'];
     public $timestamps = false;
 
     /**

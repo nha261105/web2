@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\UserTokens;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Hash;
 
 class UserTokensController extends Controller
 {
@@ -36,8 +37,7 @@ class UserTokensController extends Controller
             }
 
             // Nếu token hết hạn
-            if (Carbon::now()->greaterThan($token->expires_at)) {
-                $token->delete(); // xóa token hết hạn
+            if (Carbon::now()->greaterThan($token->expires_at) && Carbon::now()->subMinutes(30)->greaterThan($token->lastused_at)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Token đã hết hạn. Vui lòng đăng nhập lại'
@@ -45,12 +45,12 @@ class UserTokensController extends Controller
             }
 
             // Nếu token còn hạn
-            $token->expires_at = Carbon::now()->addMinutes(30);
+            $token->lastused_at = Carbon::now();
             $token->save();
             return response()->json([
                 'success' => true,
                 'message' => 'Token còn hạn',
-                'user_id' => $token->user_id,
+                'token' => $token,
             ]);
         }catch(Exception $e){
             return response()->json([

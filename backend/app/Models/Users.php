@@ -11,6 +11,6 @@ class Users extends Model
     use HasApiTokens;
 
     protected $table = 'users';
-    protected $fillable = ['email', 'password', 'full_name', 'phone', 'status'];
+    protected $fillable = ['email', 'hash_password', 'full_name', 'phone', 'status'];
     public $timestamps = false;
 }
