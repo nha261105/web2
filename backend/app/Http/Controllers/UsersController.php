@@ -8,6 +8,7 @@ use App\Models\UserTokens;
 use App\Models\Users;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
 
 class UsersController extends Controller
 {
@@ -22,17 +23,23 @@ class UsersController extends Controller
         try{
             $email = $request->input('email');
             $password = $request->input('password');
+            $isRemember = $request->input('isRemember');
 
-            $user = Users::where('email',  $email)->where('password', $password)->first();
+            $user = Users::where('email',  $email)->first();
             if($user){
-                
+                // Nểu mật khẩu không khớp
+                if(!Hash::check($password, $user->hash_password)){
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Email hoặc mật khẩu không đúng'
+                    ]);
+                }
                 $tokenRecord = UserTokens::create([
                     'user_id' => $user->id,
-                    'expires_at' => Carbon::now()->addMinutes(30)
+                    'token' => hash('sha256', Str::random(40)),
+                    'expires_at' => $isRemember ? Carbon::now()->addMinutes(30 * 24 * 60) : Carbon::now(),
+                    'lastused_at' => Carbon::now(),
                 ]);
-
-                $tokenRecord->token = hash('sha256', $tokenRecord->id . Str::random(20));
-                $tokenRecord->save();
 
                 return response()->json([
                     'success' => true,
@@ -52,5 +59,4 @@ class UsersController extends Controller
             ], 500);
         }
     }
-
 }

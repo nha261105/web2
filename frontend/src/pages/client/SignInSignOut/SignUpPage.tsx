@@ -8,9 +8,12 @@ import {
   MyInputForTextPass,
 } from "@/components/ui/my-input-text";
 import { ArrowRight, Check, Mail } from "lucide-react";
+import { useState } from "react";
 import { Fragment } from "react/jsx-runtime";
 
 export default function SignUpPage() {
+  const [isAccept, setIsAccept] = useState(false);
+
   const textLeftPanel = [
     "500+ products",
     "Free delivery $200+",
@@ -107,6 +110,8 @@ export default function SignUpPage() {
                 <MyInputCheckbox
                   htmlFor="policy"
                   text="Tôi đồng ý với tất cả "
+                  checked={isAccept}
+                  onChange={setIsAccept}
                 />
                 <MyHref text="điều khoản" src="#" />
               </div>
