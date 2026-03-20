@@ -15,6 +15,7 @@ class UsersController extends Controller
     /**
      * Trả về thông tin user trong bảng users dựa trên email và password user
      * 
+     * 
      * @param Request $email email của user
      * @param Request $password Mật khẩu user
      * @return JsonResponse 
