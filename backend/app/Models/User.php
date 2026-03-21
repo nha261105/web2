@@ -2,54 +2,42 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Builder;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable {
-    use HasFactory,Notifiable, HasApiTokens;
+class User extends Authenticatable
+{
+    use HasApiTokens;
 
     protected $table = 'users';
 
     protected $fillable = [
         'email',
-        'password',
+        'hash_password',
         'full_name',
         'phone',
         'status',
     ];
 
     protected $hidden = [
-        'password',
+        'hash_password',
     ];
 
-    protected $casts = [
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-    ];
+    public $timestamps = false;
 
-    public function rentals() {
-        return $this->hasMany(Rental::class);
+    public function setHashPasswordAttribute($value): void
+    {
+        $this->attributes['hash_password'] = bcrypt($value);
     }
 
-    public function scopeActive($query) {
-        return $query->where('status','ACTIVE');
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('status', 'ACTIVE');
     }
 
-    public function scopeInactive($query) {
-        return $query->where('status','INACTIVE');
-    }
-
-    public function getFullNameAttribute($value) {
-        return ucwords($value);
-    }
-
-    public function setPasswordAttribute($value) {
-        $this->attributes['password'] = bcrypt($value);
+    public function scopeInactive(Builder $query): Builder
+    {
+        return $query->where('status', 'INACTIVE');
     }
 }
-
-
-
-?>
