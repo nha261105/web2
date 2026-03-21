@@ -1,6 +1,7 @@
 import { Heart, ShoppingCart, Star, Trash2 } from "lucide-react";
 import type { Product, ProductCardType } from "../data";
 import { useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { QuantityControl } from "./QuantityControl";
 type ProductCardProps = {
   product: Product;
@@ -117,7 +118,7 @@ export const ProductsCard = ({
       </div>
     );
   }
-  return (
+  const cardContent = (
     <div
       className={
         isList
@@ -306,5 +307,14 @@ export const ProductsCard = ({
         )}
       </div>
     </div>
+  );
+
+  return (
+    <Link
+      to={`/products/${product.id}`}
+      className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-2xl"
+    >
+      {cardContent}
+    </Link>
   );
 };

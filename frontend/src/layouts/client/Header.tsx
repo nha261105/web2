@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 
 // ICON IMPORT
@@ -9,6 +9,7 @@ import {
   ShoppingCart,
   X,
   ChevronDown,
+  //   ArrowRight,
 } from "lucide-react";
 
 const MEGA_MENU_SECTIONS = [
@@ -101,11 +102,29 @@ const MEGA_MENU_SECTIONS = [
 export default function Header() {
   const [keyword, setKeyword] = useState("");
   const [isMegaOpen, setIsMegaOpen] = useState(false);
+  const megaAreaRef = useRef<HTMLLIElement | null>(null);
 
   const clearSearch = () => setKeyword("");
 
+  useEffect(() => {
+    if (!isMegaOpen) return;
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (megaAreaRef.current && !megaAreaRef.current.contains(target)) {
+        setIsMegaOpen(false);
+      }
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, [isMegaOpen]);
+
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+    <header className="bg-white border-b border-slate-200 text-slate-900 sticky top-0 z-50 shadow-sm">
       {/* TOP BAR */}
       <div className="flex items-center justify-between px-4 py-3 gap-4 h-20 max-w-7xl mx-auto sm:px-6 lg:px-8">
         {/* LOGO */}
@@ -113,7 +132,7 @@ export default function Header() {
           <div className="h-11 w-11 rounded-xl bg-blue-600 text-white font-bold text-lg flex items-center justify-center">
             RT
           </div>
-          <span className="text-2xl font-bold text-blue-700 hidden sm:block">
+          <span className="text-2xl font-bold tracking-tight text-slate-900 hidden sm:block">
             RentalTech
           </span>
         </Link>
@@ -135,7 +154,7 @@ export default function Header() {
                 value={keyword}
                 onChange={(event) => setKeyword(event.target.value)}
                 placeholder="Tìm thiết bị cần thuê (laptop, camera, drone...)"
-                className="h-12 w-full rounded-xl border border-slate-300 bg-slate-50 pl-12 pr-24 text-[15px] text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
+                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-24 text-[15px] text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
               />
 
               <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -143,7 +162,7 @@ export default function Header() {
                   <button
                     type="button"
                     onClick={clearSearch}
-                    className="h-7 w-7 rounded-full grid place-items-center text-slate-500 hover:text-slate-700 hover:bg-slate-200 transition-colors"
+                    className="h-7 w-7 rounded-full grid place-items-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
                     aria-label="Xóa nội dung tìm kiếm"
                   >
                     <X size={14} />
@@ -188,78 +207,76 @@ export default function Header() {
           </button>
         </div>
       </div>
-
-      <nav className="relative bg-blue-600 text-white">
-        <div className="mx-auto flex max-w-7xl justify-center px-3 py-3 sm:px-6 lg:px-8">
+      <nav className="relative">
+        <div className="mx-auto flex max-w-7xl justify-center px-4 py-3 sm:px-6 lg:px-8">
           <ul
             id="nav"
-            className="flex flex-wrap justify-center gap-6 sm:gap-10 text-sm sm:text-base font-medium"
+            className="flex items-center gap-8 text-sm font-semibold text-slate-700"
           >
             <li>
-              <Link to="/" className="hover:underline underline-offset-4">
+              <Link to="/" className="hover:text-blue-600 transition-colors">
                 Trang Chủ
               </Link>
             </li>
             <li
-              className="relative"
+              ref={megaAreaRef}
               onMouseEnter={() => setIsMegaOpen(true)}
               onMouseLeave={() => setIsMegaOpen(false)}
             >
               <button
                 type="button"
-                className="inline-flex items-center gap-1 hover:underline underline-offset-4"
+                className={`inline-flex items-center gap-2 transition-colors ${isMegaOpen ? "text-blue-600" : "hover:text-blue-600"}`}
                 onClick={() => setIsMegaOpen((prev) => !prev)}
                 aria-haspopup="menu"
                 aria-expanded={isMegaOpen}
               >
                 Thiết Bị
                 <ChevronDown
-                  size={16}
+                  size={14}
                   className={`transition-transform ${isMegaOpen ? "rotate-180" : ""}`}
                 />
               </button>
 
               {isMegaOpen && (
-                <div className="absolute left-1/2 top-full z-50 w-[min(1200px,96vw)] -translate-x-1/2 pt-3">
-                  <div className="max-h-[68vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 text-slate-700 shadow-2xl">
-                    <div className="grid grid-cols-1 gap-x-6 gap-y-7 sm:grid-cols-2 lg:grid-cols-3">
-                      {MEGA_MENU_SECTIONS.map((section) => (
-                        <div key={section.title}>
-                          <p className="mb-2 border-b border-slate-200 pb-2 text-lg font-semibold text-orange-600">
-                            {section.title}
-                          </p>
-                          <ul className="space-y-1.5 text-[16px]">
-                            {section.items.map((item) => (
-                              <li key={item}>
-                                <Link
-                                  to="/"
-                                  className="text-slate-600 transition-colors hover:text-blue-600"
-                                >
-                                  {item}
-                                </Link>
-                              </li>
-                            ))}
-                          </ul>
-                          <Link
-                            to="/"
-                            className="mt-2 inline-block text-lg font-medium text-orange-600 hover:underline"
-                          >
-                            Xem thêm
-                          </Link>
-                        </div>
-                      ))}
+                <div
+                  className="absolute inset-x-0 top-full z-50 -translate-y-2.5"
+                  onMouseLeave={() => setIsMegaOpen(false)}
+                >
+                  <div className="mx-auto w-[min(1200px,94vw)]">
+                    <div className="max-h-[72vh] overflow-y-auto rounded-[16px] border border-slate-100 bg-white p-6 text-slate-700 shadow-lg">
+                      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        {MEGA_MENU_SECTIONS.map((section) => (
+                          <div key={section.title} className="p-4">
+                            <p className="mb-3 text-base font-bold text-slate-900">
+                              {section.title}
+                            </p>
+                            <ul className="space-y-2 text-sm text-slate-600">
+                              {section.items.map((item) => (
+                                <li key={item}>
+                                  <Link
+                                    to="/"
+                                    className="transition-colors hover:text-blue-600"
+                                  >
+                                    {item}
+                                  </Link>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
             </li>
             <li>
-              <Link to="/" className="hover:underline underline-offset-4">
+              <Link to="/" className="hover:text-blue-600 transition-colors">
                 Giới thiệu
               </Link>
             </li>
             <li>
-              <Link to="/" className="hover:underline underline-offset-4">
+              <Link to="/" className="hover:text-blue-600 transition-colors">
                 Liên Hệ
               </Link>
             </li>

@@ -9,6 +9,7 @@ import HomePage from "../pages/client/HomePage";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import CartPage from "@/pages/client/CartPage";
 import CheckoutPage from "@/pages/client/CheckoutPage";
+import ProductDetailPage from "@/pages/client/ProductDetailPage";
 import SignInPage from "@/pages/client/SignInSignOut/SigInPage";
 import SignUpPage from "@/pages/client/SignInSignOut/SignUpPage";
 
@@ -18,6 +19,7 @@ export const AppRoutes = () => {
       {/* Route cho client */}
       <Route element={<ClientLayout />}>
         <Route path="/" element={<HomePage />} />
+        <Route path="/products/:id" element={<ProductDetailPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
       </Route>
