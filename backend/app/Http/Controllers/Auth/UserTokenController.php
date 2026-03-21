@@ -1,61 +1,58 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Auth;
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use App\Models\UserTokens;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Hash;
+use Exception;
+use Illuminate\Http\Request;
 
-class UserTokensController extends Controller
+class UserTokenController extends Controller
 {
     /**
-     * Test token còn hạn hay hết hạn, nếu còn hạn thì gia hạn thêm 30 phút, còn không bắt đăng nhập lại
-     * 
-     * @param Request $token token cần kiểm tra
-     * @return JsonResponse 
+     * Kiểm tra token còn hạn hay đã hết hạn
      */
-    public function checkUserToken(Request $request)
+    public function check(Request $request)
     {
-        try{
-            // Lấy param
+        try {
             $tokenString = $request->bearerToken();
+
             if (!$tokenString) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Token không tồn tại'
+                    'message' => 'Token không tồn tại',
                 ]);
             }
-            
-            // Tìm token
-            $token = UserTokens::where('token', $tokenString)->first();  
+
+            $token = UserTokens::where('token', $tokenString)->first();
+
             if (!$token) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Token không hợp lệ'
+                    'message' => 'Token không hợp lệ',
                 ]);
             }
 
-            // Nếu token hết hạn
             if (Carbon::now()->greaterThan($token->expires_at) && Carbon::now()->subMinutes(30)->greaterThan($token->lastused_at)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Token đã hết hạn. Vui lòng đăng nhập lại'
+                    'message' => 'Token đã hết hạn. Vui lòng đăng nhập lại',
                 ]);
             }
 
-            // Nếu token còn hạn
             $token->lastused_at = Carbon::now();
             $token->save();
+
             return response()->json([
                 'success' => true,
                 'message' => 'Token còn hạn',
                 'token' => $token,
             ]);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Có lỗi xảy ra: ' . $e->getMessage()
+                'message' => 'Có lỗi xảy ra: ' . $e->getMessage(),
             ], 500);
         }
     }

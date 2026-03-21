@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
-use App\Models\Users;
+use App\Models\User;
 
 class UserTokens extends Model
 {
@@ -37,8 +37,8 @@ class UserTokens extends Model
      * Liên kết với Users
      * 
      * */ 
-    public function users()
+    public function user()
     {
-        return $this->belongsTo(Users::class);
+        return $this->belongsTo(User::class);
     }
 }
