@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\RbacController;
 use App\Http\Controllers\Auth\UserTokenController;
 use App\Http\Controllers\User\UserController;
+use App\Http\Controllers\Address\AddressController;
 
 /**
  * User Routes
@@ -13,7 +14,7 @@ Route::post('/users', [UserController::class, 'store']);
 
 /**
  * Auth Routes
-*/
+ */
 Route::post('/auth/sign-in', [AuthController::class, 'signIn']);
 
 Route::middleware(['auth.token'])->group(function () {
@@ -21,7 +22,20 @@ Route::middleware(['auth.token'])->group(function () {
 	Route::get('/auth/me', [AuthController::class, 'me']);
 	Route::post('/user-tokens/check-token', [UserTokenController::class, 'check']);
 
+	Route::get('/users/me', [UserController::class, 'me']);
+	Route::patch('/users/me', [UserController::class, 'updateMe']);
+
+	// address crud
+	Route::prefix('addresses')->group(function () {
+		Route::get('/', [AddressController::class, 'index']);
+		Route::post('/', [AddressController::class, 'store']);
+		Route::patch('/{id}', [AddressController::class, 'update']);
+		Route::delete('/{id}', [AddressController::class, 'destroy']);
+	});
+
 	Route::middleware(['role:ADMIN'])->group(function () {
+		Route::get('/users', [UserController::class, 'index']);
+        Route::delete('/users/{id}', [UserController::class, 'destroy']);
 		Route::get('/roles', [RbacController::class, 'roles']);
 		Route::get('/permissions', [RbacController::class, 'permissions']);
 		Route::post('/roles/{id}/permissions', [RbacController::class, 'syncRolePermissions']);
