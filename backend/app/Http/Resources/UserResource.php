@@ -14,6 +14,7 @@ class UserResource extends JsonResource {
             'full_name' => $this->full_name,
             'phone' => $this->phone,
             'status' => $this->status,
+            'addresses' => AddressResource::collection($this->whenLoaded('addresses')),
         ];
     }
 }
