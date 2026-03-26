@@ -37,7 +37,7 @@ class AddressController extends Controller
      * POST /api/addresses
      * Thêm địa chỉ mới
      */
-    public function store(Request $request): JsonResponse // 123
+    public function store(Request $request): JsonResponse
     {
         try {
             $user = $request->attributes->get('auth_user');
@@ -62,7 +62,7 @@ class AddressController extends Controller
      * PATCH /api/addresses/{id}
      * Cập nhật địa chỉ
      */
-    public function update(Request $request, $id): JsonResponse // 123
+    public function update(Request $request, $id): JsonResponse
     {
         try {
             $user = $request->attributes->get('auth_user');
@@ -86,7 +86,7 @@ class AddressController extends Controller
      * DELETE /api/addresses/{id}
      * Xóa địa chỉ
      */
-    public function destroy(Request $request, $id): JsonResponse // 123
+    public function destroy(Request $request, $id): JsonResponse
     {
         try {
             $user = $request->attributes->get('auth_user');
