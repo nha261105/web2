@@ -3,9 +3,6 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\UserTokens;
-use Carbon\Carbon;
-use Exception;
 use Illuminate\Http\Request;
 
 class UserTokenController extends Controller
@@ -15,45 +12,34 @@ class UserTokenController extends Controller
      */
     public function check(Request $request)
     {
-        try {
-            $tokenString = $request->bearerToken();
+        $user = $request->attributes->get('auth_user');
+        $token = $request->attributes->get('auth_token');
 
-            if (!$tokenString) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Token không tồn tại',
-                ]);
-            }
-
-            $token = UserTokens::where('token', $tokenString)->first();
-
-            if (!$token) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Token không hợp lệ',
-                ]);
-            }
-
-            if (Carbon::now()->greaterThan($token->expires_at) && Carbon::now()->subMinutes(30)->greaterThan($token->lastused_at)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Token đã hết hạn. Vui lòng đăng nhập lại',
-                ]);
-            }
-
-            $token->lastused_at = Carbon::now();
-            $token->save();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Token còn hạn',
-                'token' => $token,
-            ]);
-        } catch (Exception $e) {
+        if (!$user || !$token) {
             return response()->json([
                 'success' => false,
-                'message' => 'Có lỗi xảy ra: ' . $e->getMessage(),
-            ], 500);
+                'message' => 'Token khong hop le',
+            ], 401);
         }
+
+        $user->load('roles.permissions');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Token con han',
+            'data' => [
+                'token' => [
+                    'access_token' => $token->token,
+                    'expires_at' => $token->expires_at,
+                    'lastused_at' => $token->lastused_at,
+                ],
+                'user' => $user,
+                'roles' => $user->roles->pluck('name')->values(),
+                'permissions' => $user->roles
+                    ->flatMap(fn ($role) => $role->permissions->pluck('name'))
+                    ->unique()
+                    ->values(),
+            ],
+        ]);
     }
 }
