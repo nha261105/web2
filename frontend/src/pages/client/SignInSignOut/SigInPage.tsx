@@ -1,11 +1,11 @@
 import { MyHrefText } from "@/components/ui/input/my-href";
 import { MyInputCheckbox } from "@/components/ui/input/my-input-checkbox";
-import { MyButton, MyGoogleButton } from "@/components/ui/my-button";
+import { MyButton, MyGoogleButton } from "@/components/ui/input/my-button";
 import MyHref from "@/components/ui/my-href";
 import {
   MyInputForTextIcon,
   MyInputForTextPass,
-} from "@/components/ui/my-input-text";
+} from "@/components/ui/input/my-input-text";
 import { signin } from "@/services/usersService";
 import { checkToken } from "@/services/userTokensService";
 import { ArrowRight, Check, Mail } from "lucide-react";

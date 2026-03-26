@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 // ICON IMPORT
 import {
@@ -103,6 +103,7 @@ export default function Header() {
   const [keyword, setKeyword] = useState("");
   const [isMegaOpen, setIsMegaOpen] = useState(false);
   const megaAreaRef = useRef<HTMLLIElement | null>(null);
+  const navigator = useNavigate();
 
   const clearSearch = () => setKeyword("");
 
@@ -190,15 +191,21 @@ export default function Header() {
           </button>
           <button
             type="button"
-            className="h-10 w-10 rounded-full grid place-items-center text-slate-600 hover:text-blue-600 hover:bg-slate-100 transition-colors"
+            className="cursor-pointer h-10 w-10 rounded-full grid place-items-center text-slate-600 hover:text-blue-600 hover:bg-slate-100 transition-colors"
             aria-label="Tài khoản"
+            onClick={() => {
+              navigator("/account");
+            }}
           >
             <User size={24} />
           </button>
           <button
             type="button"
-            className="relative h-10 w-10 rounded-full grid place-items-center text-slate-600 hover:text-amber-500 hover:bg-slate-100 transition-colors"
+            className="cursor-pointer relative h-10 w-10 rounded-full grid place-items-center text-slate-600 hover:text-amber-500 hover:bg-slate-100 transition-colors"
             aria-label="Giỏ hàng"
+            onClick={() => {
+              navigator("/cart");
+            }}
           >
             <ShoppingCart size={24} />
             <span className="absolute -right-1 -top-1 min-w-5 h-5 rounded-full bg-orange-500 text-white text-xs px-1 grid place-items-center font-semibold">

@@ -13,8 +13,8 @@ import {
   Linkedin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import { FieldGroup } from "@/components/ui/field";
+import { MyInputText } from "@/components/ui/input/my-input-text";
 
 export default function Footer() {
   return (
@@ -96,23 +96,17 @@ export default function Footer() {
           </p>
 
           <div className="mt-2 w-full max-w-sm">
-            <FieldGroup className="flex w-full items-center gap-2 rounded-2xl bg-slate-900 p-1.5 border border-slate-800 shadow-inner focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all">
-              <Field className="flex-1 px-2">
-                <FieldLabel htmlFor="footer-mail" className="sr-only">
-                  Email
-                </FieldLabel>
-                <Input
-                  id="footer-mail"
-                  type="email"
-                  placeholder="Nhập email của bạn..."
-                  className="h-10 w-full border-none bg-transparent text-sm font-medium text-white placeholder:text-slate-500 focus:outline-none focus:ring-0"
-                />
-              </Field>
+            <FieldGroup className="flex flex-row w-full items-center gap-2">
+              <MyInputText
+                defaultValue=""
+                placeholder="Nhập email của bạn..."
+                className="text-white"
+              />
               <Button
                 type="submit"
-                className="h-10 rounded-xl bg-blue-600 px-5 text-sm font-bold text-white shadow-md transition-all hover:bg-blue-700 active:scale-95 shrink-0"
+                className="h-11 w-11 flex justify-center items-center rounded-xl bg-blue-600 transition-all hover:bg-blue-700 cursor-pointer"
               >
-                Đăng ký <Send size={16} className="ml-2" />
+                <Send size={16} className="text-sm font-bold text-white " />
               </Button>
             </FieldGroup>
           </div>

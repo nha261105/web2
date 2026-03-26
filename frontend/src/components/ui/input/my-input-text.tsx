@@ -4,6 +4,7 @@ import { useState } from "react";
 type MyInputTextType = {
   defaultValue: string;
   placeholder: string;
+  className?: string;
 };
 
 type MyInputForTextType = {
@@ -24,11 +25,17 @@ type MyInputForTextIcon = {
   onChange?: (value: string) => void;
 };
 
-function MyInputText({ defaultValue, placeholder }: MyInputTextType) {
+function MyInputText({
+  defaultValue,
+  placeholder,
+  className,
+}: MyInputTextType) {
   const [value, setValue] = useState(defaultValue);
 
   return (
-    <div className="flex flex-1 items-center gap-2">
+    <div
+      className={`${className ? className : ""} flex flex-1 items-center gap-2`}
+    >
       <input
         type="text"
         value={value}

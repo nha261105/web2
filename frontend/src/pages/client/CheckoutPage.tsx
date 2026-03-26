@@ -10,7 +10,7 @@ import { Fragment, useState } from "react";
 import PaymentStep from "./CheckoutStep.tsx/PaymentStep";
 import ConfirmStep from "./CheckoutStep.tsx/ConfirmStep";
 import { Check } from "lucide-react";
-import { MyBackButton } from "@/components/ui/my-button";
+import { MyBackButton } from "@/components/ui/input/my-button";
 import { useNavigate } from "react-router-dom";
 
 export default function CheckoutPage() {
@@ -88,7 +88,9 @@ export default function CheckoutPage() {
         <LeftCartLayout>
           {stepCheckOut == 1 && <ShippingStep onChange={setStepCheckOut} />}
           {stepCheckOut == 2 && <PaymentStep onChange={setStepCheckOut} />}
-          {stepCheckOut == 3 && <ConfirmStep onChange={setStepCheckOut} onSuccess={setSuccess}/>}
+          {stepCheckOut == 3 && (
+            <ConfirmStep onChange={setStepCheckOut} onSuccess={setSuccess} />
+          )}
         </LeftCartLayout>
         <RightCartLayout>
           <div className="w-full flex flex-col border-gray-300 bg-white border p-5 rounded-lg gap-3">

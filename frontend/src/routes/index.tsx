@@ -18,6 +18,7 @@ import AdminCategories from "@/pages/admin/AdminCategories";
 import AdminUsers from "@/pages/admin/AdminUsers";
 import AdminReports from "@/pages/admin/AdminReports";
 import AdminSettings from "@/pages/admin/AdminSettings";
+import AccountPage from "@/pages/client/AccountPage";
 
 export const AppRoutes = () => {
   return (
@@ -28,17 +29,18 @@ export const AppRoutes = () => {
         <Route path="/products/:id" element={<ProductDetailPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/account" element={<AccountPage />} />
       </Route>
 
       {/* Route cho admin */}
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminDashboard />} />
-        <Route path="products" element= {<AdminProducts />} />
-        <Route path="orders" element= {<AdminOrders />} />
-        <Route path="categories" element= {<AdminCategories />} />
-        <Route path="users" element= {<AdminUsers />} />
-        <Route path="reports" element= {<AdminReports />} />
-        <Route path="settings" element= {<AdminSettings />} />
+        <Route path="products" element={<AdminProducts />} />
+        <Route path="orders" element={<AdminOrders />} />
+        <Route path="categories" element={<AdminCategories />} />
+        <Route path="users" element={<AdminUsers />} />
+        <Route path="reports" element={<AdminReports />} />
+        <Route path="settings" element={<AdminSettings />} />
       </Route>
 
       {/* Page not found */}

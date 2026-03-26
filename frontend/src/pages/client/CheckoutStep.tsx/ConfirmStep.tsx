@@ -1,4 +1,4 @@
-import { MyBackButton, MyButton } from "@/components/ui/my-button";
+import { MyBackButton, MyButton } from "@/components/ui/input/my-button";
 import { MyFrameWithInfo2 } from "@/components/ui/my-frame";
 import { ArrowRight, Search } from "lucide-react";
 import { Fragment } from "react/jsx-runtime";
