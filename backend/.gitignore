@@ -19,10 +19,7 @@
 /public/vendor
 /storage/*.key
 /storage/pail
-/storage/app/private/scribe
-/resources/views/scribe
 /vendor
-/.scribe
 Homestead.json
 Homestead.yaml
 Thumbs.db
