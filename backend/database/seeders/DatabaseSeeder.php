@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -15,11 +16,24 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->call([
+            RolePermissionSeeder::class,
+        ]);
+
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
+        $user = User::factory()->create([
             'email' => 'test@example.com',
+            'hash_password' => 'password123',
+            'full_name' => 'Test User',
+            'phone' => '0912345678',
+            'status' => 'ACTIVE',
+            'created_at' => now(),
         ]);
+
+        $customerRole = Role::where('name', 'CUSTOMER')->first();
+        if ($customerRole) {
+            $user->roles()->syncWithoutDetaching([$customerRole->id]);
+        }
     }
 }
