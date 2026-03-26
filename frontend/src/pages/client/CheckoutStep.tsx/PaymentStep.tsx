@@ -1,9 +1,13 @@
-import { ButtonIcon, MyBackButton, MyButton } from "@/components/ui/my-button";
+import {
+  ButtonIcon,
+  MyBackButton,
+  MyButton,
+} from "@/components/ui/input/my-button";
 import {
   MyFrameWithInfo,
   MyFrameWithTextButton,
 } from "@/components/ui/my-frame";
-import { MyInputForText } from "@/components/ui/my-input-text";
+import { MyInputForText } from "@/components/ui/input/my-input-text";
 import { ArrowRight, Building2, CreditCard, Wallet } from "lucide-react";
 import { useState } from "react";
 

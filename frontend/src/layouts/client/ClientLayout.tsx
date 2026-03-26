@@ -6,9 +6,9 @@ import Footer from "./Footer.tsx";
 export default function ClientLayout() {
   return (
     // CLIENT LAYOUT: HEADER,NAVBAR,FOOTER,CONTENT.
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col">
       <Header />
-      <main className="flex-1">
+      <main className="flex min-h-[70vh]">
         <Outlet />
       </main>
       <Footer />

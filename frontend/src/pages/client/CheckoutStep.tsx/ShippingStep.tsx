@@ -1,6 +1,6 @@
-import { MyButton } from "@/components/ui/my-button";
-import { MyInputForText } from "@/components/ui/my-input-text";
-import MyRadioSelect from "@/components/ui/my-radio-select";
+import { MyButton } from "@/components/ui/input/my-button";
+import { MyInputForText } from "@/components/ui/input/my-input-text";
+import MyRadioSelect from "@/components/ui/input/my-radio-select";
 import { ArrowRight, MapPin } from "lucide-react";
 import { useState } from "react";
 
