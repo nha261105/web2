@@ -1,4 +1,5 @@
 import axios from "axios";
+import { API_BASE_URL, API_ENDPOINTS } from "@/config/api";
 
 /**
  * Hàm đăng nhập bằng email và password
@@ -14,12 +15,13 @@ export async function signin(
 ) {
   try {
     const response = await axios.post(
-      "http://127.0.0.1:8000/api/users/sign-in",
+      `${API_BASE_URL}${API_ENDPOINTS.signIn}`,
       { email, password, isRemember },
     );
 
-    if (response.data.success)
-      localStorage.setItem("token", response.data.token.token);
+    const accessToken = response.data?.data?.token?.access_token;
+    if (response.data.success && accessToken)
+      localStorage.setItem("token", accessToken);
 
     return response.data;
   } catch (err: unknown) {
