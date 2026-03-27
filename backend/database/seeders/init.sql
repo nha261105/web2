@@ -175,7 +175,7 @@ CREATE TABLE coupons (
 
 CREATE TABLE rentals (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+    user_id INT NOT NULL,rentals
     coupon_id INT,
     address_id INT NOT NULL,
     code VARCHAR(100) NOT NULL UNIQUE,

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\ApiResponse;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -13,10 +14,7 @@ class RequireRole
         $user = $request->attributes->get('auth_user');
 
         if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Chua xac thuc',
-            ], 401);
+            return ApiResponse::unauthorized();
         }
 
         foreach ($roles as $role) {
@@ -25,9 +23,6 @@ class RequireRole
             }
         }
 
-        return response()->json([
-            'success' => false,
-            'message' => 'Ban khong co role phu hop de truy cap tai nguyen nay',
-        ], 403);
+        return ApiResponse::forbidden();
     }
 }

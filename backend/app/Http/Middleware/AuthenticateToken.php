@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\UserTokens;
+use App\Support\ApiResponse;
 use Carbon\Carbon;
 use Closure;
 use Illuminate\Http\Request;
@@ -15,10 +16,7 @@ class AuthenticateToken
         $tokenString = $request->bearerToken();
 
         if (!$tokenString) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Chua cung cap token',
-            ], 401);
+            return ApiResponse::unauthorized();
         }
 
         $token = UserTokens::with('user.roles.permissions')
@@ -26,17 +24,11 @@ class AuthenticateToken
             ->first();
 
         if (!$token || !$token->user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Token khong hop le',
-            ], 401);
+            return ApiResponse::unauthorized();
         }
 
         if (Carbon::now()->greaterThan($token->expires_at)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Token da het han, vui long dang nhap lai',
-            ], 401);
+            return ApiResponse::unauthorized('Token expired, please sign in again');
         }
 
         $token->lastused_at = Carbon::now();

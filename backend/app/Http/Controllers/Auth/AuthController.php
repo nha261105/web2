@@ -5,11 +5,12 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\UserTokens;
+use App\Support\ApiResponse;
 use Carbon\Carbon;
-use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Throwable;
 
 class AuthController extends Controller
 {
@@ -18,13 +19,13 @@ class AuthController extends Controller
      */
     public function signIn(Request $request)
     {
-        try {
-            $validated = $request->validate([
-                'email' => 'required|email',
-                'password' => 'required|string|min:8',
-                'isRemember' => 'nullable|boolean',
-            ]);
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string|min:8',
+            'isRemember' => 'nullable|boolean',
+        ]);
 
+        try {
             $email = $validated['email'];
             $password = $validated['password'];
             $isRemember = (bool) ($validated['isRemember'] ?? false);
@@ -32,10 +33,7 @@ class AuthController extends Controller
             $user = User::with('roles.permissions')->where('email', $email)->first();
 
             if (!$user || !Hash::check($password, $user->hash_password)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Email hoặc mật khẩu không đúng',
-                ], 401);
+                return ApiResponse::error('Email or password is incorrect', 'INVALID_CREDENTIALS', 401);
             }
 
             $tokenRecord = UserTokens::create([
@@ -52,24 +50,19 @@ class AuthController extends Controller
                 ->unique()
                 ->values();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Dang nhap thanh cong',
-                'data' => [
-                    'user' => $user,
-                    'roles' => $user->roles->pluck('name')->values(),
-                    'permissions' => $permissions,
-                    'token' => [
-                        'access_token' => $tokenRecord->token,
-                        'expires_at' => $tokenRecord->expires_at,
-                    ],
+            return ApiResponse::success([
+                'user' => $user,
+                'roles' => $user->roles->pluck('name')->values(),
+                'permissions' => $permissions,
+                'token' => [
+                    'access_token' => $tokenRecord->token,
+                    'expires_at' => $tokenRecord->expires_at,
                 ],
-            ]);
-        } catch (Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Có lỗi xảy ra: ' . $e->getMessage(),
-            ], 500);
+            ], 'Sign in successful');
+        } catch (Throwable $e) {
+            report($e);
+
+            return ApiResponse::internalError();
         }
     }
 
@@ -78,24 +71,18 @@ class AuthController extends Controller
         $user = $request->attributes->get('auth_user');
 
         if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Chua xac thuc',
-            ], 401);
+            return ApiResponse::unauthorized();
         }
 
         $user->load('roles.permissions');
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'user' => $user,
-                'roles' => $user->roles->pluck('name')->values(),
-                'permissions' => $user->roles
-                    ->flatMap(fn ($role) => $role->permissions->pluck('name'))
-                    ->unique()
-                    ->values(),
-            ],
+        return ApiResponse::success([
+            'user' => $user,
+            'roles' => $user->roles->pluck('name')->values(),
+            'permissions' => $user->roles
+                ->flatMap(fn ($role) => $role->permissions->pluck('name'))
+                ->unique()
+                ->values(),
         ]);
     }
 
@@ -104,17 +91,11 @@ class AuthController extends Controller
         $token = $request->attributes->get('auth_token');
 
         if (!$token) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Khong tim thay token dang dang nhap',
-            ], 401);
+            return ApiResponse::unauthorized();
         }
 
         $token->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Dang xuat thanh cong',
-        ]);
+        return ApiResponse::success([], 'Sign out successful');
     }
 }
