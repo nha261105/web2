@@ -26,7 +26,7 @@ Route::middleware(['auth.token'])->group(function () {
 	Route::patch('/users/me', [UserController::class, 'updateMe']);
 
 	// address crud
-	Route::prefix('addresses')->group(function () {
+	Route::prefix('users/{userId}/addresses')->group(function () {
 		Route::get('/', [AddressController::class, 'index']);
 		Route::post('/', [AddressController::class, 'store']);
 		Route::patch('/{id}', [AddressController::class, 'update']);
@@ -35,7 +35,7 @@ Route::middleware(['auth.token'])->group(function () {
 
 	Route::middleware(['role:ADMIN'])->group(function () {
 		Route::get('/users', [UserController::class, 'index']);
-        Route::delete('/users/{id}', [UserController::class, 'destroy']);
+		Route::delete('/users/{id}', [UserController::class, 'destroy']);
 		Route::get('/roles', [RbacController::class, 'roles']);
 		Route::get('/permissions', [RbacController::class, 'permissions']);
 		Route::post('/roles/{id}/permissions', [RbacController::class, 'syncRolePermissions']);

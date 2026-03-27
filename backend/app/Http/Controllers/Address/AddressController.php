@@ -18,13 +18,20 @@ class AddressController extends Controller
     }
 
     /**
-     * GET /api/addresses
-     * Lấy danh sách địa chỉ của user đang đăng nhập
+     * GET /api/users/{userId}/addresses
      */
-    public function index(Request $request): JsonResponse // 123
+    public function index(Request $request, $userId): JsonResponse
     {
-        $user = $request->attributes->get('auth_user');
-        $addresses = \App\Models\Address::where('user_id', $user->id)->get();
+        $authUser = $request->attributes->get('auth_user');
+        
+        if ($authUser->id != $userId && !$this->checkAdmin($authUser)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn không có quyền xem địa chỉ của người khác',
+            ], 403);
+        }
+
+        $addresses = \App\Models\Address::where('user_id', $userId)->get();
 
         return response()->json([
             'success' => true,
@@ -34,15 +41,18 @@ class AddressController extends Controller
     }
 
     /**
-     * POST /api/addresses
-     * Thêm địa chỉ mới
+     * POST /api/users/{userId}/addresses
      */
-    public function store(Request $request): JsonResponse
+    public function store(Request $request, $userId): JsonResponse
     {
         try {
-            $user = $request->attributes->get('auth_user');
-            // Gọi service xử lý logic (bao gồm cả logic is_default)
-            $address = $this->addressService->save($request->all(), $user->id);
+            $authUser = $request->attributes->get('auth_user');
+
+            if ($authUser->id != $userId && !$this->checkAdmin($authUser)) {
+                return response()->json(['success' => false, 'message' => 'Hành động không hợp lệ'], 403);
+            }
+
+            $address = $this->addressService->save($request->all(), $userId); 
 
             return response()->json([
                 'success' => true,
@@ -59,14 +69,18 @@ class AddressController extends Controller
     }
 
     /**
-     * PATCH /api/addresses/{id}
-     * Cập nhật địa chỉ
+     * PATCH /api/users/{userId}/addresses/{id}
      */
-    public function update(Request $request, $id): JsonResponse
+    public function update(Request $request, $userId, $id): JsonResponse
     {
         try {
-            $user = $request->attributes->get('auth_user');
-            $address = $this->addressService->save($request->all(), $user->id, $id);
+            $authUser = $request->attributes->get('auth_user');
+
+            if ($authUser->id != $userId && !$this->checkAdmin($authUser)) {
+                return response()->json(['success' => false, 'message' => 'Hành động không hợp lệ'], 403);
+            }
+
+            $address = $this->addressService->save($request->all(), $userId, $id); 
 
             return response()->json([
                 'success' => true,
@@ -83,14 +97,18 @@ class AddressController extends Controller
     }
 
     /**
-     * DELETE /api/addresses/{id}
-     * Xóa địa chỉ
+     * DELETE /api/users/{userId}/addresses/{id}
      */
-    public function destroy(Request $request, $id): JsonResponse
+    public function destroy(Request $request, $userId, $id): JsonResponse
     {
         try {
-            $user = $request->attributes->get('auth_user');
-            $this->addressService->delete($user->id, $id);
+            $authUser = $request->attributes->get('auth_user');
+
+            if ($authUser->id != $userId && !$this->checkAdmin($authUser)) {
+                return response()->json(['success' => false, 'message' => 'Hành động không hợp lệ'], 403);
+            }
+
+            $this->addressService->delete($userId, $id);
 
             return response()->json([
                 'success' => true,
@@ -103,5 +121,13 @@ class AddressController extends Controller
                 'error' => $e->getMessage(),
             ], 400);
         }
+    }
+
+    /**
+     * Hàm phụ kiểm tra quyền Admin
+     */
+    private function checkAdmin($user): bool
+    {
+        return $user->roles->contains('name', 'ADMIN');
     }
 }
