@@ -4,10 +4,11 @@ namespace App\Services\User;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class UserService
 {
-    public function getAllUsers(int $perPage = 15)
+    public function listUsers(int $perPage = 15): LengthAwarePaginator
     {
         return User::paginate($perPage);
     }
@@ -53,11 +54,10 @@ class UserService
             'full_name' => $data['full_name'],
             'phone' => $data['phone'],
             'status' => $data['status'] ?? 'ACTIVE',
-            'created_at' => now(),
         ]);
     }
-    
-    public function update($userId, $data)
+
+    public function updateUser($userId, array $data): User
     {
         $user = User::findOrFail($userId);
         if (isset($data['password'])) {
@@ -71,5 +71,4 @@ class UserService
     {
         return User::findOrFail($id)->delete();
     }
-    
 }
