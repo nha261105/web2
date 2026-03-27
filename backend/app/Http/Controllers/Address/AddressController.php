@@ -7,6 +7,9 @@ use App\Http\Resources\AddressResource;
 use App\Services\Address\AddressService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Http\Requests\Address\CreateAddressRequest;
+use App\Http\Requests\Address\UpdateAddressRequest;
+use App\Support\ApiResponse;
 
 class AddressController extends Controller
 {
@@ -23,76 +26,59 @@ class AddressController extends Controller
     public function index(Request $request, $userId): JsonResponse
     {
         $authUser = $request->attributes->get('auth_user');
-        
-        if ($authUser->id != $userId && !$this->checkAdmin($authUser)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Bạn không có quyền xem địa chỉ của người khác',
-            ], 403);
+
+        if ($authUser->id != $userId && !$authUser->hasRole('ADMIN')) {
+            return ApiResponse::forbidden('Bạn không có quyền xem địa chỉ của người khác');
         }
 
         $addresses = \App\Models\Address::where('user_id', $userId)->get();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Lấy danh sách địa chỉ thành công',
-            'data' => AddressResource::collection($addresses),
-        ]);
+        return ApiResponse::success([
+            'addresses' => AddressResource::collection($addresses)
+        ], 'Lấy danh sách địa chỉ thành công');
     }
 
     /**
      * POST /api/users/{userId}/addresses
      */
-    public function store(Request $request, $userId): JsonResponse
+    public function store(CreateAddressRequest $request, $userId): JsonResponse
     {
         try {
             $authUser = $request->attributes->get('auth_user');
 
-            if ($authUser->id != $userId && !$this->checkAdmin($authUser)) {
-                return response()->json(['success' => false, 'message' => 'Hành động không hợp lệ'], 403);
+            if ($authUser->id != $userId && !$authUser->hasRole('ADMIN')) {
+                return ApiResponse::forbidden('Hành động không hợp lệ');
             }
 
-            $address = $this->addressService->save($request->all(), $userId); 
+            $address = $this->addressService->save($request->all(), $userId);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Thêm địa chỉ thành công',
-                'data' => new AddressResource($address),
-            ], 201);
+            return ApiResponse::success([
+                'address' => new AddressResource($address)
+            ], 'Thêm địa chỉ thành công', 201);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Lỗi khi thêm địa chỉ',
-                'error' => $e->getMessage(),
-            ], 400);
+            return ApiResponse::error('Lỗi khi thêm địa chỉ', 'STORE_FAILED', 400, ['detail' => $e->getMessage()]);
         }
     }
 
     /**
      * PATCH /api/users/{userId}/addresses/{id}
      */
-    public function update(Request $request, $userId, $id): JsonResponse
+    public function update(UpdateAddressRequest $request, $userId, $id): JsonResponse
     {
         try {
             $authUser = $request->attributes->get('auth_user');
 
-            if ($authUser->id != $userId && !$this->checkAdmin($authUser)) {
-                return response()->json(['success' => false, 'message' => 'Hành động không hợp lệ'], 403);
+            if ($authUser->id != $userId && !$authUser->hasRole('ADMIN')) {
+                return ApiResponse::forbidden('Hành động không hợp lệ');
             }
 
-            $address = $this->addressService->save($request->all(), $userId, $id); 
+            $address = $this->addressService->save($request->all(), $userId, $id);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Cập nhật địa chỉ thành công',
-                'data' => new AddressResource($address),
-            ]);
+            return ApiResponse::success([
+                'address' => new AddressResource($address)
+            ], 'Cập nhật địa chỉ thành công');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Lỗi khi cập nhật địa chỉ',
-                'error' => $e->getMessage(),
-            ], 400);
+            return ApiResponse::error('Lỗi khi cập nhật địa chỉ', 'UPDATE_FAILED', 400, ['detail' => $e->getMessage()]);
         }
     }
 
@@ -104,22 +90,15 @@ class AddressController extends Controller
         try {
             $authUser = $request->attributes->get('auth_user');
 
-            if ($authUser->id != $userId && !$this->checkAdmin($authUser)) {
-                return response()->json(['success' => false, 'message' => 'Hành động không hợp lệ'], 403);
+            if ($authUser->id != $userId && !$authUser->hasRole('ADMIN')) {
+                return ApiResponse::forbidden('Hành động không hợp lệ');
             }
 
             $this->addressService->delete($userId, $id);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Xóa địa chỉ thành công',
-            ]);
+            return ApiResponse::success([], 'Xóa địa chỉ thành công');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Lỗi khi xóa địa chỉ',
-                'error' => $e->getMessage(),
-            ], 400);
+            return ApiResponse::error('Lỗi khi xóa địa chỉ', 'DELETE_FAILED', 400, ['detail' => $e->getMessage()]);
         }
     }
 
