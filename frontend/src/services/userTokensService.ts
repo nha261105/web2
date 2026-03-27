@@ -1,4 +1,5 @@
 import axios from "axios";
+import { API_BASE_URL, API_ENDPOINTS } from "@/config/api";
 
 /**
  * Hàm kiểm tra token lưu trong localStorage có hợp lệ kho
@@ -15,7 +16,7 @@ export async function checkToken() {
       };
 
     const response = await axios.post(
-      "http://127.0.0.1:8000/api/user-tokens/check-token",
+      `${API_BASE_URL}${API_ENDPOINTS.checkToken}`,
       {},
       {
         headers: { Authorization: `Bearer ${token}` },

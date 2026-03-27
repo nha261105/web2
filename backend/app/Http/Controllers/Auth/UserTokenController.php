@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Support\ApiResponse;
 use Illuminate\Http\Request;
 
 class UserTokenController extends Controller
@@ -16,30 +17,23 @@ class UserTokenController extends Controller
         $token = $request->attributes->get('auth_token');
 
         if (!$user || !$token) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Token khong hop le',
-            ], 401);
+            return ApiResponse::unauthorized();
         }
 
         $user->load('roles.permissions');
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Token con han',
-            'data' => [
-                'token' => [
-                    'access_token' => $token->token,
-                    'expires_at' => $token->expires_at,
-                    'lastused_at' => $token->lastused_at,
-                ],
-                'user' => $user,
-                'roles' => $user->roles->pluck('name')->values(),
-                'permissions' => $user->roles
-                    ->flatMap(fn ($role) => $role->permissions->pluck('name'))
-                    ->unique()
-                    ->values(),
+        return ApiResponse::success([
+            'token' => [
+                'access_token' => $token->token,
+                'expires_at' => $token->expires_at,
+                'lastused_at' => $token->lastused_at,
             ],
-        ]);
+            'user' => $user,
+            'roles' => $user->roles->pluck('name')->values(),
+            'permissions' => $user->roles
+                ->flatMap(fn ($role) => $role->permissions->pluck('name'))
+                ->unique()
+                ->values(),
+        ], 'Token is valid');
     }
 }

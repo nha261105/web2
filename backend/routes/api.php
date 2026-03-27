@@ -4,6 +4,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\RbacController;
 use App\Http\Controllers\Auth\UserTokenController;
+use App\Http\Controllers\Rental\RentalController;
+use App\Http\Controllers\Rental\RentalIssueController;
+use App\Http\Controllers\Rental\ReturnOrderController;
+use App\Http\Controllers\Rental\TransactionController;
 use App\Http\Controllers\User\UserController;
 use App\Http\Controllers\Address\AddressController;
 
@@ -42,5 +46,23 @@ Route::middleware(['auth.token'])->group(function () {
 		Route::get('/users/{id}/roles', [RbacController::class, 'userRoles']);
 		Route::post('/users/{id}/roles', [RbacController::class, 'assignRoleToUser']);
 		Route::delete('/users/{id}/roles/{roleId}', [RbacController::class, 'removeRoleFromUser']);
+
+		//Rental CRUD
+		Route::get('/rentals', [RentalController::class, 'index']);
+		Route::post('/rentals', [RentalController::class, 'store']);
+		Route::get('/rentals/{id}', [RentalController::class, 'show']);
+		Route::patch('/rentals/{id}', [RentalController::class, 'update']);
+
+		// Return order
+		Route::post('/return-orders', [ReturnOrderController::class, 'store']);
+		Route::patch('/return-orders/{id}', [ReturnOrderController::class, 'update']);
+
+		// Rental issue
+		Route::post('/rental-issues', [RentalIssueController::class, 'store']);
+		Route::patch('/rental-issues/{id}', [RentalIssueController::class, 'update']);
+
+		// Transaction
+		Route::post('/transactions', [TransactionController::class, 'store']);
+		Route::patch('/transactions/{id}', [TransactionController::class, 'update']);
 	});
 });
