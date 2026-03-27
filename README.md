@@ -214,3 +214,33 @@ backend/
 | Frontend | http://localhost:5173 |
 | Backend | http://localhost:8000 |
 | API prefix | http://localhost:8000/api |
+
+---
+
+## Trạng thái triển khai hiện tại (27/03/2026)
+
+### Đã làm
+
+- Đã gỡ Scribe khỏi backend.
+- Đã chuẩn hóa host local sang localhost.
+- Đã thiết lập config kết nối FE-BE qua biến môi trường.
+- Frontend đã dùng config API tập trung ở `frontend/src/config/api.ts`.
+- Endpoint đăng nhập FE đã đổi sang `/api/auth/sign-in`.
+- Endpoint check token FE đã khớp `/api/user-tokens/check-token`.
+- Backend đã có cấu hình CORS ở `backend/config/cors.php` và env `FRONTEND_URL`.
+
+### Chưa làm
+
+- Chưa có lớp API client chung (axios instance với interceptors, timeout, retry, xử lý 401 tập trung).
+- Chưa có test API/feature cho các endpoint auth, user, RBAC.
+- Chưa implement các module nghiệp vụ chính: catalog, inventory, rental, return, transaction, review, notification.
+- Frontend mới kết nối một phần auth; các page chính chưa nối API đầy đủ.
+
+### Kết nối FE-BE đang dùng
+
+- Frontend env: `VITE_API_BASE_URL=http://localhost:8000`
+- Backend env: `APP_URL=http://localhost:8000`
+- Backend env: `FRONTEND_URL=http://localhost:5173`
+- Backend env: `SANCTUM_STATEFUL_DOMAINS=localhost:5173,localhost:3000,localhost:8000`
+
+---
