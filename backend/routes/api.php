@@ -11,6 +11,7 @@ use App\Http\Controllers\Rental\TransactionController;
 use App\Http\Controllers\User\UserController;
 use App\Http\Controllers\Address\AddressController;
 
+
 /**
  * User Routes
  */
@@ -46,6 +47,7 @@ Route::middleware(['auth.token'])->group(function () {
 		Route::get('/users/{id}/roles', [RbacController::class, 'userRoles']);
 		Route::post('/users/{id}/roles', [RbacController::class, 'assignRoleToUser']);
 		Route::delete('/users/{id}/roles/{roleId}', [RbacController::class, 'removeRoleFromUser']);
+		Route::patch('/users/{id}/status', [UserController::class, 'updateStatus']);
 
 		//Rental CRUD
 		Route::get('/rentals', [RentalController::class, 'index']);
