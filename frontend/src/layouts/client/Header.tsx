@@ -194,7 +194,7 @@ export default function Header() {
             className="cursor-pointer h-10 w-10 rounded-full grid place-items-center text-slate-600 hover:text-blue-600 hover:bg-slate-100 transition-colors"
             aria-label="Tài khoản"
             onClick={() => {
-              navigator("/account");
+              navigator("/Account");
             }}
           >
             <User size={24} />
