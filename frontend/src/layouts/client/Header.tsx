@@ -102,6 +102,7 @@ const MEGA_MENU_SECTIONS = [
 export default function Header() {
   const [keyword, setKeyword] = useState("");
   const [isMegaOpen, setIsMegaOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const megaAreaRef = useRef<HTMLLIElement | null>(null);
   const navigator = useNavigate();
 
@@ -138,14 +139,14 @@ export default function Header() {
           </span>
         </Link>
 
-        <div className="flex-1 max-w-3xl">
+        <div className="hidden sm:block flex-1 max-w-3xl">
           <form
             className="group flex items-center gap-2"
             onSubmit={(event) => event.preventDefault()}
             role="search"
             aria-label="Tìm kiếm sản phẩm"
           >
-            <div className="relative flex-1">
+            <div className="relative flex-1 max-w-xl">
               <Search
                 size={20}
                 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -163,7 +164,7 @@ export default function Header() {
                   <button
                     type="button"
                     onClick={clearSearch}
-                    className="h-7 w-7 rounded-full grid place-items-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                    className="h-7 w-7 rounded-full grid place-items-center bg-slate-100 text-slate-500 hover:text-slate-700 hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors"
                     aria-label="Xóa nội dung tìm kiếm"
                   >
                     <X size={14} />
@@ -171,14 +172,28 @@ export default function Header() {
                 )}
               </div>
             </div>
-
-            <button
-              type="submit"
-              className="hidden sm:inline-flex h-12 items-center rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-            >
-              Tìm kiếm
-            </button>
           </form>
+        </div>
+
+        <div className="flex items-center gap-2 sm:hidden">
+          <button
+            type="button"
+            onClick={() => setIsMobileSearchOpen(true)}
+            className="h-10 w-10 rounded-full grid place-items-center text-slate-600 hover:text-blue-600 hover:bg-slate-100 transition-colors"
+            aria-label="Tìm kiếm"
+          >
+            <Search size={20} />
+          </button>
+          {keyword.length > 0 && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="h-10 w-10 rounded-full grid place-items-center bg-slate-100 text-slate-500 hover:text-slate-700 hover:bg-slate-200 transition-colors"
+              aria-label="Xóa nội dung tìm kiếm"
+            >
+              <X size={16} />
+            </button>
+          )}
         </div>
 
         <div className="flex gap-2 sm:gap-3 shrink-0">
@@ -208,13 +223,67 @@ export default function Header() {
             }}
           >
             <ShoppingCart size={24} />
-            <span className="absolute -right-1 -top-1 min-w-5 h-5 rounded-full bg-orange-500 text-white text-xs px-1 grid place-items-center font-semibold">
+            <span
+              className="absolute -right-1 -top-1 min-w-5 h-
+            5 rounded-full bg-orange-500 text-white text-xs px-1 grid place-items-center font-semibold"
+            >
               2
             </span>
           </button>
         </div>
       </div>
-      <nav className="relative">
+
+      {isMobileSearchOpen && (
+        <div className="sm:hidden fixed inset-0 z-50 bg-black/40 p-4">
+          <div className="mx-auto h-full max-w-md rounded-xl bg-white p-4 shadow-lg">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm font-semibold text-slate-800">
+                Tìm kiếm
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsMobileSearchOpen(false)}
+                className="rounded-md p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                aria-label="Đóng tìm kiếm"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form
+              className="flex items-center gap-2"
+              onSubmit={(event) => event.preventDefault()}
+              role="search"
+              aria-label="Tìm kiếm sản phẩm"
+            >
+              <div className="relative flex-1">
+                <Search
+                  size={20}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <input
+                  id="mobile-input-search"
+                  value={keyword}
+                  onChange={(event) => setKeyword(event.target.value)}
+                  placeholder="Tìm thiết bị cần thuê"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-10 text-sm text-slate-900 outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
+                />
+                {keyword.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearSearch}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-slate-100 text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+                    aria-label="Xóa nội dung tìm kiếm"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <nav className="hidden sm:block relative">
         <div className="mx-auto flex max-w-7xl justify-center px-4 py-3 sm:px-6 lg:px-8">
           <ul
             id="nav"
@@ -288,6 +357,54 @@ export default function Header() {
               </Link>
             </li>
           </ul>
+        </div>
+      </nav>
+
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2">
+          <Link
+            to="/"
+            className="flex flex-col items-center text-xs text-slate-600 hover:text-blue-600"
+          >
+            <span>Trang Chủ</span>
+          </Link>
+          <button
+            type="button"
+            onClick={() => setIsMegaOpen((prev) => !prev)}
+            className="flex flex-col items-center text-xs text-slate-600 hover:text-blue-600"
+            aria-label="Danh mục thiết bị"
+          >
+            Thiết Bị
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsMobileSearchOpen(true)}
+            className="flex flex-col items-center text-xs text-slate-600 hover:text-blue-600"
+            aria-label="Tìm kiếm"
+          >
+            Tìm kiếm
+          </button>
+          <button
+            type="button"
+            onClick={() => navigator("/account")}
+            className="flex flex-col items-center text-xs text-slate-600 hover:text-blue-600"
+            aria-label="Tài khoản"
+          >
+            Tài khoản
+          </button>
+          <button
+            type="button"
+            onClick={() => navigator("/cart")}
+            className="flex flex-col items-center text-xs text-slate-600 hover:text-blue-600 relative"
+            aria-label="Giỏ hàng"
+          >
+            Giỏ hàng
+            {false && (
+              <span className="absolute -right-1 -top-1 min-w-5 h-5 rounded-full bg-orange-500 text-white text-[10px] px-1 grid place-items-center font-semibold">
+                2
+              </span>
+            )}
+          </button>
         </div>
       </nav>
     </header>
