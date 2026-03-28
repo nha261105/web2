@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Brand\BrandController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\RbacController;
@@ -25,6 +26,12 @@ Route::post('/auth/sign-in', [AuthController::class, 'signIn']);
 Route::prefix('categories')->group(function () {
     Route::get('/', [CategoryController::class, 'index']);
     Route::get('/{id}', [CategoryController::class, 'show']);
+});
+
+// Brand public routes
+Route::prefix('brands')->group(function () {
+    Route::get('/', [BrandController::class, 'index']);
+    Route::get('/{id}', [BrandController::class, 'show']);
 });
 
 Route::middleware(['auth.token'])->group(function () {
@@ -87,6 +94,11 @@ Route::middleware(['auth.token'])->group(function () {
                 CategoryController::class,
                 'destroy',
             ]);
+        });
+        Route::prefix('brands')->group(function () {
+            Route::post('/', [BrandController::class, 'store']);
+            Route::patch('/{brand}', [BrandController::class, 'update']);
+            Route::delete('/{brand}', [BrandController::class, 'destroy']);
         });
     });
 });
