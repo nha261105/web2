@@ -26,17 +26,23 @@ class UserController extends Controller
         try {
             $user = $this->userService->createUser($request->validated());
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Tạo user thành công',
-                'data' => new UserResource($user),
-            ], 201);
+            return response()->json(
+                [
+                    'success' => true,
+                    'message' => 'Tạo user thành công',
+                    'data' => new UserResource($user),
+                ],
+                201,
+            );
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Lỗi khi tạo user',
-                'error' => $e->getMessage(),
-            ], 400);
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Lỗi khi tạo user',
+                    'error' => $e->getMessage(),
+                ],
+                400,
+            );
         }
     }
 }

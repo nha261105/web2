@@ -13,9 +13,7 @@ use Illuminate\Http\Request;
 
 class RentalController extends Controller
 {
-    public function __construct(private RentalService $service)
-    {
-    }
+    public function __construct(private RentalService $service) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -36,9 +34,13 @@ class RentalController extends Controller
     {
         $rental = $this->service->create($request->validated());
 
-        return ApiResponse::success([
-            'rental' => new RentalResource($rental),
-        ], 'Rental created', 201);
+        return ApiResponse::success(
+            [
+                'rental' => new RentalResource($rental),
+            ],
+            'Rental created',
+            201,
+        );
     }
 
     public function show(int $id): JsonResponse
@@ -54,8 +56,11 @@ class RentalController extends Controller
     {
         $rental = $this->service->update($id, $request->validated());
 
-        return ApiResponse::success([
-            'rental' => new RentalResource($rental),
-        ], 'Rental updated');
+        return ApiResponse::success(
+            [
+                'rental' => new RentalResource($rental),
+            ],
+            'Rental updated',
+        );
     }
 }

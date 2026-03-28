@@ -23,11 +23,15 @@ class RolePermissionSeeder extends Seeder
         $admin->permissions()->sync(Permission::pluck('id')->all());
 
         $staff->permissions()->sync(
-            Permission::whereIn('name', ['READ', 'UPDATE'])->pluck('id')->all()
+            Permission::whereIn('name', ['READ', 'UPDATE'])
+                ->pluck('id')
+                ->all(),
         );
 
         $customer->permissions()->sync(
-            Permission::whereIn('name', ['READ'])->pluck('id')->all()
+            Permission::whereIn('name', ['READ'])
+                ->pluck('id')
+                ->all(),
         );
     }
 }

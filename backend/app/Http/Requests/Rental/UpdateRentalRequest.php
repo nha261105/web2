@@ -19,7 +19,10 @@ class UpdateRentalRequest extends FormRequest
             'actual_return_date' => ['sometimes', 'nullable', 'date'],
             'total_price' => ['sometimes', 'numeric', 'min:0'],
             'deposit_amount' => ['sometimes', 'numeric', 'min:0'],
-            'status' => ['sometimes', 'in:PENDING,APPROVED,DEPOSITED,PICKED_UP,COMPLETED,CANCELLED'],
+            'status' => [
+                'sometimes',
+                'in:PENDING,APPROVED,DEPOSITED,PICKED_UP,COMPLETED,CANCELLED',
+            ],
             'note' => ['sometimes', 'nullable', 'string'],
         ];
     }

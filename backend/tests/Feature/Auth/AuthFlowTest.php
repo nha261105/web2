@@ -14,14 +14,19 @@ class AuthFlowTest extends TestCase
 
     private function createUser(array $attributes = []): User
     {
-        return User::factory()->create(array_merge([
-            'email' => 'auth.test@example.com',
-            'hash_password' => 'password123',
-            'full_name' => 'Auth Test',
-            'phone' => '0912345678',
-            'status' => 'ACTIVE',
-            'created_at' => now(),
-        ], $attributes));
+        return User::factory()->create(
+            array_merge(
+                [
+                    'email' => 'auth.test@example.com',
+                    'hash_password' => 'password123',
+                    'full_name' => 'Auth Test',
+                    'phone' => '0912345678',
+                    'status' => 'ACTIVE',
+                    'created_at' => now(),
+                ],
+                $attributes,
+            ),
+        );
     }
 
     public function test_sign_in_returns_422_with_standard_validation_payload(): void
@@ -66,12 +71,10 @@ class AuthFlowTest extends TestCase
             'isRemember' => false,
         ]);
 
-        $signInResponse
-            ->assertOk()
-            ->assertJson([
-                'success' => true,
-                'message' => 'Sign in successful',
-            ]);
+        $signInResponse->assertOk()->assertJson([
+            'success' => true,
+            'message' => 'Sign in successful',
+        ]);
 
         $accessToken = $signInResponse->json('data.token.access_token');
 
@@ -79,34 +82,54 @@ class AuthFlowTest extends TestCase
 
         $this->getJson('/api/auth/me', [
             'Authorization' => "Bearer {$accessToken}",
-        ])->assertOk()->assertJson([
-            'success' => true,
-        ]);
+        ])
+            ->assertOk()
+            ->assertJson([
+                'success' => true,
+            ]);
 
-        $this->postJson('/api/user-tokens/check-token', [], [
-            'Authorization' => "Bearer {$accessToken}",
-        ])->assertOk()->assertJson([
-            'success' => true,
-            'message' => 'Token is valid',
-        ]);
+        $this->postJson(
+            '/api/user-tokens/check-token',
+            [],
+            [
+                'Authorization' => "Bearer {$accessToken}",
+            ],
+        )
+            ->assertOk()
+            ->assertJson([
+                'success' => true,
+                'message' => 'Token is valid',
+            ]);
 
-        $this->postJson('/api/auth/sign-out', [], [
-            'Authorization' => "Bearer {$accessToken}",
-        ])->assertOk()->assertJson([
-            'success' => true,
-            'message' => 'Sign out successful',
-        ]);
+        $this->postJson(
+            '/api/auth/sign-out',
+            [],
+            [
+                'Authorization' => "Bearer {$accessToken}",
+            ],
+        )
+            ->assertOk()
+            ->assertJson([
+                'success' => true,
+                'message' => 'Sign out successful',
+            ]);
 
         $this->assertDatabaseMissing('user_tokens', [
             'token' => $accessToken,
         ]);
 
-        $this->postJson('/api/user-tokens/check-token', [], [
-            'Authorization' => "Bearer {$accessToken}",
-        ])->assertStatus(401)->assertJson([
-            'success' => false,
-            'code' => 'UNAUTHORIZED',
-        ]);
+        $this->postJson(
+            '/api/user-tokens/check-token',
+            [],
+            [
+                'Authorization' => "Bearer {$accessToken}",
+            ],
+        )
+            ->assertStatus(401)
+            ->assertJson([
+                'success' => false,
+                'code' => 'UNAUTHORIZED',
+            ]);
     }
 
     public function test_me_requires_bearer_token(): void
@@ -138,9 +161,11 @@ class AuthFlowTest extends TestCase
 
         $this->getJson('/api/roles', [
             'Authorization' => "Bearer {$token->token}",
-        ])->assertStatus(403)->assertJson([
-            'success' => false,
-            'code' => 'FORBIDDEN',
-        ]);
+        ])
+            ->assertStatus(403)
+            ->assertJson([
+                'success' => false,
+                'code' => 'FORBIDDEN',
+            ]);
     }
 }

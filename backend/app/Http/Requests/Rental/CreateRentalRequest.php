@@ -20,7 +20,10 @@ class CreateRentalRequest extends FormRequest
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
             'total_price' => ['required', 'numeric', 'min:0'],
             'deposit_amount' => ['required', 'numeric', 'min:0'],
-            'status' => ['required', 'in:PENDING,APPROVED,DEPOSITED,PICKED_UP,COMPLETED,CANCELLED'],
+            'status' => [
+                'required',
+                'in:PENDING,APPROVED,DEPOSITED,PICKED_UP,COMPLETED,CANCELLED',
+            ],
         ];
     }
 }

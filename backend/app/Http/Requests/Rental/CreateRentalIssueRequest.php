@@ -15,7 +15,11 @@ class CreateRentalIssueRequest extends FormRequest
     {
         return [
             'rental_id' => ['required', 'integer', 'exists:rentals,id'],
-            'rental_detail_id' => ['required', 'integer', 'exists:rental_details,id'],
+            'rental_detail_id' => [
+                'required',
+                'integer',
+                'exists:rental_details,id',
+            ],
             'type' => ['required', 'in:LATE,DAMAGED,LOST'],
             'description' => ['required', 'string'],
             'penalty_fee' => ['required', 'numeric', 'min:0'],
