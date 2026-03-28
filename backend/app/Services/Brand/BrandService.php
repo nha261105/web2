@@ -3,9 +3,11 @@ namespace App\Services\Brand;
 
 use App\Models\Brand;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class BrandService
 {
+    use HasFactory;
     public function list(): Collection
     {
         return Brand::all();

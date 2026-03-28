@@ -18,18 +18,22 @@ return new class extends Migration {
             DB::statement(
                 "UPDATE inventory SET status = 'MAINTENANCE' WHERE status = 'MAINTENACE'",
             );
-            DB::statement(
-                "ALTER TABLE inventory MODIFY status ENUM('AVAILABLE','RENTING','MAINTENANCE','LOST') NOT NULL",
-            );
+            if (DB::getDriverName() === 'mysql') {
+                DB::statement(
+                    "ALTER TABLE inventory MODIFY status ENUM('AVAILABLE','RENTING','MAINTENANCE','LOST') NOT NULL",
+                );
+            }
         }
 
         if (Schema::hasTable('maintenance_logs')) {
             DB::statement(
                 "UPDATE maintenance_logs SET status = 'MAINTENANCED' WHERE status = 'MANTENMANCED'",
             );
-            DB::statement(
-                "ALTER TABLE maintenance_logs MODIFY status ENUM('INVENTORY','MAINTENANCED') NOT NULL",
-            );
+            if (DB::getDriverName() === 'mysql') {
+                DB::statement(
+                    "ALTER TABLE maintenance_logs MODIFY status ENUM('INVENTORY','MAINTENANCED') NOT NULL",
+                );
+            }
         }
     }
 
@@ -39,18 +43,22 @@ return new class extends Migration {
             DB::statement(
                 "UPDATE maintenance_logs SET status = 'MANTENMANCED' WHERE status = 'MAINTENANCED'",
             );
-            DB::statement(
-                "ALTER TABLE maintenance_logs MODIFY status ENUM('INVENTORY','MANTENMANCED') NOT NULL",
-            );
+            if (DB::getDriverName() === 'mysql') {
+                DB::statement(
+                    "ALTER TABLE maintenance_logs MODIFY status ENUM('INVENTORY','MANTENMANCED') NOT NULL",
+                );
+            }
         }
 
         if (Schema::hasTable('inventory')) {
             DB::statement(
                 "UPDATE inventory SET status = 'MAINTENACE' WHERE status = 'MAINTENANCE'",
             );
-            DB::statement(
-                "ALTER TABLE inventory MODIFY status ENUM('AVAILABLE','RENTING','MAINTENACE','LOST') NOT NULL",
-            );
+            if (DB::getDriverName() === 'mysql') {
+                DB::statement(
+                    "ALTER TABLE inventory MODIFY status ENUM('AVAILABLE','RENTING','MAINTENACE','LOST') NOT NULL",
+                );
+            }
         }
 
         if (

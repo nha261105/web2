@@ -1,11 +1,12 @@
 <?php
 namespace App\Services\Category;
-
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Category;
 use Illuminate\Database\Eloquent\Collection;
 
 class CategoryService
 {
+    use HasFactory;
     public function list(): Collection
     {
         return Category::all();
