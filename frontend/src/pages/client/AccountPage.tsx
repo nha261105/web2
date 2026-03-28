@@ -1,15 +1,43 @@
 import { MyButton } from "@/components/ui/input/my-button";
 import MyNavigateLink from "@/components/ui/my-navigate-link";
 import { LogOut, Package, Settings, User } from "lucide-react";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import ProfilePage from "./Account/ProfilePage";
 import SettingsPage from "./Account/SettingsPage";
 import OrdersPage from "./Account/OrdersPage";
 
 export default function AccountPage() {
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+
+  const getAccountPageFromTab = (tab: string | null) => {
+    switch (tab) {
+      case "orders":
+        return "My Orders";
+      case "settings":
+        return "Settings";
+      default:
+        return "Profile";
+    }
+  };
+
+  const getTabFromLabel = (label: string) => {
+    switch (label) {
+      case "My Orders":
+        return "orders";
+      case "Settings":
+        return "settings";
+      default:
+        return "profile";
+    }
+  };
+
   const [isLogin, setIsLogin] = useState(false);
-  const [accountPage, setAccountPage] = useState("Profile");
+  const accountPage = useMemo(
+    () => getAccountPageFromTab(tabParam),
+    [tabParam],
+  );
   const navigate = useNavigate();
   const NAV_ITEMS = [
     { label: "Profile", icon: User, exact: true },
@@ -49,7 +77,7 @@ export default function AccountPage() {
             <aside className="w-56 shrink-0 hidden sm:block">
               <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
                 {/* User info */}
-                <div className="p-5 border-b border-gray-100 bg-gradient-to-br from-[#0052CC] to-[#0747A6]">
+                <div className="p-5 border-b border-gray-100 bg-linear-to-br from-[#0052CC] to-[#0747A6]">
                   <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-3">
                     <User className="w-6 h-6 text-white" />
                   </div>
@@ -70,7 +98,7 @@ export default function AccountPage() {
                           : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                       }`}
                       onClick={() => {
-                        setAccountPage(item.label);
+                        navigate(`/account?tab=${getTabFromLabel(item.label)}`);
                       }}
                     >
                       <item.icon className="w-4 h-4" />
@@ -99,7 +127,9 @@ export default function AccountPage() {
                 {NAV_ITEMS.map((item, index) => (
                   <button
                     key={index}
-                    onClick={() => setAccountPage(item.label)}
+                    onClick={() =>
+                      navigate(`/account?tab=${getTabFromLabel(item.label)}`)
+                    }
                     className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-xs font-medium transition-colors ${
                       item.label === accountPage
                         ? "bg-[#0052CC] text-white"
