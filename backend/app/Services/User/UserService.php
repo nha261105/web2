@@ -4,38 +4,47 @@ namespace App\Services\User;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
-class UserService {
-    public function getAllUsers(int $perPage = 15) {
+class UserService
+{
+    public function listUsers(int $perPage = 15): LengthAwarePaginator
+    {
         return User::paginate($perPage);
     }
 
-    public function getActiveUsers(): Collection {
+    public function getActiveUsers(): Collection
+    {
         return User::active()->get();
     }
 
-    public function getUserByEmail(string $email): ?User {
+    public function getUserByEmail(string $email): ?User
+    {
         return User::where('email', $email)->first();
     }
 
-    public function getUserById(int $id) : ?User {
+    public function getUserById(int $id): ?User
+    {
         return User::find($id);
     }
 
-    private function emailExists(string $email):bool {
+    private function emailExists(string $email): bool
+    {
         return User::where('email', $email)->exists();
     }
 
-    private function phoneExists(string $phone):bool {
+    private function phoneExists(string $phone): bool
+    {
         return User::where('phone', $phone)->exists();
     }
 
-    public function createUser(array $data): User {
-        if($this->emailExists($data['email'])) {
+    public function createUser(array $data): User
+    {
+        if ($this->emailExists($data['email'])) {
             throw new \Exception('Email đã tồn tại');
         }
 
-        if($this->phoneExists($data['phone'])) {
+        if ($this->phoneExists($data['phone'])) {
             throw new \Exception('Số điện thoại đã tồn tại');
         }
 
@@ -48,7 +57,18 @@ class UserService {
         ]);
     }
 
-    
-}
+    public function updateUser($userId, array $data): User
+    {
+        $user = User::findOrFail($userId);
+        if (isset($data['password'])) {
+            $data['hash_password'] = $data['password'];
+        }
+        $user->update($data);
+        return $user;
+    }
 
-?>
+    public function deleteUser(int $id): bool
+    {
+        return User::findOrFail($id)->delete();
+    }
+}

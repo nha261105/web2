@@ -8,11 +8,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class User extends Authenticatable
 {
     use HasFactory;
     use HasApiTokens;
+    use SoftDeletes;
 
     protected $table = 'users';
 
@@ -28,7 +30,9 @@ class User extends Authenticatable
         'hash_password',
     ];
 
-    public $timestamps = false;
+    // test false ->true
+    public $timestamps = true;
+    const UPDATED_AT = null;
 
     public function setHashPasswordAttribute($value): void
     {
@@ -65,5 +69,10 @@ class User extends Authenticatable
     public function scopeInactive(Builder $query): Builder
     {
         return $query->where('status', 'INACTIVE');
+    }
+
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(Address::class, 'user_id');
     }
 }

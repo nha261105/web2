@@ -9,6 +9,8 @@ use App\Http\Controllers\Rental\RentalIssueController;
 use App\Http\Controllers\Rental\ReturnOrderController;
 use App\Http\Controllers\Rental\TransactionController;
 use App\Http\Controllers\User\UserController;
+use App\Http\Controllers\Address\AddressController;
+
 
 /**
  * User Routes
@@ -17,7 +19,7 @@ Route::post('/users', [UserController::class, 'store']);
 
 /**
  * Auth Routes
-*/
+ */
 Route::post('/auth/sign-in', [AuthController::class, 'signIn']);
 
 Route::middleware(['auth.token'])->group(function () {
@@ -25,13 +27,27 @@ Route::middleware(['auth.token'])->group(function () {
 	Route::get('/auth/me', [AuthController::class, 'me']);
 	Route::post('/user-tokens/check-token', [UserTokenController::class, 'check']);
 
+	Route::get('/users/me', [UserController::class, 'me']);
+	Route::patch('/users/me', [UserController::class, 'updateMe']);
+
+	// address crud
+	Route::prefix('users/{userId}/addresses')->group(function () {
+		Route::get('/', [AddressController::class, 'index']);
+		Route::post('/', [AddressController::class, 'store']);
+		Route::patch('/{id}', [AddressController::class, 'update']);
+		Route::delete('/{id}', [AddressController::class, 'destroy']);
+	});
+
 	Route::middleware(['role:ADMIN'])->group(function () {
+		Route::get('/users', [UserController::class, 'index']);
+		Route::delete('/users/{id}', [UserController::class, 'destroy']);
 		Route::get('/roles', [RbacController::class, 'roles']);
 		Route::get('/permissions', [RbacController::class, 'permissions']);
 		Route::post('/roles/{id}/permissions', [RbacController::class, 'syncRolePermissions']);
 		Route::get('/users/{id}/roles', [RbacController::class, 'userRoles']);
 		Route::post('/users/{id}/roles', [RbacController::class, 'assignRoleToUser']);
 		Route::delete('/users/{id}/roles/{roleId}', [RbacController::class, 'removeRoleFromUser']);
+		Route::patch('/users/{id}/status', [UserController::class, 'updateStatus']);
 
 		//Rental CRUD
 		Route::get('/rentals', [RentalController::class, 'index']);
