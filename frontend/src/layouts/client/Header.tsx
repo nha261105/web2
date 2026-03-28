@@ -9,6 +9,9 @@ import {
   ShoppingCart,
   X,
   ChevronDown,
+  Settings,
+  Package,
+  LogOut,
   //   ArrowRight,
 } from "lucide-react";
 
@@ -102,9 +105,15 @@ const MEGA_MENU_SECTIONS = [
 export default function Header() {
   const [keyword, setKeyword] = useState("");
   const [isMegaOpen, setIsMegaOpen] = useState(false);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState("Demo User");
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const megaAreaRef = useRef<HTMLLIElement | null>(null);
+  const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const navigator = useNavigate();
+
+  const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=2563eb&color=ffffff&size=128`;
 
   const clearSearch = () => setKeyword("");
 
@@ -124,6 +133,22 @@ export default function Header() {
       document.removeEventListener("mousemove", handleMouseMove);
     };
   }, [isMegaOpen]);
+
+  useEffect(() => {
+    if (!isAccountOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (accountMenuRef.current && !accountMenuRef.current.contains(target)) {
+        setIsAccountOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isAccountOpen]);
 
   return (
     <header className="bg-white border-b border-slate-200 text-slate-900 sticky top-0 z-50 shadow-sm">
@@ -204,29 +229,126 @@ export default function Header() {
           >
             <Heart size={24} />
           </button>
-          <button
-            type="button"
-            className="cursor-pointer h-10 w-10 rounded-full grid place-items-center text-slate-600 hover:text-blue-600 hover:bg-slate-100 transition-colors"
-            aria-label="Tài khoản"
-            onClick={() => {
-              navigator("/account");
-            }}
-          >
-            <User size={24} />
-          </button>
+          <div ref={accountMenuRef} className="relative">
+            <button
+              type="button"
+              className="cursor-pointer h-10 min-w-10 rounded-full px-2 flex items-center gap-2 text-slate-600 hover:text-blue-600 hover:bg-slate-100 transition-colors"
+              aria-label="Tài khoản"
+              aria-expanded={isAccountOpen}
+              onClick={() => setIsAccountOpen((prev) => !prev)}
+            >
+              {isLoggedIn ? (
+                <>
+                  <img
+                    src={avatarUrl}
+                    alt={username}
+                    className="h-8 w-8 rounded-full object-cover"
+                  />
+                  <span className="hidden sm:inline-block text-sm font-medium">
+                    {username}
+                  </span>
+                </>
+              ) : (
+                <User size={24} />
+              )}
+            </button>
+
+            {isAccountOpen && (
+              <div className="absolute right-0 top-full mt-3 w-64 rounded-lg border border-slate-200 bg-white shadow-xl ring-1 ring-black/5 z-50 overflow-clip">
+                {!isLoggedIn ? (
+                  <div className="flex flex-col p-4 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsLoggedIn(true);
+                        setUsername("Demo User");
+                        setIsAccountOpen(false);
+                      }}
+                      className="rounded-2xl bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+                    >
+                      Đăng nhập
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsLoggedIn(true);
+                        setUsername("Demo User");
+                        setIsAccountOpen(false);
+                      }}
+                      className="rounded-2xl bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+                    >
+                      Tạo tài khoản
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="bg-slate-50 px-4 py-4">
+                      <p className="text-sm font-semibold text-slate-900">
+                        {username}
+                      </p>
+                      <p className="text-xs text-slate-500">user@demo.com</p>
+                    </div>
+                    <div className="flex flex-col gap-2 p-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAccountOpen(false);
+                          navigator("/account?tab=profile");
+                        }}
+                        className="cursor-pointer flex items-center gap-3 rounded-2xl px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors w-full text-left"
+                      >
+                        <User className="w-4 h-4" />
+                        My Profile
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAccountOpen(false);
+                          navigator("/account?tab=orders");
+                        }}
+                        className="cursor-pointer flex items-center gap-3 rounded-2xl px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors w-full text-left"
+                      >
+                        <Package className="w-4 h-4" />
+                        My Orders
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAccountOpen(false);
+                          navigator("/account?tab=settings");
+                        }}
+                        className="cursor-pointer flex items-center gap-3 rounded-2xl px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors w-full text-left"
+                      >
+                        <Settings className="w-4 h-4" />
+                        Settings
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsLoggedIn(false);
+                        setIsAccountOpen(false);
+                      }}
+                      className="flex w-full items-center justify-center gap-2 bg-rose-50 p-3 text-sm font-semibold text-rose-600 hover:bg-rose-100 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
           <button
             type="button"
             className="cursor-pointer relative h-10 w-10 rounded-full grid place-items-center text-slate-600 hover:text-amber-500 hover:bg-slate-100 transition-colors"
             aria-label="Giỏ hàng"
             onClick={() => {
-              navigator("/cart");
+              navigator("/cart/tab?");
             }}
           >
             <ShoppingCart size={24} />
-            <span
-              className="absolute -right-1 -top-1 min-w-5 h-
-            5 rounded-full bg-orange-500 text-white text-xs px-1 grid place-items-center font-semibold"
-            >
+            <span className="absolute -right-1 -top-1 min-w-5 h-5 rounded-full bg-orange-500 text-white text-xs px-1 grid place-items-center font-semibold">
               2
             </span>
           </button>
@@ -319,7 +441,7 @@ export default function Header() {
                   onMouseLeave={() => setIsMegaOpen(false)}
                 >
                   <div className="mx-auto w-[min(1200px,94vw)]">
-                    <div className="max-h-[72vh] overflow-y-auto rounded-[16px] border border-slate-100 bg-white p-6 text-slate-700 shadow-lg">
+                    <div className="max-h-[72vh] overflow-y-auto rounded-3xl border border-slate-100 bg-white p-6 text-slate-700 shadow-lg">
                       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         {MEGA_MENU_SECTIONS.map((section) => (
                           <div key={section.title} className="p-4">
@@ -386,7 +508,7 @@ export default function Header() {
           </button>
           <button
             type="button"
-            onClick={() => navigator("/account")}
+            onClick={() => navigator("/account?tab=profile")}
             className="flex flex-col items-center text-xs text-slate-600 hover:text-blue-600"
             aria-label="Tài khoản"
           >
@@ -399,11 +521,6 @@ export default function Header() {
             aria-label="Giỏ hàng"
           >
             Giỏ hàng
-            {false && (
-              <span className="absolute -right-1 -top-1 min-w-5 h-5 rounded-full bg-orange-500 text-white text-[10px] px-1 grid place-items-center font-semibold">
-                2
-              </span>
-            )}
           </button>
         </div>
       </nav>
