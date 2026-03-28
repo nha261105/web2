@@ -11,7 +11,7 @@ Nền tảng cho thuê thiết bị quay phim, nhiếp ảnh. Quản lý tài s�
 | 1 | Nguyễn Hoàng Anh (Lead) | 3123410007 |
 | 2 | Nguyễn Âu Gia Bảo | 3123410029 |
 | 3 | Lê Mạnh Cường | 3123410035 |
-| 4 | Nguyễn Trần Công Danh | 3123410??? |
+| 4 | Nguyễn Trần Công Danh | 3123410046 |
 
 ---
 
