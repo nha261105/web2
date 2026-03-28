@@ -45,6 +45,7 @@ return new class extends Migration
             $table->string('ward', 100);
             $table->text('street');
             $table->boolean('is_default');
+            $table->timestamps();
         });
 
         Schema::create('roles', function (Blueprint $table) {

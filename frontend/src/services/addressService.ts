@@ -5,25 +5,29 @@ import { API_BASE_URL, addressEndpoints } from "@/config/api";
 export interface Address {
   id: number;
   user_id: number;
-  label: string;
-  address_line: string;
+  receive_name: string;
+  receive_phone: string;
   city: string;
   district: string;
   ward: string;
+  street: string;
+  note: string | null;
   is_default: boolean;
-  created_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface CreateAddressPayload {
-  label: string;
-  address_line: string;
+  receive_name: string;
+  receive_phone: string;
   city: string;
   district: string;
   ward: string;
+  street: string;
+  note?: string;
   is_default?: boolean;
 }
 
-// Fix lỗi "interface declaring no members" — dùng type thay vì extends empty
 export type UpdateAddressPayload = Partial<CreateAddressPayload>;
 
 // ─── Helper lấy token ────────────────────────────────────────────────────────
@@ -46,7 +50,6 @@ export async function getAddresses(userId: number) {
   }
 }
 
-// ─── Thêm địa chỉ mới ────────────────────────────────────────────────────────
 export async function createAddress(userId: number, data: CreateAddressPayload) {
   try {
     const response = await axios.post(
@@ -61,12 +64,7 @@ export async function createAddress(userId: number, data: CreateAddressPayload) 
   }
 }
 
-// ─── Sửa địa chỉ ─────────────────────────────────────────────────────────────
-export async function updateAddress(
-  userId: number,
-  id: number,
-  data: UpdateAddressPayload,
-) {
+export async function updateAddress(userId: number, id: number, data: UpdateAddressPayload) {
   try {
     const response = await axios.patch(
       `${API_BASE_URL}${addressEndpoints.byId(userId, id)}`,
@@ -80,7 +78,6 @@ export async function updateAddress(
   }
 }
 
-// ─── Xoá địa chỉ ─────────────────────────────────────────────────────────────
 export async function deleteAddress(userId: number, id: number) {
   try {
     const response = await axios.delete(

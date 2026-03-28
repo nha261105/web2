@@ -71,11 +71,21 @@ export async function updateMe(data: {
   name?: string;
   phone?: string;
   avatar?: string;
+  location?: string;
+  bio?: string;
 }) {
   try {
+    const payload = {
+      full_name: data.name,
+      phone: data.phone,
+      avatar: data.avatar,
+      location: data.location,
+      bio: data.bio
+    };
+
     const response = await axios.patch(
       `${API_BASE_URL}${API_ENDPOINTS.updateMe}`,
-      data,
+      payload, 
       { headers: getAuthHeader() },
     );
     return response.data;
