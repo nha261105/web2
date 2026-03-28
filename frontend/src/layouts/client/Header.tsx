@@ -9,6 +9,9 @@ import {
   ShoppingCart,
   X,
   ChevronDown,
+  Settings,
+  Package,
+  LogOut,
   //   ArrowRight,
 } from "lucide-react";
 
@@ -102,8 +105,15 @@ const MEGA_MENU_SECTIONS = [
 export default function Header() {
   const [keyword, setKeyword] = useState("");
   const [isMegaOpen, setIsMegaOpen] = useState(false);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState("Demo User");
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const megaAreaRef = useRef<HTMLLIElement | null>(null);
+  const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const navigator = useNavigate();
+
+  const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=2563eb&color=ffffff&size=128`;
 
   const clearSearch = () => setKeyword("");
 
@@ -124,6 +134,22 @@ export default function Header() {
     };
   }, [isMegaOpen]);
 
+  useEffect(() => {
+    if (!isAccountOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (accountMenuRef.current && !accountMenuRef.current.contains(target)) {
+        setIsAccountOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isAccountOpen]);
+
   return (
     <header className="bg-white border-b border-slate-200 text-slate-900 sticky top-0 z-50 shadow-sm">
       {/* TOP BAR */}
@@ -138,14 +164,14 @@ export default function Header() {
           </span>
         </Link>
 
-        <div className="flex-1 max-w-3xl">
+        <div className="hidden sm:block flex-1 max-w-3xl">
           <form
             className="group flex items-center gap-2"
             onSubmit={(event) => event.preventDefault()}
             role="search"
             aria-label="Tìm kiếm sản phẩm"
           >
-            <div className="relative flex-1">
+            <div className="relative flex-1 max-w-xl">
               <Search
                 size={20}
                 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -163,7 +189,7 @@ export default function Header() {
                   <button
                     type="button"
                     onClick={clearSearch}
-                    className="h-7 w-7 rounded-full grid place-items-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                    className="h-7 w-7 rounded-full grid place-items-center bg-slate-100 text-slate-500 hover:text-slate-700 hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors"
                     aria-label="Xóa nội dung tìm kiếm"
                   >
                     <X size={14} />
@@ -171,14 +197,28 @@ export default function Header() {
                 )}
               </div>
             </div>
-
-            <button
-              type="submit"
-              className="hidden sm:inline-flex h-12 items-center rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-            >
-              Tìm kiếm
-            </button>
           </form>
+        </div>
+
+        <div className="flex items-center gap-2 sm:hidden">
+          <button
+            type="button"
+            onClick={() => setIsMobileSearchOpen(true)}
+            className="h-10 w-10 rounded-full grid place-items-center text-slate-600 hover:text-blue-600 hover:bg-slate-100 transition-colors"
+            aria-label="Tìm kiếm"
+          >
+            <Search size={20} />
+          </button>
+          {keyword.length > 0 && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="h-10 w-10 rounded-full grid place-items-center bg-slate-100 text-slate-500 hover:text-slate-700 hover:bg-slate-200 transition-colors"
+              aria-label="Xóa nội dung tìm kiếm"
+            >
+              <X size={16} />
+            </button>
+          )}
         </div>
 
         <div className="flex gap-2 sm:gap-3 shrink-0">
@@ -189,22 +229,122 @@ export default function Header() {
           >
             <Heart size={24} />
           </button>
-          <button
-            type="button"
-            className="cursor-pointer h-10 w-10 rounded-full grid place-items-center text-slate-600 hover:text-blue-600 hover:bg-slate-100 transition-colors"
-            aria-label="Tài khoản"
-            onClick={() => {
-              navigator("/Account");
-            }}
-          >
-            <User size={24} />
-          </button>
+          <div ref={accountMenuRef} className="relative">
+            <button
+              type="button"
+              className="cursor-pointer h-10 min-w-10 rounded-full px-2 flex items-center gap-2 text-slate-600 hover:text-blue-600 hover:bg-slate-100 transition-colors"
+              aria-label="Tài khoản"
+              aria-expanded={isAccountOpen}
+              onClick={() => setIsAccountOpen((prev) => !prev)}
+            >
+              {isLoggedIn ? (
+                <>
+                  <img
+                    src={avatarUrl}
+                    alt={username}
+                    className="h-8 w-8 rounded-full object-cover"
+                  />
+                  <span className="hidden sm:inline-block text-sm font-medium">
+                    {username}
+                  </span>
+                </>
+              ) : (
+                <User size={24} />
+              )}
+            </button>
+
+            {isAccountOpen && (
+              <div className="absolute right-0 top-full mt-3 w-64 rounded-lg border border-slate-200 bg-white shadow-xl ring-1 ring-black/5 z-50 overflow-clip">
+                {!isLoggedIn ? (
+                  <div className="flex flex-col p-4 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsLoggedIn(true);
+                        setUsername("Demo User");
+                        setIsAccountOpen(false);
+                      }}
+                      className="rounded-2xl bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+                    >
+                      Đăng nhập
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsLoggedIn(true);
+                        setUsername("Demo User");
+                        setIsAccountOpen(false);
+                      }}
+                      className="rounded-2xl bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+                    >
+                      Tạo tài khoản
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="bg-slate-50 px-4 py-4">
+                      <p className="text-sm font-semibold text-slate-900">
+                        {username}
+                      </p>
+                      <p className="text-xs text-slate-500">user@demo.com</p>
+                    </div>
+                    <div className="flex flex-col gap-2 p-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAccountOpen(false);
+                          navigator("/account?tab=profile");
+                        }}
+                        className="cursor-pointer flex items-center gap-3 rounded-2xl px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors w-full text-left"
+                      >
+                        <User className="w-4 h-4" />
+                        My Profile
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAccountOpen(false);
+                          navigator("/account?tab=orders");
+                        }}
+                        className="cursor-pointer flex items-center gap-3 rounded-2xl px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors w-full text-left"
+                      >
+                        <Package className="w-4 h-4" />
+                        My Orders
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAccountOpen(false);
+                          navigator("/account?tab=settings");
+                        }}
+                        className="cursor-pointer flex items-center gap-3 rounded-2xl px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors w-full text-left"
+                      >
+                        <Settings className="w-4 h-4" />
+                        Settings
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsLoggedIn(false);
+                        setIsAccountOpen(false);
+                      }}
+                      className="flex w-full items-center justify-center gap-2 bg-rose-50 p-3 text-sm font-semibold text-rose-600 hover:bg-rose-100 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
           <button
             type="button"
             className="cursor-pointer relative h-10 w-10 rounded-full grid place-items-center text-slate-600 hover:text-amber-500 hover:bg-slate-100 transition-colors"
             aria-label="Giỏ hàng"
             onClick={() => {
-              navigator("/cart");
+              navigator("/cart/tab?");
             }}
           >
             <ShoppingCart size={24} />
@@ -214,7 +354,58 @@ export default function Header() {
           </button>
         </div>
       </div>
-      <nav className="relative">
+
+      {isMobileSearchOpen && (
+        <div className="sm:hidden fixed inset-0 z-50 bg-black/40 p-4">
+          <div className="mx-auto h-full max-w-md rounded-xl bg-white p-4 shadow-lg">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm font-semibold text-slate-800">
+                Tìm kiếm
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsMobileSearchOpen(false)}
+                className="rounded-md p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                aria-label="Đóng tìm kiếm"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form
+              className="flex items-center gap-2"
+              onSubmit={(event) => event.preventDefault()}
+              role="search"
+              aria-label="Tìm kiếm sản phẩm"
+            >
+              <div className="relative flex-1">
+                <Search
+                  size={20}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <input
+                  id="mobile-input-search"
+                  value={keyword}
+                  onChange={(event) => setKeyword(event.target.value)}
+                  placeholder="Tìm thiết bị cần thuê"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-10 text-sm text-slate-900 outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
+                />
+                {keyword.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearSearch}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-slate-100 text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+                    aria-label="Xóa nội dung tìm kiếm"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <nav className="hidden sm:block relative">
         <div className="mx-auto flex max-w-7xl justify-center px-4 py-3 sm:px-6 lg:px-8">
           <ul
             id="nav"
@@ -250,7 +441,7 @@ export default function Header() {
                   onMouseLeave={() => setIsMegaOpen(false)}
                 >
                   <div className="mx-auto w-[min(1200px,94vw)]">
-                    <div className="max-h-[72vh] overflow-y-auto rounded-[16px] border border-slate-100 bg-white p-6 text-slate-700 shadow-lg">
+                    <div className="max-h-[72vh] overflow-y-auto rounded-3xl border border-slate-100 bg-white p-6 text-slate-700 shadow-lg">
                       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         {MEGA_MENU_SECTIONS.map((section) => (
                           <div key={section.title} className="p-4">
@@ -288,6 +479,49 @@ export default function Header() {
               </Link>
             </li>
           </ul>
+        </div>
+      </nav>
+
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2">
+          <Link
+            to="/"
+            className="flex flex-col items-center text-xs text-slate-600 hover:text-blue-600"
+          >
+            <span>Trang Chủ</span>
+          </Link>
+          <button
+            type="button"
+            onClick={() => setIsMegaOpen((prev) => !prev)}
+            className="flex flex-col items-center text-xs text-slate-600 hover:text-blue-600"
+            aria-label="Danh mục thiết bị"
+          >
+            Thiết Bị
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsMobileSearchOpen(true)}
+            className="flex flex-col items-center text-xs text-slate-600 hover:text-blue-600"
+            aria-label="Tìm kiếm"
+          >
+            Tìm kiếm
+          </button>
+          <button
+            type="button"
+            onClick={() => navigator("/account?tab=profile")}
+            className="flex flex-col items-center text-xs text-slate-600 hover:text-blue-600"
+            aria-label="Tài khoản"
+          >
+            Tài khoản
+          </button>
+          <button
+            type="button"
+            onClick={() => navigator("/cart")}
+            className="flex flex-col items-center text-xs text-slate-600 hover:text-blue-600 relative"
+            aria-label="Giỏ hàng"
+          >
+            Giỏ hàng
+          </button>
         </div>
       </nav>
     </header>
