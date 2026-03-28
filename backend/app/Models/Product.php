@@ -44,4 +44,8 @@ class Product extends Model
     {
         return $this->belongsTo(RentalPolicy::class, 'policies_id');
     }
+    public function comboDetail(): HasMany
+    {
+        return $this->hasMany(ComboDetail::class);
+    }
 }

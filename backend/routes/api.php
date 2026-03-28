@@ -12,6 +12,7 @@ use App\Http\Controllers\Rental\ReturnOrderController;
 use App\Http\Controllers\Rental\TransactionController;
 use App\Http\Controllers\User\UserController;
 use App\Http\Controllers\Category\CategoryController;
+use App\Http\Controllers\Combos\ComboController;
 use App\Http\Controllers\Coupon\CouponController;
 
 /**
@@ -39,6 +40,12 @@ Route::prefix('brands')->group(function () {
 Route::prefix('products')->group(function () {
     Route::get('/', [ProductController::class, 'index']);
     Route::get('/{id}', [ProductController::class, 'show']);
+});
+
+// Combo public routes
+Route::prefix('combos')->group(function () {
+    Route::get('/', [ComboController::class, 'index']);
+    Route::get('/{id}', [ComboController::class, 'show']);
 });
 
 // Coupon public routes
@@ -125,6 +132,13 @@ Route::middleware(['auth.token'])->group(function () {
             Route::get('/{id}', [CouponController::class, 'show']);
             Route::patch('/{coupon}', [CouponController::class, 'update']);
             Route::delete('/{coupon}', [CouponController::class, 'destroy']);
+        });
+
+        // Combos
+        Route::prefix('combos')->group(function () {
+            Route::post('/', [ComboController::class, 'store']);
+            Route::patch('/{combo}', [ComboController::class, 'update']);
+            Route::delete('/{combo}', [ComboController::class, 'destroy']);
         });
     });
 });

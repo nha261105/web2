@@ -24,7 +24,13 @@ class ProductResource extends JsonResource
             'deposit_price' => $this->deposit_price,
             'description' => $this->description,
             'status' => $this->status,
-            'images' => $this->images?->pluck('image_url')->values() ?? [],
+            'category' => new CategoryResource($this->whenLoaded('category')),
+            'brand' => new BrandResource($this->whenLoaded('brand')),
+            'images' => $this->whenLoaded(
+                'images',
+                fn() => $this->images->pluck('image_url')->values(),
+                [],
+            ),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
