@@ -1,6 +1,7 @@
 import MyNavigateLink from "@/components/ui/my-navigate-link";
 import { checkToken } from "@/services/userTokensService";
 import { getMe, signout } from "@/services/usersService";
+import { getMyRentals, type Rental } from "@/services/rentalService";
 import { LogOut, MapPin, Package, Settings, User } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -21,27 +22,35 @@ export default function AccountPage() {
   const tabParam = searchParams.get("tab");
   const navigate = useNavigate();
 
-  // ─── Auth state thật ────────────────────────────────────────────────────────
+  // ─── Auth state ───────────────────────────────────────────────────────────
   const [authUser, setAuthUser] = useState<AuthUser | null>(() => {
     try {
       const saved = localStorage.getItem("auth_user");
-      if (saved && saved !== "undefined") {
-        return JSON.parse(saved);
-      }
-    } catch (error) {
-      console.error("Lỗi khi đọc data từ localStorage:", error);
-    }
+      if (saved && saved !== "undefined") return JSON.parse(saved);
+    } catch { /* ignore */ }
     return null;
   });
   const [isLoggedIn, setIsLoggedIn] = useState(!!authUser);
+
+  // ─── Preloaded rentals ────────────────────────────────────────────────────
+  const [rentals, setRentals] = useState<Rental[]>([]);
+  const [rentalsLoading, setRentalsLoading] = useState(true);
+
   useEffect(() => {
-    async function checkAuth() {
+    async function init() {
       const tokenRes = await checkToken();
       if (!tokenRes.success) {
         setIsLoggedIn(false);
+        setRentalsLoading(false);
         return;
       }
-      const meRes = await getMe();
+
+      // Fetch getMe + getMyRentals song song — chỉ 1 lần duy nhất khi mount
+      const [meRes, rentalsRes] = await Promise.all([
+        getMe(),
+        getMyRentals(),
+      ]);
+
       if (meRes.success) {
         setAuthUser(meRes.data.user);
         setIsLoggedIn(true);
@@ -49,11 +58,17 @@ export default function AccountPage() {
       } else {
         setIsLoggedIn(false);
       }
+
+      if (rentalsRes.success) {
+        setRentals(rentalsRes.data.items ?? []);
+      }
+
+      setRentalsLoading(false);
     }
-    checkAuth();
+    init();
   }, []);
 
-  // ─── Tab logic ──────────────────────────────────────────────────────────────
+  // ─── Tab logic ────────────────────────────────────────────────────────────
   const getAccountPageFromTab = (tab: string | null) => {
     switch (tab) {
       case "orders":    return "My Orders";
@@ -81,12 +96,13 @@ export default function AccountPage() {
     { label: "Settings",  icon: Settings },
   ];
 
-  // ─── Logout ─────────────────────────────────────────────────────────────────
+  // ─── Logout ───────────────────────────────────────────────────────────────
   const handleLogout = async () => {
     await signout();
     localStorage.removeItem("auth_user");
     setIsLoggedIn(false);
     setAuthUser(null);
+    setRentals([]);
     navigate("/");
   };
 
@@ -97,7 +113,6 @@ export default function AccountPage() {
           items={[{ text: "Home", link: "/" }, { text: "My Account" }]}
         />
 
-        {/* Chưa đăng nhập */}
         {!isLoggedIn && (
           <div className="min-h-[50vh] flex flex-col justify-center items-center gap-3">
             <div className="text-base font-semibold text-gray-500">
@@ -113,26 +128,22 @@ export default function AccountPage() {
           </div>
         )}
 
-        {/* Đã đăng nhập */}
         {isLoggedIn && authUser && (
           <div className="flex flex-row w-full gap-3">
-            {/* Sidebar */}
             <aside className="w-56 shrink-0 hidden sm:block">
               <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                {/* User info */}
                 <div className="p-5 border-b border-gray-100 bg-gradient-to-br from-[#0052CC] to-[#0747A6]">
                   <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-3">
                     <User className="w-6 h-6 text-white" />
                   </div>
                   <p className="text-white font-semibold text-sm truncate">
-                    {authUser?.full_name ?? "—"}
+                    {authUser.full_name}
                   </p>
                   <p className="text-blue-200 text-xs truncate">
-                    {authUser?.email ?? "—"}
+                    {authUser.email}
                   </p>
                 </div>
 
-                {/* Nav */}
                 <nav className="p-2">
                   {NAV_ITEMS.map((item) => (
                     <button
@@ -150,7 +161,6 @@ export default function AccountPage() {
                       {item.label}
                     </button>
                   ))}
-
                   <button
                     onClick={handleLogout}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 w-full transition-colors mt-1 cursor-pointer"
@@ -162,9 +172,7 @@ export default function AccountPage() {
               </div>
             </aside>
 
-            {/* Main content */}
             <div className="flex-1 min-w-0">
-              {/* Mobile tab bar */}
               <div className="sm:hidden flex gap-1 mb-3 bg-white rounded-xl border border-gray-200 p-1 overflow-x-auto">
                 {NAV_ITEMS.map((item) => (
                   <button
@@ -187,15 +195,19 @@ export default function AccountPage() {
               <div className={accountPage === "Profile" ? "block" : "hidden"}>
                 <ProfilePage user={authUser} />
               </div>
-              
+
               <div className={accountPage === "Addresses" ? "block" : "hidden"}>
-                <AddressPage userId={authUser!.id} />
+                <AddressPage userId={authUser.id} />
               </div>
-              
+
+              {/* Truyền data đã preload — không loading khi switch tab */}
               <div className={accountPage === "My Orders" ? "block" : "hidden"}>
-                <OrdersPage />
+                <OrdersPage
+                  initialRentals={rentals}
+                  initialLoading={rentalsLoading}
+                />
               </div>
-              
+
               <div className={accountPage === "Settings" ? "block" : "hidden"}>
                 <SettingsPage />
               </div>
