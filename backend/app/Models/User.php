@@ -75,4 +75,16 @@ class User extends Authenticatable
     {
         return $this->hasMany(Address::class, 'user_id');
     }
+
+    /**
+     * Get the password for the user.
+     * Overrides the default getAuthPassword method to use 'hash_password' column.
+     *
+     * @return string
+     */
+    public function getAuthPassword()
+    {
+        return $this->hash_password;
+    }
+
 }

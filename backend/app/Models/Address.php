@@ -20,5 +20,5 @@ class Address extends Model
         'is_default'
     ];
 
-    public $timestamps = false;
+    public $timestamps = true;
 }

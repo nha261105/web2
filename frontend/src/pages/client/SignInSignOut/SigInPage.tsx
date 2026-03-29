@@ -28,16 +28,20 @@ export default function SignInPage() {
     validateToken();
   }, [navigate]);
 
-  const handleSignIn = async () => {
-    const result = await signin(email, password, isRemember);
+  const handleSignIn = async (e: React.MouseEvent<HTMLDivElement>) => { 
+    e.preventDefault();
 
-    if (result.success) {
-      navigate("/"); // login thành công → quay về /
-      toast.success("Đăng nhập thành công");
+    const res = await signin( email, password, isRemember ); 
+    
+    if (res.success) {
+      toast.success("Đăng nhập thành công!");
+      localStorage.setItem("token", res.data.token.access_token ?? res.data.token);
+      localStorage.setItem("auth_user", JSON.stringify(res.data.user));
+      navigate("/"); 
     } else {
-      alert(result.message); // hiển thị lỗi
+      toast.error(res.message || "Sai email hoặc mật khẩu!");
     }
-  };
+  }
 
   const textLeftPanel = [
     "500+ professional tech products",

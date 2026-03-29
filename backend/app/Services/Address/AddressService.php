@@ -15,9 +15,13 @@ class AddressService
                 Address::where('user_id', $userId)->update(['is_default' => 0]);
             }
 
+            $allowed = ['receive_name', 'receive_phone', 'city', 'district', 'ward', 'street', 'note', 'is_default'];
+            $payload = array_intersect_key($data, array_flip($allowed));
+            $payload['user_id'] = $userId;
+
             return Address::updateOrCreate(
                 ['id' => $id, 'user_id' => $userId],
-                $data
+                $payload
             );
         });
     }
