@@ -50,7 +50,7 @@ class AddressController extends Controller
                 return ApiResponse::forbidden('Hành động không hợp lệ');
             }
 
-            $address = $this->addressService->save($request->all(), $userId);
+            $address = $this->addressService->save($request->validated(), $userId);
 
             return ApiResponse::success([
                 'address' => new AddressResource($address)
@@ -72,7 +72,7 @@ class AddressController extends Controller
                 return ApiResponse::forbidden('Hành động không hợp lệ');
             }
 
-            $address = $this->addressService->save($request->all(), $userId, $id);
+            $address = $this->addressService->save($request->validated(), $userId, $id);
 
             return ApiResponse::success([
                 'address' => new AddressResource($address)
@@ -81,7 +81,7 @@ class AddressController extends Controller
             return ApiResponse::error('Lỗi khi cập nhật địa chỉ', 'UPDATE_FAILED', 400, ['detail' => $e->getMessage()]);
         }
     }
-
+    
     /**
      * DELETE /api/users/{userId}/addresses/{id}
      */
@@ -94,19 +94,15 @@ class AddressController extends Controller
                 return ApiResponse::forbidden('Hành động không hợp lệ');
             }
 
-            $this->addressService->delete($userId, $id);
+            $result = $this->addressService->delete($userId, $id);
+
+            if ($result === false) {
+                return ApiResponse::error('Không tìm thấy địa chỉ', 'NOT_FOUND', 404);
+            }
 
             return ApiResponse::success([], 'Xóa địa chỉ thành công');
         } catch (\Exception $e) {
-            return ApiResponse::error('Lỗi khi xóa địa chỉ', 'DELETE_FAILED', 400, ['detail' => $e->getMessage()]);
+            return ApiResponse::internalError('Lỗi khi xóa địa chỉ');
         }
-    }
-
-    /**
-     * Hàm phụ kiểm tra quyền Admin
-     */
-    private function checkAdmin($user): bool
-    {
-        return $user->roles->contains('name', 'ADMIN');
     }
 }
