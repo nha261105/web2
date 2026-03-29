@@ -38,8 +38,12 @@ Route::middleware(['auth.token'])->group(function () {
 		Route::delete('/{id}', [AddressController::class, 'destroy']);
 	});
 
+	//rental user
+	Route::get('/rentals', [RentalController::class, 'index']);
+
 	Route::middleware(['role:ADMIN'])->group(function () {
 		Route::get('/users', [UserController::class, 'index']);
+		Route::get('/users/{id}', [UserController::class, 'show']);
 		Route::delete('/users/{id}', [UserController::class, 'destroy']);
 		Route::get('/roles', [RbacController::class, 'roles']);
 		Route::get('/permissions', [RbacController::class, 'permissions']);
@@ -50,7 +54,7 @@ Route::middleware(['auth.token'])->group(function () {
 		Route::patch('/users/{id}/status', [UserController::class, 'updateStatus']);
 
 		//Rental CRUD
-		Route::get('/rentals', [RentalController::class, 'index']);
+		// Route::get('/rentals', [RentalController::class, 'index']);
 		Route::post('/rentals', [RentalController::class, 'store']);
 		Route::get('/rentals/{id}', [RentalController::class, 'show']);
 		Route::patch('/rentals/{id}', [RentalController::class, 'update']);

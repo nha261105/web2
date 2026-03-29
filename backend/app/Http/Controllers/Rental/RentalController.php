@@ -13,21 +13,20 @@ use Illuminate\Http\Request;
 
 class RentalController extends Controller
 {
-    public function __construct(private RentalService $service)
-    {
-    }
+    public function __construct(private RentalService $service) {}
 
     public function index(Request $request): JsonResponse
     {
-        $result = $this->service->paginate($request->all());
+        $authUser = $request->attributes->get('auth_user');
+        $result = $this->service->paginate($request->all(), $authUser);
 
         return ApiResponse::success([
-            'items' => RentalResource::collection($result),
+            'items' => RentalResource::collection($result)->resolve(),
             'meta' => [
-                'total' => $result->total(),
+                'total'        => $result->total(),
                 'current_page' => $result->currentPage(),
-                'per_page' => $result->perPage(),
-                'last_page' => $result->lastPage(),
+                'per_page'     => $result->perPage(),
+                'last_page'    => $result->lastPage(),
             ],
         ]);
     }

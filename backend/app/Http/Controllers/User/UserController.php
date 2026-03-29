@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Http\Requests\User\UpdateUserRequest;
 use App\Support\ApiResponse;
+use App\Http\Requests\User\UpdateUserStatusRequest;
 
 class UserController extends Controller
 {
@@ -46,13 +47,13 @@ class UserController extends Controller
         $users = $this->userService->listUsers((int)$perPage);
 
         return ApiResponse::success([
-            'data' => UserResource::collection($users),
-            'meta' => [
-                'total' => $users->total(),
+            'users' => UserResource::collection($users)->resolve(),
+            'meta'  => [
+                'total'        => $users->total(),
                 'current_page' => $users->currentPage(),
-                'per_page' => $users->perPage(),
-                'last_page' => $users->lastPage()
-            ]
+                'per_page'     => $users->perPage(),
+                'last_page'    => $users->lastPage(),
+            ],
         ], 'Fetched successfully');
     }
 
@@ -75,7 +76,7 @@ class UserController extends Controller
     {
         try {
             $authUser = $request->attributes->get('auth_user');
-            $user = $this->userService->updateUser($authUser->id, $request->all());
+            $user = $this->userService->updateUser($authUser->id, $request->validated());
 
             return ApiResponse::success([
                 'user' => new UserResource($user)
@@ -101,20 +102,15 @@ class UserController extends Controller
     /**
      * PATCH /api/users/{id}/status (Admin)
      */
-    public function updateStatus(Request $request, $id): JsonResponse 
+    public function updateStatus(UpdateUserStatusRequest $request, $id): JsonResponse
     {
         try {
-            $request->validate([
-                'status' => 'required|in:ACTIVE,INACTIVE'
-            ]);
-
-            $user = $this->userService->updateUser($id, ['status' => $request->status]);
-
+            $user = $this->userService->updateUser((int)$id, $request->validated());
             return ApiResponse::success([
                 'user' => new UserResource($user)
             ], 'Cập nhật trạng thái người dùng thành công');
         } catch (\Exception $e) {
-            return ApiResponse::error('Cập nhật trạng thái thất bại', 'UPDATE_STATUS_FAILED', 400);
+            return ApiResponse::error('Người dùng không tồn tại hoặc lỗi hệ thống', 'UPDATE_STATUS_FAILED', 404);
         }
     }
 }
