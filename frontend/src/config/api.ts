@@ -4,5 +4,17 @@ export const API_BASE_URL = rawApiBaseUrl.replace(/\/+$/, "");
 
 export const API_ENDPOINTS = {
   signIn: "/api/auth/sign-in",
+  signOut: "/api/auth/sign-out",
+  me: "/api/auth/me",
   checkToken: "/api/user-tokens/check-token",
+
+  //User
+  usersMe: "/api/users/me",
+  updateMe: "/api/users/me",
+
 } as const;
+
+export const addressEndpoints = {
+  list: (userId: number) => `/api/users/${userId}/addresses`,
+  byId: (userId: number, id: number) => `/api/users/${userId}/addresses/${id}`,
+};
