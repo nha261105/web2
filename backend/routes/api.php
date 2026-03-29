@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\RbacController;
 use App\Http\Controllers\Auth\UserTokenController;
 use App\Http\Controllers\Rental\RentalController;
 use App\Http\Controllers\Rental\RentalIssueController;
+use App\Http\Controllers\Rental\RentalPolicyController;
 use App\Http\Controllers\Rental\ReturnOrderController;
 use App\Http\Controllers\Rental\TransactionController;
 use App\Http\Controllers\User\UserController;
@@ -47,6 +48,12 @@ Route::prefix('products')->group(function () {
 Route::prefix('combos')->group(function () {
     Route::get('/', [ComboController::class, 'index']);
     Route::get('/{id}', [ComboController::class, 'show']);
+});
+
+// Rental policy public routes
+Route::prefix('rental-policies')->group(function () {
+    Route::get('/', [RentalPolicyController::class, 'index']);
+    Route::get('/{id}', [RentalPolicyController::class, 'show']);
 });
 
 // Coupon public routes
@@ -140,6 +147,19 @@ Route::middleware(['auth.token'])->group(function () {
             Route::post('/', [ComboController::class, 'store']);
             Route::patch('/{combo}', [ComboController::class, 'update']);
             Route::delete('/{combo}', [ComboController::class, 'destroy']);
+        });
+
+        // Rental policies
+        Route::prefix('rental-policies')->group(function () {
+            Route::post('/', [RentalPolicyController::class, 'store']);
+            Route::patch('/{rentalPolicy}', [
+                RentalPolicyController::class,
+                'update',
+            ]);
+            Route::delete('/{rentalPolicy}', [
+                RentalPolicyController::class,
+                'destroy',
+            ]);
         });
     });
     Route::middleware(['auth.token'])->group(function () {

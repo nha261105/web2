@@ -2,11 +2,15 @@
 
 namespace App\Services\Product;
 
+use App\Models\ProductImage;
+use App\Services\ImageStorage\SupabaseStorage;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 class ProductService
 {
+    public function __construct(private SupabaseStorage $storage) {}
     public function list(array $filters = []): Collection
     {
         return Product::query()
@@ -38,7 +42,26 @@ class ProductService
     }
     public function create(array $data): Product
     {
-        return Product::create($data);
+        return DB::transaction(function () use ($data) {
+            $imageUrls = $data['image_source_urls'] ?? [];
+            unset($data['image_source_urls']);
+
+            $product = Product::create($data);
+
+            foreach ($imageUrls as $rawUrl) {
+                $publicUrl = $this->storage->uploadFromUrl(
+                    $rawUrl,
+                    'products/' . $product->id,
+                );
+
+                ProductImage::create([
+                    'product_id' => $product->id,
+                    'image_url' => $publicUrl,
+                ]);
+            }
+
+            return $product->fresh(['category', 'brand', 'images']);
+        });
     }
     public function updateById(int $id, array $data): Product
     {

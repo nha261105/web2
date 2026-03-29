@@ -4,8 +4,10 @@ namespace Tests\Feature\Product;
 
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Product;
 use App\Models\Role;
 use App\Models\UserTokens;
+use App\Services\ImageStorage\SupabaseStorage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -95,6 +97,78 @@ class ProductApiTest extends TestCase
         $this->assertDatabaseHas('products', [
             'name' => 'iphone15',
             'slug' => $payload['slug'],
+        ]);
+    }
+
+    public function test_products_store_with_image_source_urls_saves_product_img(): void
+    {
+        $admin = User::factory()->create([
+            'email' => 'product-image-admin@gmail.com',
+        ]);
+        $token = bin2hex(random_bytes(16));
+        $role = Role::firstOrCreate(['name' => 'ADMIN']);
+        $admin->roles()->attach($role->id);
+        UserTokens::create([
+            'user_id' => $admin->id,
+            'token' => $token,
+            'expires_at' => now()->addHours(2),
+        ]);
+
+        $category = Category::create([
+            'name' => 'Tablet',
+            'slug' => 'tablet-' . uniqid(),
+        ]);
+
+        $brand = Brand::create([
+            'name' => 'Samsung',
+            'slug' => 'samsung-' . uniqid(),
+        ]);
+
+        $policyId = null;
+        if (Schema::hasTable('rental_policies')) {
+            $policyId = DB::table('rental_policies')->insertGetId([
+                'late_day_fee' => 10.0,
+                'max_late_day' => 5,
+            ]);
+        }
+
+        $publicUrl =
+            'https://example.supabase.co/storage/v1/object/public/images/products/1/mock.jpg';
+
+        $this->mock(SupabaseStorage::class, function ($mock) use ($publicUrl) {
+            $mock
+                ->shouldReceive('uploadFromUrl')
+                ->once()
+                ->andReturn($publicUrl);
+        });
+
+        $payload = [
+            'name' => 'galaxy-tab',
+            'slug' => 'galaxy-tab-' . uniqid(),
+            'category_id' => $category->id,
+            'brand_id' => $brand->id,
+            'policies_id' => $policyId,
+            'deposit_price' => 7000,
+            'daily_price' => 2500,
+            'status' => 'ACTIVE',
+            'description' => 'tablet test image',
+            'image_source_urls' => ['https://images.example.com/galaxy.jpg'],
+        ];
+
+        $res = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+        ])->postJson('/api/products', $payload);
+
+        $res->assertStatus(201);
+
+        $productId = Product::query()
+            ->where('slug', $payload['slug'])
+            ->value('id');
+
+        $this->assertNotNull($productId);
+        $this->assertDatabaseHas('product_img', [
+            'product_id' => $productId,
+            'image_url' => $publicUrl,
         ]);
     }
 }

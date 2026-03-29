@@ -35,6 +35,8 @@ class CreateProductRequest extends FormRequest
             'deposit_price' => ['required', 'numeric', 'min:0'],
             'description' => ['required', 'string'],
             'status' => ['required', Rule::in(['ACTIVE', 'INACTIVE'])],
+            'image_source_urls' => ['nullable', 'array', 'max:10'],
+            'image_source_urls.*' => ['url', 'max:2048'],
         ];
     }
 }
