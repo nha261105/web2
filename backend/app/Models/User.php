@@ -7,13 +7,11 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class User extends Authenticatable
 {
     use HasFactory;
-    use HasApiTokens;
     use SoftDeletes;
 
     protected $table = 'users';
@@ -49,10 +47,12 @@ class User extends Authenticatable
         return $this->belongsToMany(Role::class, 'user_roles', 'user_id', 'role_id');
     }
 
-    public function hasRole(string $roleName): bool
-    {
-        return $this->roles()->where('name', $roleName)->exists();
-    }
+ public function hasRole(string $roleName): bool
+{
+    // Đảm bảo quan hệ 'roles' đã được định nghĩa đúng (BelongsToMany)
+    // Dùng pluck để lấy mảng tên các Role và kiểm tra
+    return $this->roles->pluck('name')->contains($roleName);
+}
 
     public function hasPermission(string $permissionName): bool
     {
@@ -86,5 +86,4 @@ class User extends Authenticatable
     {
         return $this->hash_password;
     }
-
 }
