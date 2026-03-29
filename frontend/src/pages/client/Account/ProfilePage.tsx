@@ -1,22 +1,47 @@
 import { useState } from "react";
-import { Camera, Save, User } from "lucide-react";
+import { Camera, Save, User, Loader2 } from "lucide-react";
+import {  updateMe } from "@/services/usersService";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 interface ProfileForm {
   name: string;
   email: string;
   phone: string;
-  location: string;
-  bio: string;
 }
 
-export default function ProfilePage() {
+interface ProfilePageProps {
+  user: {
+    full_name: string;
+    email: string;
+    phone: string;
+  };
+}
+
+export default function ProfilePage({ user }: ProfilePageProps) {
+  const [saving, setSaving] = useState(false);
+  const navigate = useNavigate();
   const [form, setForm] = useState<ProfileForm>({
-    name: "Nguyễn Thanh Sang",
-    email: "demo@gmail.com",
-    phone: "+1 (415) 555-0199",
-    location: "San Francisco, CA",
-    bio: "Freelance creative professional who loves renting top-tier tech for projects.",
+    name: user.full_name ?? "",
+    email: user.email ?? "",
+    phone: user.phone ?? "",
   });
+
+  // ─── Submit cập nhật ──────────────────────────────────────────────────────
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    const res = await updateMe({
+      name: form.name,
+      phone: form.phone,
+    });
+    if (res.success) {
+      toast.success("Cập nhật thông tin thành công!");
+    } else {
+      toast.error(res.message || "Cập nhật thất bại");
+    }
+    setSaving(false);
+  };
 
   return (
     <div className="space-y-3">
@@ -27,27 +52,27 @@ export default function ProfilePage() {
         </h2>
         <div className="flex items-center gap-5">
           <div className="relative">
-            {/* {user?.avatar ? (
-              <img
-                src={user.avatar}
-                alt={user.name}
-                className="w-20 h-20 rounded-2xl object-cover"
-              />
-            ) : (
-                )} */}
             <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center">
-              <User className="w-6 h-6 text-black" />
+              <User className="w-6 h-6 text-gray-400" />
             </div>
-            <button className="absolute -bottom-2 -right-2 w-7 h-7 bg-[#0052CC] text-white rounded-full flex items-center justify-center shadow-md hover:bg-[#0747A6] transition-colors">
+            <button
+              type="button"
+              className="absolute -bottom-2 -right-2 w-7 h-7 bg-[#0052CC] text-white rounded-full flex items-center justify-center shadow-md hover:bg-[#0747A6] transition-colors"
+            >
               <Camera className="w-3.5 h-3.5" />
             </button>
           </div>
           <div>
             <p className="text-sm font-medium text-gray-900 mb-1">
-              {"Nguyễn Thanh Sang"}
+              {form.name || "—"}
             </p>
-            <p className="text-xs text-gray-500 mb-3">{"demo@gmail.com"}</p>
-            <button className="h-8 px-4 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors">
+            <p className="text-xs text-gray-500 mb-3">
+              {form.email || "—"}
+            </p>
+            <button
+              type="button"
+              className="h-8 px-4 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors"
+            >
               Change Photo
             </button>
           </div>
@@ -59,107 +84,99 @@ export default function ProfilePage() {
         <h2 className="text-base font-semibold text-gray-900 mb-5">
           Personal Information
         </h2>
-        <form onSubmit={() => {}}>
+        <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-            {[
-              {
-                field: "name",
-                label: "Full Name",
-                placeholder: "Your full name",
-              },
-              {
-                field: "email",
-                label: "Email",
-                placeholder: "your@email.com",
-                type: "email",
-              },
-              {
-                field: "phone",
-                label: "Phone",
-                placeholder: "+1 (555) 000-0000",
-              },
-              {
-                field: "location",
-                label: "Location",
-                placeholder: "City, State",
-              },
-            ].map((f) => (
-              <div key={f.field}>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  {f.label}
-                </label>
-                <input
-                  type={f.type || "text"}
-                  value={form[f.field as keyof ProfileForm]}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, [f.field]: e.target.value }))
-                  }
-                  placeholder={f.placeholder}
-                  className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/20 outline-none"
-                />
-              </div>
-            ))}
-            <div className="sm:col-span-2">
+            {/* Full Name */}
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Bio
+                Full Name
               </label>
-              <textarea
-                value={form.bio}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, bio: e.target.value }))
-                }
-                rows={3}
-                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/20 outline-none resize-none"
+              <input
+                type="text"
+                value={form.name}
+                onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                placeholder="Họ và tên"
+                className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/20 outline-none"
+              />
+            </div>
+
+            {/* Email — read only */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Email
+              </label>
+              <input
+                type="email"
+                value={form.email}
+                readOnly
+                className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm bg-gray-50 text-gray-400 cursor-not-allowed outline-none"
+              />
+              <p className="text-xs text-gray-400 mt-1">Email không thể thay đổi</p>
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Phone
+              </label>
+              <input
+                type="text"
+                value={form.phone}
+                onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+                placeholder="0901234567"
+                className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/20 outline-none"
               />
             </div>
           </div>
 
           <button
             type="submit"
-            className="h-10 px-6 bg-[#0052CC] text-white rounded-xl text-sm font-medium hover:bg-[#0747A6] transition-colors flex items-center gap-2"
+            disabled={saving}
+            className="h-10 px-6 bg-[#0052CC] text-white rounded-xl text-sm font-medium hover:bg-[#0747A6] transition-colors flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <Save className="w-4 h-4" /> Save Changes
+            {saving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            {saving ? "Đang lưu..." : "Save Changes"}
           </button>
         </form>
       </div>
 
-      {/* Account stats */}
+      {/* Quick links */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-5">
-          Account Stats
+        <h2 className="text-base font-semibold text-gray-900 mb-4">
+          Account Overview
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {[
             {
-              label: "Total Orders",
-              value: "5",
+              label: "Địa chỉ",
+              color: "bg-purple-50 text-purple-600",
+              tab: "addresses",
+            },
+            {
+              label: "Đơn thuê",
               color: "bg-blue-50 text-[#0052CC]",
+              tab: "orders",
             },
             {
-              label: "Active Rentals",
-              value: "1",
-              color: "bg-green-50 text-green-600",
+              label: "Cài đặt",
+              color: "bg-gray-50 text-gray-600",
+              tab: "settings",
             },
-            {
-              label: "Total Spent",
-              value: "$1,044",
-              color: "bg-orange-50 text-[#FF6A00]",
-            },
-            {
-              label: "Saved Items",
-              value: "2",
-              color: "bg-pink-50 text-pink-600",
-            },
-          ].map((stat) => (
-            <div
-              key={stat.label}
-              className={`rounded-xl p-4 ${stat.color.split(" ")[0]}`}
+          ].map((item) => (
+            <button
+              key={item.tab}
+              type="button"
+              onClick={() => navigate(`/account?tab=${item.tab}`)}
+              className={`rounded-xl p-4 text-left transition-opacity hover:opacity-80 ${item.color.split(" ")[0]}`}
             >
-              <p className={`text-2xl font-bold ${stat.color.split(" ")[1]}`}>
-                {stat.value}
+              <p className={`text-sm font-semibold ${item.color.split(" ")[1]}`}>
+                {item.label}
               </p>
-              <p className="text-xs text-gray-500 mt-1">{stat.label}</p>
-            </div>
+            </button>
           ))}
         </div>
       </div>
