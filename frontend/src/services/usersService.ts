@@ -28,6 +28,7 @@ export async function signin(
     const accessToken = response.data?.data?.token?.access_token;
     if (response.data.success && accessToken)
       localStorage.setItem("token", accessToken);
+      localStorage.setItem("auth_user", JSON.stringify(response.data.user));
 
     return response.data;
   } catch (err: unknown) {

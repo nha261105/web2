@@ -5,21 +5,26 @@ import { API_BASE_URL, addressEndpoints } from "@/config/api";
 export interface Address {
   id: number;
   user_id: number;
-  label: string;
-  address_line: string;
+  receive_name: string;
+  receive_phone: string;
   city: string;
   district: string;
   ward: string;
+  street: string;
+  note?: string;
   is_default: boolean;
-  created_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface CreateAddressPayload {
-  label: string;
-  address_line: string;
+  receive_name: string;
+  receive_phone: string;
   city: string;
   district: string;
   ward: string;
+  street: string;
+  note?: string;
   is_default?: boolean;
 }
 
