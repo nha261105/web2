@@ -1,7 +1,9 @@
-.PHONE: dev frontend backend
+.PHONY: dev frontend backend
 
 dev:
-	$(NAME) -j2 frontend backend
+	(cd frontend && npm run dev) & \
+	(cd backend && php artisan serve) & \
+	wait
 
 frontend:
 	cd frontend && npm run dev

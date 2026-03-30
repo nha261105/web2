@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { getProducts } from "@/services/catalogService";
+import { getMe, signout } from "@/services/usersService";
 
 // ICON IMPORT
 import {
@@ -16,73 +17,72 @@ import {
   //   ArrowRight,
 } from "lucide-react";
 
-type DeviceSection = {
-  category: string;
-  products: string[];
+type DeviceMenuColumn = {
+  title: string;
+  keywords: string[];
+  fallbackItems: string[];
+  items: string[];
 };
 
-const DEFAULT_DEVICE_SECTIONS: DeviceSection[] = [
+const DEFAULT_DEVICE_COLUMNS: DeviceMenuColumn[] = [
   {
-    category: "Laptop văn phòng",
-    products: [
-      "MacBook Air M2",
-      "MacBook Pro M3",
-      "Dell XPS 13",
-      "HP Spectre x360",
-      "Lenovo ThinkPad X1",
-    ],
-  },
-  {
-    category: "Laptop gaming",
-    products: [
-      "ROG Zephyrus G14",
-      "ROG Strix G16",
-      "MSI Katana 15",
-      "Acer Predator Helios",
-      "Lenovo Legion 5",
-    ],
-  },
-  {
-    category: "Máy ảnh & ống kính",
-    products: [
+    title: "Máy ảnh",
+    keywords: ["may anh", "camera", "canon", "sony", "nikon", "fujifilm"],
+    fallbackItems: [
       "Sony A7 IV",
-      "Sony FX30",
       "Canon EOS R6",
-      "Canon R5",
       "Nikon Z6 II",
+      "Fujifilm X-T5",
     ],
+    items: [],
   },
   {
-    category: "Drone & gimbal",
-    products: [
-      "DJI Mini 4 Pro",
-      "DJI Air 3",
-      "DJI Mavic 3",
-      "DJI Avata 2",
-      "DJI RS 4",
-    ],
+    title: "Flycam",
+    keywords: ["flycam", "drone", "dji", "mavic", "mini"],
+    fallbackItems: ["DJI Mavic 3", "DJI Air 3", "DJI Mini 4 Pro", "DJI Avata 2"],
+    items: [],
   },
   {
-    category: "Audio & livestream",
-    products: [
-      "Rode Wireless Pro",
-      "DJI Mic 2",
-      "Shure SM7B",
-      "Elgato Wave 3",
-      "ATEM Mini Pro",
-    ],
+    title: "Phụ kiện quay",
+    keywords: ["gimbal", "tripod", "lens", "ong kinh", "filter", "rig"],
+    fallbackItems: ["DJI RS 4", "DJI RS 4 Pro", "Sony FE 24-70", "Filter ND"],
+    items: [],
   },
   {
-    category: "Máy chiếu & màn hình",
-    products: [
-      "BenQ TK700",
-      "Epson EH-TW7000",
-      "ViewSonic X100",
-      "Samsung Smart Monitor",
-      "LG UltraFine 32",
-    ],
+    title: "Âm thanh & livestream",
+    keywords: ["audio", "micro", "mic", "livestream", "stream", "rode"],
+    fallbackItems: ["Rode Wireless Pro", "DJI Mic 2", "Shure SM7B", "ATEM Mini Pro"],
+    items: [],
   },
 ];
+
+const normalizeText = (text: string) =>
+  text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+const buildDeviceColumns = (
+  products: Array<{ title: string; category: string }>,
+): DeviceMenuColumn[] => {
+  return DEFAULT_DEVICE_COLUMNS.map((column) => {
+    const matched = products
+      .filter((product) => {
+        const haystack = normalizeText(`${product.title} ${product.category}`);
+        return column.keywords.some((keyword) =>
+          haystack.includes(normalizeText(keyword)),
+        );
+      })
+      .map((product) => product.title);
+
+    const items = Array.from(new Set(matched)).slice(0, 8);
+
+    return {
+      ...column,
+      items: items.length ? items : column.fallbackItems,
+    };
+  });
+};
 
 export default function Header() {
   const [keyword, setKeyword] = useState("");
@@ -90,13 +90,18 @@ export default function Header() {
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("Người dùng demo");
+  const [userEmail, setUserEmail] = useState("demo@rentaltech.vn");
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
-  const [deviceSections, setDeviceSections] = useState<DeviceSection[]>(
-    DEFAULT_DEVICE_SECTIONS,
+  const [deviceColumns, setDeviceColumns] = useState<DeviceMenuColumn[]>(
+    DEFAULT_DEVICE_COLUMNS,
   );
   const megaAreaRef = useRef<HTMLLIElement | null>(null);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const navigator = useNavigate();
+
+  const handleBackToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=2563eb&color=ffffff&size=128`;
 
@@ -139,41 +144,64 @@ export default function Header() {
     async function loadDeviceSections() {
       try {
         const productItems = await getProducts();
-
-        const grouped = productItems.reduce(
-          (acc, product) => {
-            const category = product.category || "Thiết bị khác";
-            acc[category] = acc[category] || [];
-            acc[category].push(product.title);
-            return acc;
-          },
-          {} as Record<string, string[]>,
-        );
-
-        const sections = Object.entries(grouped)
-          .map(([category, products]) => ({
-            category,
-            products: Array.from(new Set(products)).slice(0, 8),
-          }))
-          .sort((a, b) => a.category.localeCompare(b.category, "vi"));
-
-        if (sections.length > 0) {
-          setDeviceSections(sections);
-        }
+        setDeviceColumns(buildDeviceColumns(productItems));
       } catch {
-        setDeviceSections(DEFAULT_DEVICE_SECTIONS);
+        setDeviceColumns(buildDeviceColumns([]));
       }
     }
 
     void loadDeviceSections();
   }, []);
 
+  useEffect(() => {
+    const loadCurrentUser = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setIsLoggedIn(false);
+        setUsername("Người dùng demo");
+        setUserEmail("demo@rentaltech.vn");
+        return;
+      }
+
+      const result = await getMe();
+
+      if (result?.success && result?.data?.user) {
+        setIsLoggedIn(true);
+        setUsername(result.data.user.full_name || "Người dùng");
+        setUserEmail(result.data.user.email || "demo@rentaltech.vn");
+        return;
+      }
+
+      localStorage.removeItem("token");
+      setIsLoggedIn(false);
+      setUsername("Người dùng demo");
+      setUserEmail("demo@rentaltech.vn");
+    };
+
+    loadCurrentUser();
+  }, []);
+
+  const handleSignOut = async () => {
+    await signout();
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+    setUsername("Người dùng demo");
+    setUserEmail("demo@rentaltech.vn");
+    setIsAccountOpen(false);
+    navigator("/", { replace: true });
+  };
+
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 text-slate-900 shadow-sm backdrop-blur supports-backdrop-filter:bg-white/85">
       {/* TOP BAR */}
       <div className="mx-auto flex h-20 max-w-7xl items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
         {/* LOGO */}
-        <Link to="/" className="flex items-center gap-3 shrink-0 z-10">
+        <Link
+          to="/"
+          onClick={handleBackToTop}
+          className="flex items-center gap-3 shrink-0 z-10"
+        >
           <div className="grid h-11 w-11 place-items-center rounded-xl bg-linear-to-br from-blue-600 to-cyan-500 text-white shadow-md shadow-blue-500/20">
             <span className="text-base font-extrabold tracking-wide">RT</span>
           </div>
@@ -306,9 +334,7 @@ export default function Header() {
                       <p className="text-sm font-semibold text-slate-900">
                         {username}
                       </p>
-                      <p className="text-xs text-slate-500">
-                        demo@rentaltech.vn
-                      </p>
+                      <p className="text-xs text-slate-500">{userEmail}</p>
                     </div>
                     <div className="flex flex-col gap-2 p-4">
                       <button
@@ -347,10 +373,7 @@ export default function Header() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => {
-                        setIsLoggedIn(false);
-                        setIsAccountOpen(false);
-                      }}
+                      onClick={handleSignOut}
                       className="flex w-full items-center justify-center gap-2 bg-rose-50 p-3 text-sm font-semibold text-rose-600 hover:bg-rose-100 transition-colors"
                     >
                       <LogOut className="w-4 h-4" />
@@ -470,17 +493,17 @@ export default function Header() {
                           Danh mục thiết bị và sản phẩm gợi ý
                         </p>
                       </div>
-                      <div className="grid grid-cols-1 gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                        {deviceSections.map((section) => (
+                      <div className="grid grid-cols-1 gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                        {deviceColumns.map((column) => (
                           <div
-                            key={section.category}
-                            className="rounded-2xl bg-slate-50/90 p-4 shadow-sm"
+                            key={column.title}
+                            className="rounded-2xl bg-slate-50/90 p-4 shadow-sm ring-1 ring-slate-200/70"
                           >
                             <p className="mb-3 text-base font-bold text-slate-900">
-                              {section.category}
+                              {column.title}
                             </p>
                             <ul className="space-y-2 text-sm text-slate-600">
-                              {section.products.map((item) => (
+                              {column.items.map((item) => (
                                 <li key={item}>
                                   <Link
                                     to="/products"
@@ -527,16 +550,16 @@ export default function Header() {
             </button>
           </div>
           <div className="space-y-3">
-            {deviceSections.map((section) => (
+            {deviceColumns.map((column) => (
               <div
-                key={section.category}
+                key={column.title}
                 className="rounded-xl bg-slate-50/95 p-3 shadow-sm"
               >
                 <p className="mb-2 text-sm font-semibold text-slate-800">
-                  {section.category}
+                  {column.title}
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {section.products.map((product) => (
+                  {column.items.map((product) => (
                     <Link
                       key={product}
                       to="/products"

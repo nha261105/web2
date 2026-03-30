@@ -20,6 +20,11 @@ export default function SignInPage() {
   const [password, setPassword] = useState("");
   const [isRemember, setIsRemember] = useState(false);
 
+  const getRedirectPathByRole = (roles: string[] | undefined) => {
+    if (roles?.includes("ADMIN")) return "/admin";
+    return "/";
+  };
+
   useEffect(() => {
     async function validateToken() {
       const res = await checkToken();
@@ -32,7 +37,8 @@ export default function SignInPage() {
     const result = await signin(email, password, isRemember);
 
     if (result.success) {
-      navigate("/"); // login thành công → quay về /
+      const roles = result?.data?.roles as string[] | undefined;
+      navigate(getRedirectPathByRole(roles), { replace: true });
       toast.success("Đăng nhập thành công");
     } else {
       alert(result.message); // hiển thị lỗi
