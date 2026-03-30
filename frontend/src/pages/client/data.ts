@@ -21,42 +21,42 @@ export type ProductCardType = "default" | "list" | "cart";
 export const steps = [
   {
     id: "01",
-    title: "Choose Your Gear",
-    desc: "Browse 500+ professional tech products. Filter by category, brand, price, and availability.",
+    title: "Chọn thiết bị phù hợp",
+    desc: "Khám phá hơn 500 thiết bị công nghệ chuyên nghiệp, lọc theo danh mục, thương hiệu, mức giá và trạng thái sẵn hàng.",
   },
   {
     id: "02",
-    title: "Book Your Dates",
-    desc: "Select rental duration and quantity that fit your project timeline.",
+    title: "Đặt lịch thuê linh hoạt",
+    desc: "Chọn thời gian thuê và số lượng thiết bị đúng với tiến độ dự án của bạn.",
   },
   {
     id: "03",
-    title: "Get It Delivered",
-    desc: "Receive your equipment quickly and start building right away.",
+    title: "Nhận thiết bị nhanh chóng",
+    desc: "Nhận hàng đúng hẹn, bắt đầu công việc ngay mà không mất thời gian chờ đợi.",
   },
 ];
 
 export const reviews = [
   {
-    used_id : 1,
+    used_id: 1,
     user_name: "Sarah Chen",
     user_img: "",
     star: 5,
-    desc: "RentalTech saved my wedding shoot! I needed a backup Sony A7 IV last minute, and they delivered same-day. The equipment was immaculate, and the price was incredibly fair",
+    desc: "RentalTech đã cứu buổi chụp cưới của mình. Mình cần gấp Sony A7 IV dự phòng vào phút chót và đội ngũ giao trong ngày. Thiết bị rất mới, đóng gói cẩn thận và mức giá cực kỳ hợp lý.",
   },
   {
-    used_id : 2,
+    used_id: 2,
     user_name: "Marcus Williams",
     user_img: "",
     star: 4,
-    desc: "RentalTech saved my wedding shoot! I needed a backup Sony A7 IV last minute, and they delivered same-day. The equipment was immaculate, and the price was incredibly fair",
+    desc: "Mình thuê combo quay sự kiện và trải nghiệm rất tốt. Thiết bị hoạt động ổn định, nhân viên hỗ trợ kỹ, thủ tục nhận trả nhanh gọn.",
   },
   {
-    user_id : 3,
+    user_id: 3,
     user_name: "Aisha Patel",
     user_img: "",
     star: 5,
-    desc: "RentalTech saved my wedding shoot! I needed a backup Sony A7 IV last minute, and they delivered same-day. The equipment was immaculate, and the price was incredibly fair",
+    desc: "Lần đầu thuê thiết bị ở RentalTech nhưng rất ấn tượng. Tư vấn đúng nhu cầu, giá minh bạch và giao hàng đúng giờ.",
   },
 ];
 export const PRODUCTS: Product[] = [

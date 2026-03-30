@@ -30,10 +30,16 @@ class AuthController extends Controller
             $password = $validated['password'];
             $isRemember = (bool) ($validated['isRemember'] ?? false);
 
-            $user = User::with('roles.permissions')->where('email', $email)->first();
+            $user = User::with('roles.permissions')
+                ->where('email', $email)
+                ->first();
 
             if (!$user || !Hash::check($password, $user->hash_password)) {
-                return ApiResponse::error('Email or password is incorrect', 'INVALID_CREDENTIALS', 401);
+                return ApiResponse::error(
+                    'Email or password is incorrect',
+                    'INVALID_CREDENTIALS',
+                    401,
+                );
             }
 
             $tokenRecord = UserTokens::create([
@@ -46,19 +52,22 @@ class AuthController extends Controller
             ]);
 
             $permissions = $user->roles
-                ->flatMap(fn ($role) => $role->permissions->pluck('name'))
+                ->flatMap(fn($role) => $role->permissions->pluck('name'))
                 ->unique()
                 ->values();
 
-            return ApiResponse::success([
-                'user' => $user,
-                'roles' => $user->roles->pluck('name')->values(),
-                'permissions' => $permissions,
-                'token' => [
-                    'access_token' => $tokenRecord->token,
-                    'expires_at' => $tokenRecord->expires_at,
+            return ApiResponse::success(
+                [
+                    'user' => $user,
+                    'roles' => $user->roles->pluck('name')->values(),
+                    'permissions' => $permissions,
+                    'token' => [
+                        'access_token' => $tokenRecord->token,
+                        'expires_at' => $tokenRecord->expires_at,
+                    ],
                 ],
-            ], 'Sign in successful');
+                'Sign in successful',
+            );
         } catch (Throwable $e) {
             report($e);
 
@@ -80,7 +89,7 @@ class AuthController extends Controller
             'user' => $user,
             'roles' => $user->roles->pluck('name')->values(),
             'permissions' => $user->roles
-                ->flatMap(fn ($role) => $role->permissions->pluck('name'))
+                ->flatMap(fn($role) => $role->permissions->pluck('name'))
                 ->unique()
                 ->values(),
         ]);

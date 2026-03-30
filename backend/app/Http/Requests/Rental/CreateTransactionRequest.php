@@ -16,7 +16,12 @@ class CreateTransactionRequest extends FormRequest
         return [
             'rental_id' => ['required', 'integer', 'exists:rentals,id'],
             'user_id' => ['required', 'integer', 'exists:users,id'],
-            'issue_id' => ['sometimes', 'nullable', 'integer', 'exists:rental_issues,id'],
+            'issue_id' => [
+                'sometimes',
+                'nullable',
+                'integer',
+                'exists:rental_issues,id',
+            ],
             'type' => ['required', 'in:DEPOSIT,PAYMENT,REFUND,FINE'],
             'amount' => ['required', 'numeric', 'min:0'],
             'payment_method' => ['required', 'string', 'max:100'],

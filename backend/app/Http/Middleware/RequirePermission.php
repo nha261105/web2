@@ -9,8 +9,11 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RequirePermission
 {
-    public function handle(Request $request, Closure $next, string ...$permissions): Response
-    {
+    public function handle(
+        Request $request,
+        Closure $next,
+        string ...$permissions,
+    ): Response {
         $user = $request->attributes->get('auth_user');
 
         if (!$user) {

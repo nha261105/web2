@@ -9,8 +9,11 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RequireRole
 {
-    public function handle(Request $request, Closure $next, string ...$roles): Response
-    {
+    public function handle(
+        Request $request,
+        Closure $next,
+        string ...$roles,
+    ): Response {
         $user = $request->attributes->get('auth_user');
 
         if (!$user) {

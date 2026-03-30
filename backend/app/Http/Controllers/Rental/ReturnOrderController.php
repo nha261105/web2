@@ -12,25 +12,32 @@ use Illuminate\Http\JsonResponse;
 
 class ReturnOrderController extends Controller
 {
-    public function __construct(private ReturnOrderService $service)
-    {
-    }
+    public function __construct(private ReturnOrderService $service) {}
 
     public function store(CreateReturnOrderRequest $request): JsonResponse
     {
         $returnOrder = $this->service->create($request->validated());
 
-        return ApiResponse::success([
-            'return_order' => new ReturnOrderResource($returnOrder),
-        ], 'Return order created', 201);
+        return ApiResponse::success(
+            [
+                'return_order' => new ReturnOrderResource($returnOrder),
+            ],
+            'Return order created',
+            201,
+        );
     }
 
-    public function update(UpdateReturnOrderRequest $request, int $id): JsonResponse
-    {
+    public function update(
+        UpdateReturnOrderRequest $request,
+        int $id,
+    ): JsonResponse {
         $returnOrder = $this->service->update($id, $request->validated());
 
-        return ApiResponse::success([
-            'return_order' => new ReturnOrderResource($returnOrder),
-        ], 'Return order updated');
+        return ApiResponse::success(
+            [
+                'return_order' => new ReturnOrderResource($returnOrder),
+            ],
+            'Return order updated',
+        );
     }
 }

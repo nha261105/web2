@@ -8,7 +8,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class UserService
 {
-    public function listUsers(int $perPage = 15): LengthAwarePaginator
+    public function getAllUsers(int $perPage = 15)
     {
         return User::paginate($perPage);
     }
@@ -56,19 +56,6 @@ class UserService
             'status' => $data['status'] ?? 'ACTIVE',
         ]);
     }
-
-    public function updateUser($userId, array $data): User
-    {
-        $user = User::findOrFail($userId);
-        if (isset($data['password'])) {
-            $data['hash_password'] = $data['password'];
-        }
-        $user->update($data);
-        return $user;
-    }
-
-    public function deleteUser(int $id): bool
-    {
-        return User::findOrFail($id)->delete();
-    }
 }
+
+?>

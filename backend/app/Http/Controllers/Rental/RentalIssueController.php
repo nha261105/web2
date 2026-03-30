@@ -12,25 +12,32 @@ use Illuminate\Http\JsonResponse;
 
 class RentalIssueController extends Controller
 {
-    public function __construct(private RentalIssueService $service)
-    {
-    }
+    public function __construct(private RentalIssueService $service) {}
 
     public function store(CreateRentalIssueRequest $request): JsonResponse
     {
         $issue = $this->service->create($request->validated());
 
-        return ApiResponse::success([
-            'rental_issue' => new RentalIssueResource($issue),
-        ], 'Rental issue created', 201);
+        return ApiResponse::success(
+            [
+                'rental_issue' => new RentalIssueResource($issue),
+            ],
+            'Rental issue created',
+            201,
+        );
     }
 
-    public function update(UpdateRentalIssueRequest $request, int $id): JsonResponse
-    {
+    public function update(
+        UpdateRentalIssueRequest $request,
+        int $id,
+    ): JsonResponse {
         $issue = $this->service->update($id, $request->validated());
 
-        return ApiResponse::success([
-            'rental_issue' => new RentalIssueResource($issue),
-        ], 'Rental issue updated');
+        return ApiResponse::success(
+            [
+                'rental_issue' => new RentalIssueResource($issue),
+            ],
+            'Rental issue updated',
+        );
     }
 }

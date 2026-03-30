@@ -1,4 +1,5 @@
-const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+const rawApiBaseUrl =
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
 export const API_BASE_URL = rawApiBaseUrl.replace(/\/+$/, "");
 
@@ -12,6 +13,11 @@ export const API_ENDPOINTS = {
   usersMe: "/api/users/me",
   updateMe: "/api/users/me",
 
+  // Catalog
+  products: "/api/products",
+  categories: "/api/categories",
+  brands: "/api/brands",
+  rentalPolicies: "/api/rental-policies",
 } as const;
 
 export const addressEndpoints = {
