@@ -14,6 +14,54 @@ function getAuthHeader() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+function mapAxiosError(err: unknown) {
+  if (axios.isAxiosError(err)) {
+    const responseData = err.response?.data as
+      | { message?: string; errors?: Record<string, string[] | string> }
+      | undefined;
+
+    const validationErrors = responseData?.errors
+      ? Object.values(responseData.errors)
+          .flatMap((item) => (Array.isArray(item) ? item : [item]))
+          .join("; ")
+      : "";
+
+    return {
+      success: false,
+      error: responseData?.message ?? err.code ?? "REQUEST_FAILED",
+      message:
+        validationErrors ||
+        responseData?.message ||
+        err.message ||
+        "Yeu cau that bai",
+      status: err.response?.status,
+    };
+  }
+
+  const message = err instanceof Error ? err.message : "Exception";
+  return { success: false, error: "Exception", message: "Loi: " + message };
+}
+
+export async function signup(
+  email: string,
+  password: string,
+  fullName: string,
+  phone: string,
+) {
+  try {
+    const response = await axios.post(`${API_BASE_URL}${API_ENDPOINTS.signUp}`, {
+      email,
+      password,
+      full_name: fullName,
+      phone,
+    });
+
+    return response.data;
+  } catch (err: unknown) {
+    return mapAxiosError(err);
+  }
+}
+
 export async function signin(
   email: string,
   password: string,
@@ -31,12 +79,7 @@ export async function signin(
 
     return response.data;
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Exception";
-    return {
-      success: false,
-      error: "Exception",
-      message: "Lỗi: " + message,
-    };
+    return mapAxiosError(err);
   }
 }
 
@@ -50,8 +93,7 @@ export async function signout() {
     localStorage.removeItem("token");
     return response.data;
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Exception";
-    return { success: false, error: "Exception", message: "Lỗi: " + message };
+    return mapAxiosError(err);
   }
 }
 
@@ -62,8 +104,7 @@ export async function getMe() {
     });
     return response.data;
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Exception";
-    return { success: false, error: "Exception", message: "Lỗi: " + message };
+    return mapAxiosError(err);
   }
 }
 
@@ -90,7 +131,6 @@ export async function updateMe(data: {
     );
     return response.data;
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Exception";
-    return { success: false, error: "Exception", message: "Lỗi: " + message };
+    return mapAxiosError(err);
   }
 }

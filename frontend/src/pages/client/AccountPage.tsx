@@ -1,7 +1,8 @@
 import { MyButton } from "@/components/ui/input/my-button";
 import MyNavigateLink from "@/components/ui/my-navigate-link";
+import { getMe, signout } from "@/services/usersService";
 import { LogOut, Package, Settings, User } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ProfilePage from "./Account/ProfilePage";
 import SettingsPage from "./Account/SettingsPage";
@@ -34,6 +35,9 @@ export default function AccountPage() {
   };
 
   const [isLogin, setIsLogin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [userName, setUserName] = useState("Demo User");
+  const [userEmail, setUserEmail] = useState("user@email.com");
   const accountPage = useMemo(
     () => getAccountPageFromTab(tabParam),
     [tabParam],
@@ -45,33 +49,64 @@ export default function AccountPage() {
     { label: "Settings", icon: Settings },
   ];
 
+  useEffect(() => {
+    const loadMe = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setIsLogin(false);
+        setIsLoading(false);
+        return;
+      }
+
+      const result = await getMe();
+      if (result?.success && result?.data?.user) {
+        setIsLogin(true);
+        setUserName(result.data.user.full_name || "Demo User");
+        setUserEmail(result.data.user.email || "user@email.com");
+      } else {
+        localStorage.removeItem("token");
+        setIsLogin(false);
+      }
+
+      setIsLoading(false);
+    };
+
+    loadMe();
+  }, []);
+
+  const handleSignOut = async () => {
+    await signout();
+    localStorage.removeItem("token");
+    setIsLogin(false);
+    navigate("/", { replace: true });
+  };
+
   return (
     <div className="w-full bg-gray-50 flex flex-col items-center px-6 py-6">
       <div className="w-full max-w-250 flex flex-col gap-5">
         <MyNavigateLink
           items={[{ text: "Home", link: "/" }, { text: "My Account" }]}
         />
-        {!isLogin && (
+        {isLoading && (
+          <div className="min-h-[50vh] flex flex-col justify-center items-center gap-3">
+            <div className="text-base font-semibold text-gray-500">
+              Đang tải thông tin tài khoản...
+            </div>
+          </div>
+        )}
+        {!isLoading && !isLogin && (
           <div className="min-h-[50vh] flex flex-col justify-center items-center gap-3">
             <div className="text-base font-semibold text-gray-500">
               Vui lòng đăng nhập tài khoản.
             </div>
-            {/* <MyButton
+            <MyButton
               text="Đăng nhập"
               classname="w-fit px-3"
               src="/signin"
-              onClick={() => {}}
-          /> */}
-            <MyButton
-              text="Test"
-              classname="w-fit px-3"
-              onClick={() => {
-                setIsLogin(true);
-              }}
             />
           </div>
         )}
-        {isLogin && (
+        {!isLoading && isLogin && (
           <div className="flex flex-row w-full gap-3">
             {/* Sidebar */}
             <aside className="w-56 shrink-0 hidden sm:block">
@@ -81,10 +116,8 @@ export default function AccountPage() {
                   <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-3">
                     <User className="w-6 h-6 text-white" />
                   </div>
-                  <p className="text-white font-semibold text-sm">Demo User</p>
-                  <p className="text-blue-200 text-xs truncate">
-                    user@email.com
-                  </p>
+                  <p className="text-white font-semibold text-sm">{userName}</p>
+                  <p className="text-blue-200 text-xs truncate">{userEmail}</p>
                 </div>
 
                 {/* Nav */}
@@ -107,10 +140,7 @@ export default function AccountPage() {
                   ))}
 
                   <button
-                    onClick={() => {
-                      setIsLogin(false);
-                      navigate("/");
-                    }}
+                    onClick={handleSignOut}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 w-full transition-colors mt-1 cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" />
