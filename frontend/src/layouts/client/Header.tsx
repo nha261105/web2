@@ -282,8 +282,7 @@ export default function Header() {
                     <button
                       type="button"
                       onClick={() => {
-                        setIsLoggedIn(true);
-                        setUsername("Người dùng demo");
+                        navigator("/signin");
                         setIsAccountOpen(false);
                       }}
                       className="rounded-2xl bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
@@ -293,8 +292,7 @@ export default function Header() {
                     <button
                       type="button"
                       onClick={() => {
-                        setIsLoggedIn(true);
-                        setUsername("Người dùng demo");
+                        navigator("/signup");
                         setIsAccountOpen(false);
                       }}
                       className="rounded-2xl bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
