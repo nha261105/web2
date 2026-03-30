@@ -33,6 +33,8 @@ export const ProductsCard = ({
 }: ProductCardProps) => {
   const imgRef = useRef<HTMLImageElement | null>(null);
   const thumbnail = product.image;
+  const secondaryThumbnail =
+    product.gallery?.find((image) => image && image !== thumbnail) ?? null;
 
   const [isFav, setIsFav] = useState(false);
   const badgeLabel =
@@ -67,7 +69,9 @@ export const ProductsCard = ({
           <img
             ref={imgRef}
             src={thumbnail}
-            alt=""
+            alt={product.title}
+            loading="lazy"
+            decoding="async"
             className="h-28 rounded-lg w-30 object-cover"
           />
           <div className="flex flex-col flex-1">
@@ -118,7 +122,9 @@ export const ProductsCard = ({
       </div>
     );
   }
-  const cardContent = (
+  const detailPath = `/products/${product.id}`;
+
+  const cardInner = (
     <div
       className={
         isList
@@ -146,19 +152,40 @@ export const ProductsCard = ({
             : "relative aspect-square w-full overflow-hidden bg-gray-100"
         }
       >
-        <img
-          ref={imgRef}
-          src={thumbnail}
-          alt={product.title}
+        <Link
+          to={detailPath}
           className={
             isList
-              ? "w-full h-full object-cover"
-              : "w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+              ? "absolute inset-0 block"
+              : "absolute inset-0 block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
           }
-        />
+          aria-label={`Xem chi tiết ${product.title}`}
+        >
+          <img
+            ref={imgRef}
+            src={thumbnail}
+            alt={product.title}
+            loading="lazy"
+            decoding="async"
+            className={
+              isList
+                ? "w-full h-full object-cover"
+                : "w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+            }
+          />
+          {!isCart && secondaryThumbnail ? (
+            <img
+              src={secondaryThumbnail}
+              alt={`${product.title} - góc khác`}
+              loading="lazy"
+              decoding="async"
+              className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+            />
+          ) : null}
+        </Link>
         {badgeLabel && (
           <span
-            className={`absolute top-3 left-3 px-3 py-1 text-[16px] font-semibold text-white rounded-lg shadow ${badgeClass}`}
+            className={`pointer-events-none absolute top-3 left-3 z-1 px-3 py-1 text-[16px] font-semibold text-white rounded-lg shadow ${badgeClass}`}
           >
             {badgeLabel}
           </span>
@@ -166,13 +193,9 @@ export const ProductsCard = ({
 
         <button
           type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            setIsFav((v) => !v);
-          }}
-          className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 shadow flex items-center justify-center opacity-0 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
-          aria-label="Add to wishlist"
+          onClick={() => setIsFav((v) => !v)}
+          className="absolute top-3 right-3 z-2 w-9 h-9 rounded-full bg-white/90 shadow flex items-center justify-center opacity-0 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
+          aria-label="Thêm vào danh sách yêu thích"
         >
           <Heart
             size={18}
@@ -183,23 +206,30 @@ export const ProductsCard = ({
       <div
         className={
           isList
-            ? "flex-1 flex flex-col gap-2"
-            : "flex flex-col gap-3 px-2 py-3"
+            ? "flex-1 flex flex-col gap-2 min-w-0"
+            : "flex flex-col gap-3 px-2 py-3 flex-1"
         }
       >
-        <p
-          className={
-            isList
-              ? "font-bold text-lg md:text-xl text-gray-900"
-              : "font-bold text-md text-gray-900"
-          }
+        <Link
+          to={detailPath}
+          className="text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-md"
         >
-          {product.title}
-        </p>
-        {!isList && (
-          <p className="font-sans text-gray-700 text-[14px]">
-            {product.category}
+          <p
+            className={
+              isList
+                ? "font-bold text-lg md:text-xl text-gray-900 hover:text-blue-700"
+                : "font-bold text-md text-gray-900 hover:text-blue-700"
+            }
+          >
+            {product.title}
           </p>
+        </Link>
+        {!isList && (
+          <Link to={detailPath} className="text-left">
+            <p className="font-sans text-gray-700 text-[14px] hover:text-blue-700">
+              {product.category}
+            </p>
+          </Link>
         )}
 
         {isList ? (
@@ -213,17 +243,22 @@ export const ProductsCard = ({
           </>
         ) : (
           variants === "default" && (
-            <p className="font-sans text-gray-700 text-xs line-clamp-3">
-              {product.description}
-            </p>
+            <Link to={detailPath} className="text-left">
+              <p className="font-sans text-gray-700 text-xs line-clamp-3 hover:text-blue-700">
+                {product.description}
+              </p>
+            </Link>
           )
         )}
 
-        <div className="flex items-center gap-1">
+        <Link
+          to={detailPath}
+          className="flex items-center gap-1 text-left w-fit"
+        >
           <Star size={15} />
           <p className="text-xs text-gray-700">{product.rating}</p>
           <p className="text-xs text-gray-700">({product.reviews})</p>
-        </div>
+        </Link>
 
         <div
           className={
@@ -232,7 +267,7 @@ export const ProductsCard = ({
               : "flex flex-row gap-2 items-center justify-between"
           }
         >
-          <div className="flex items-baseline gap-2">
+          <Link to={detailPath} className="flex items-baseline gap-2">
             <p
               className={
                 isList ? "font-extrabold text-2xl" : "font-bold text-2xl"
@@ -245,14 +280,11 @@ export const ProductsCard = ({
                 {formatVND(product.price)}
               </p>
             )}
-          </div>
+          </Link>
 
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              onAddToCart?.();
-            }}
+            type="button"
+            onClick={() => onAddToCart?.()}
             disabled={!onAddToCart || product.available === 0}
             className={
               isList
@@ -263,7 +295,7 @@ export const ProductsCard = ({
                   }`
                 : "p-2 rounded-full hover:bg-gray-100 transition-colors"
             }
-            aria-label="Add to cart"
+            aria-label="Thêm vào giỏ hàng"
           >
             {isList && (
               <div className="flex flex-row gap-3">
@@ -286,15 +318,12 @@ export const ProductsCard = ({
               )}
             </div>
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                onAddToCart?.();
-              }}
+              type="button"
+              onClick={() => onAddToCart?.()}
               className={`w-full mt-2 px-4 py-2 rounded-lg text-black font-semibold ${
                 product.available > 0 && onAddToCart
-                  ? "bg-white-600 hover:bg-gray=100 cursor-pointer"
-                  : "bg-white-600 cursor-not-allowed opacity-50"
+                  ? "bg-slate-100 hover:bg-slate-200 cursor-pointer"
+                  : "bg-slate-100 cursor-not-allowed opacity-50"
               }`}
               disabled={!onAddToCart || product.available === 0}
             >
@@ -310,11 +339,8 @@ export const ProductsCard = ({
   );
 
   return (
-    <Link
-      to={`/products/${product.id}`}
-      className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-2xl"
-    >
-      {cardContent}
-    </Link>
+    <div className="block rounded-2xl focus-within:ring-2 focus-within:ring-blue-500/40">
+      {cardInner}
+    </div>
   );
 };

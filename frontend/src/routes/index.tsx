@@ -10,6 +10,7 @@ import AdminDashboard from "../pages/admin/AdminDashboard";
 import CartPage from "@/pages/client/CartPage";
 import CheckoutPage from "@/pages/client/CheckoutPage";
 import ProductDetailPage from "@/pages/client/ProductDetailPage";
+import ProductsPage from "@/pages/client/ProductsPage";
 import SignInPage from "@/pages/client/SignInSignOut/SigInPage";
 import SignUpPage from "@/pages/client/SignInSignOut/SignUpPage";
 import AdminOrders from "@/pages/admin/AdminOrders";
@@ -26,6 +27,7 @@ export const AppRoutes = () => {
       {/* Route cho client */}
       <Route element={<ClientLayout />}>
         <Route path="/" element={<HomePage />} />
+        <Route path="/products" element={<ProductsPage />} />
         <Route path="/products/:id" element={<ProductDetailPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />

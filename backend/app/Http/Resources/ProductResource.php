@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\ImageStorage\SupabaseStorage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 class ProductResource extends JsonResource
@@ -28,7 +29,14 @@ class ProductResource extends JsonResource
             'brand' => new BrandResource($this->whenLoaded('brand')),
             'images' => $this->whenLoaded(
                 'images',
-                fn() => $this->images->pluck('image_url')->values(),
+                function () {
+                    $storage = app(SupabaseStorage::class);
+
+                    return $this->images
+                        ->pluck('image_url')
+                        ->map(fn($url) => $storage->toAccessibleUrl((string) $url, 86400))
+                        ->values();
+                },
                 [],
             ),
             'created_at' => $this->created_at,

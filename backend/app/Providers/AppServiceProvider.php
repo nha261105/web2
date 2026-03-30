@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use App\Models\Product;
+use App\Jobs\PopulateProductReferenceImages;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -18,6 +20,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Product::created(function ($product) {
+            PopulateProductReferenceImages::dispatch($product);
+        });
     }
 }
