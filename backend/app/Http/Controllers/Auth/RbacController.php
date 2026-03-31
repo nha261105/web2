@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -13,31 +14,20 @@ class RbacController extends Controller
 {
     public function roles(): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'data' => Role::query()->orderBy('id')->get(),
-        ]);
+        $roles = Role::query()->orderBy('id')->get();
+        return ApiResponse::success($roles->toArray());
     }
 
     public function permissions(): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'data' => Permission::query()->orderBy('id')->get(),
-        ]);
+        $permissions = Permission::query()->orderBy('id')->get();
+        return ApiResponse::success($permissions->toArray());
     }
 
     public function userRoles(int $id): JsonResponse
     {
         $user = User::with('roles')->findOrFail($id);
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'user_id' => $user->id,
-                'roles' => $user->roles,
-            ],
-        ]);
+        return ApiResponse::success($user->roles->toArray());
     }
 
     public function assignRoleToUser(Request $request, int $id): JsonResponse
@@ -49,10 +39,7 @@ class RbacController extends Controller
         $user = User::findOrFail($id);
         $user->roles()->syncWithoutDetaching([$validated['role_id']]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Gan role cho user thanh cong',
-        ]);
+        return ApiResponse::success([], 'Role assigned successfully');
     }
 
     public function removeRoleFromUser(int $id, int $roleId): JsonResponse
@@ -60,10 +47,7 @@ class RbacController extends Controller
         $user = User::findOrFail($id);
         $user->roles()->detach([$roleId]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Xoa role khoi user thanh cong',
-        ]);
+        return ApiResponse::success([], 'Role removed successfully');
     }
 
     public function syncRolePermissions(Request $request, int $id): JsonResponse
@@ -76,9 +60,6 @@ class RbacController extends Controller
         $role = Role::findOrFail($id);
         $role->permissions()->sync($validated['permission_ids']);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Cap nhat permission cho role thanh cong',
-        ]);
+        return ApiResponse::success([], 'Permissions updated successfully');
     }
 }
