@@ -11,19 +11,42 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { PRODUCTS } from "./data";
+import type { Product } from "./data";
+import { getProductById } from "@/services/catalogService";
 
 export default function ProductDetailPage() {
   const PRESET_DURATIONS = [1, 3, 7, 14];
   const { id } = useParams();
 
-  const product = useMemo(() => PRODUCTS.find((item) => item.id === id), [id]);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | undefined>(
     undefined,
   );
   const [rentalDays, setRentalDays] = useState(1);
   const [customDays, setCustomDays] = useState(1);
   const [quantity, setQuantity] = useState(1);
+
+  useEffect(() => {
+    async function loadProduct() {
+      if (!id) {
+        setProduct(null);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const item = await getProductById(id);
+        setProduct(item);
+      } catch {
+        setProduct(null);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    void loadProduct();
+  }, [id]);
 
   const images = useMemo(() => {
     if (!product) return [] as string[];
@@ -44,7 +67,17 @@ export default function ProductDetailPage() {
       currency: "VND",
     }).format(value);
 
-  const totalPrice = product.price * rentalDays * quantity;
+  const totalPrice = (product?.price ?? 0) * rentalDays * quantity;
+
+  if (isLoading) {
+    return (
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <p className="text-2xl font-bold text-slate-900">
+          Dang tai san pham...
+        </p>
+      </section>
+    );
+  }
 
   if (!product) {
     return (
@@ -110,16 +143,20 @@ export default function ProductDetailPage() {
             <p className="mb-3 text-lg font-bold text-slate-900">
               Thông số kỹ thuật
             </p>
-            <div className="overflow-hidden rounded-2xl border border-slate-200">
-              {Object.entries(product.specs).map(([label, value]) => (
-                <div
-                  key={label}
-                  className="grid grid-cols-2 border-b border-slate-200 px-4 py-3 text-sm last:border-b-0"
-                >
-                  <p className="font-semibold text-slate-700">{label}</p>
-                  <p className="text-slate-600">{value}</p>
-                </div>
-              ))}
+            <div className="rounded-2xl bg-slate-50/70 p-4 ring-1 ring-slate-200/50">
+              <dl className="space-y-0">
+                {Object.entries(product.specs).map(([label, value], idx, arr) => (
+                  <div key={label}>
+                    <div className="grid grid-cols-2 gap-2 px-1 py-3 text-sm sm:gap-4 sm:px-2">
+                      <dt className="font-semibold text-slate-700">{label}</dt>
+                      <dd className="text-slate-600">{value}</dd>
+                    </div>
+                    {idx < arr.length - 1 ? (
+                      <div className="h-px w-full bg-linear-to-r from-transparent via-slate-300/70 to-transparent" />
+                    ) : null}
+                  </div>
+                ))}
+              </dl>
             </div>
           </div>
         </div>

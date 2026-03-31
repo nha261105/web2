@@ -6,8 +6,59 @@ function getAuthHeader() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-// ─── Auth ─────────────────────────────────────────────────────────────────────
-export async function signin(email: string, password: string, isRemember: boolean) {
+function mapAxiosError(err: unknown) {
+  if (axios.isAxiosError(err)) {
+    const responseData = err.response?.data as
+      | { message?: string; code?: string; errors?: Record<string, string[] | string> }
+      | undefined;
+
+    const validationErrors = responseData?.errors
+      ? Object.values(responseData.errors)
+          .flatMap((item) => (Array.isArray(item) ? item : [item]))
+          .join("; ")
+      : "";
+
+    return {
+      success: false,
+      code: responseData?.code ?? err.code ?? "REQUEST_FAILED",
+      message:
+        validationErrors ||
+        responseData?.message ||
+        err.message ||
+        "Yeu cau that bai",
+      status: err.response?.status,
+    };
+  }
+
+  const message = err instanceof Error ? err.message : "Exception";
+  return { success: false, code: "EXCEPTION", message: "Loi: " + message };
+}
+
+export async function signup(
+  email: string,
+  password: string,
+  fullName: string,
+  phone: string,
+) {
+  try {
+    const response = await axios.post(`${API_BASE_URL}${API_ENDPOINTS.signUp}`, {
+      email,
+      password,
+      full_name: fullName,
+      phone,
+    });
+
+    return response.data;
+  } catch (err: unknown) {
+    return mapAxiosError(err);
+  }
+}
+
+export async function signin(
+  email: string,
+  password: string,
+  isRemember: boolean,
+) {
   try {
     const response = await axios.post(
       `${API_BASE_URL}${API_ENDPOINTS.signIn}`,
@@ -21,12 +72,12 @@ export async function signin(email: string, password: string, isRemember: boolea
     }
     return response.data;
   } catch (err: unknown) {
-    const e = err as { response?: { data?: { message?: string; code?: string; success?: boolean } } };
-    // Trả về chi tiết lỗi từ backend
+    // Sử dụng mapAxiosError nhưng vẫn giữ cấu trúc có code
+    const mappedError = mapAxiosError(err);
     return {
       success: false,
-      message: e.response?.data?.message || "Đăng nhập thất bại",
-      code: e.response?.data?.code || "ERROR",
+      message: mappedError.message,
+      code: mappedError.code,
     };
   }
 }
@@ -42,8 +93,7 @@ export async function signout() {
     localStorage.removeItem("auth_user");
     return response.data;
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Exception";
-    return { success: false, error: "Exception", message: "Lỗi: " + message };
+    return mapAxiosError(err);
   }
 }
 
@@ -56,8 +106,7 @@ export async function getMe() {
     );
     return response.data;
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Exception";
-    return { success: false, error: "Exception", message: "Lỗi: " + message };
+    return mapAxiosError(err);
   }
 }
 
@@ -74,8 +123,7 @@ export async function updateMe(data: {
     );
     return response.data;
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Exception";
-    return { success: false, error: "Exception", message: "Lỗi: " + message };
+    return mapAxiosError(err);
   }
 }
 
@@ -88,8 +136,7 @@ export async function getAllUsers(page = 1, perPage = 15) {
     );
     return response.data;
   } catch (err: unknown) {
-    const e = err as { response?: { data?: { message?: string } } };
-    return { success: false, message: e.response?.data?.message || "Failed to load users" };
+    return mapAxiosError(err);
   }
 }
 
@@ -107,13 +154,7 @@ export async function createUser(data: {
     );
     return response.data;
   } catch (err: unknown) {
-    const e = err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } };
-    const errors = e.response?.data?.errors;
-    const firstError = errors ? Object.values(errors).flat()[0] : null;
-    return {
-      success: false,
-      message: firstError || e.response?.data?.message || "Failed to create user",
-    };
+    return mapAxiosError(err);
   }
 }
 
@@ -126,8 +167,7 @@ export async function updateUserStatus(userId: number, status: "ACTIVE" | "INACT
     );
     return response.data;
   } catch (err: unknown) {
-    const e = err as { response?: { data?: { message?: string } } };
-    return { success: false, message: e.response?.data?.message || "Failed to update status" };
+    return mapAxiosError(err);
   }
 }
 
@@ -139,8 +179,7 @@ export async function deleteUser(userId: number) {
     );
     return response.data;
   } catch (err: unknown) {
-    const e = err as { response?: { data?: { message?: string } } };
-    return { success: false, message: e.response?.data?.message || "Failed to delete user" };
+    return mapAxiosError(err);
   }
 }
 
@@ -153,8 +192,7 @@ export async function getUserRoles(userId: number) {
     );
     return response.data;
   } catch (err: unknown) {
-    const e = err as { response?: { data?: { message?: string } } };
-    return { success: false, message: e.response?.data?.message || "Failed to load roles" };
+    return mapAxiosError(err);
   }
 }
 
@@ -167,8 +205,7 @@ export async function assignRole(userId: number, roleId: number) {
     );
     return response.data;
   } catch (err: unknown) {
-    const e = err as { response?: { data?: { message?: string } } };
-    return { success: false, message: e.response?.data?.message || "Failed to assign role" };
+    return mapAxiosError(err);
   }
 }
 
@@ -180,8 +217,7 @@ export async function removeRole(userId: number, roleId: number) {
     );
     return response.data;
   } catch (err: unknown) {
-    const e = err as { response?: { data?: { message?: string } } };
-    return { success: false, message: e.response?.data?.message || "Failed to remove role" };
+    return mapAxiosError(err);
   }
 }
 
@@ -193,11 +229,6 @@ export async function getAllRoles() {
     );
     return response.data;
   } catch (err: unknown) {
-    const e = err as { response?: { data?: { message?: string } } };
-    console.error('Error fetching roles:', e.response?.data);
-    return {
-      success: false,
-      message: e.response?.data?.message || "Failed to load roles"
-    };
+    return mapAxiosError(err);
   }
 }

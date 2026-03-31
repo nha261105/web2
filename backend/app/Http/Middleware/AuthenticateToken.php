@@ -28,7 +28,9 @@ class AuthenticateToken
         }
 
         if (Carbon::now()->greaterThan($token->expires_at)) {
-            return ApiResponse::unauthorized('Token expired, please sign in again');
+            return ApiResponse::unauthorized(
+                'Token expired, please sign in again',
+            );
         }
 
         if ($token->user->status !== 'ACTIVE') {

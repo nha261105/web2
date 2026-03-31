@@ -14,9 +14,9 @@ class UserTokens extends Model
 
     /**
      * Kiểm tra liệu token có còn hạn không
-     * 
+     *
      * @return bool true nếu còn hạn, false ngược lại
-    */
+     */
     public function isValid(): bool
     {
         return Carbon::now()->lessThanOrEqualTo($this->expires_at);
@@ -24,9 +24,9 @@ class UserTokens extends Model
 
     /**
      * Gia hạn thêm cho token 30 phút
-     * 
+     *
      * @return bool true nếu còn hạn, false ngược lại
-    */
+     */
     public function refresh(int $minutes = 30)
     {
         $this->expires_at = Carbon::now()->addMinutes($minutes);
@@ -35,8 +35,8 @@ class UserTokens extends Model
 
     /**
      * Liên kết với Users
-     * 
-     * */ 
+     *
+     * */
     public function user()
     {
         return $this->belongsTo(User::class);

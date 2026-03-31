@@ -8,10 +8,7 @@ class ReturnOrder extends Model
 {
     protected $table = 'return_orders';
 
-    protected $fillable = [
-        'rental_id',
-        'return_date',
-    ];
+    protected $fillable = ['rental_id', 'return_date'];
 
     public $timestamps = false;
 }

@@ -1,7 +1,6 @@
 <?php
 
 return [
-
     /*
     |--------------------------------------------------------------------------
     | Third Party Services
@@ -13,6 +12,16 @@ return [
     | a conventional file to locate the various service credentials.
     |
     */
+    'supabase' => [
+        'url' => env('SUPABASE_URL'),
+        'key' => env('SUPABASE_KEY', env('SUPABASE_SECRET_ACCESS_KEY')),
+        'bucket' => env('SUPABASE_BUCKET', 'images'),
+
+        'driver' => 's3',
+        'secret' => env('SUPABASE_SECRET_ACCESS_KEY'),
+        'region' => env('SUPABASE_REGION', 'ap-southeast-1'),
+        'visibility' => 'public',
+    ],
 
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
@@ -34,5 +43,4 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
-
 ];

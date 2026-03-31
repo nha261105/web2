@@ -9,14 +9,17 @@ class Permission extends Model
 {
     protected $table = 'permissions';
 
-    protected $fillable = [
-        'name',
-    ];
+    protected $fillable = ['name'];
 
     public $timestamps = false;
 
     public function roles(): BelongsToMany
     {
-        return $this->belongsToMany(Role::class, 'role_has_permission', 'permission_id', 'role_id');
+        return $this->belongsToMany(
+            Role::class,
+            'role_has_permission',
+            'permission_id',
+            'role_id',
+        );
     }
 }

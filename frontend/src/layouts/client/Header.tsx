@@ -1,38 +1,80 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { getProducts } from "@/services/catalogService";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { getMe, signout } from "@/services/usersService";
 import {
   Search, Heart, User, ShoppingCart, X,
   ChevronDown, Settings, Package, LogOut,
   LayoutDashboard,
 } from "lucide-react";
-import { signout } from "@/services/usersService";
 
-const MEGA_MENU_SECTIONS = [
+type DeviceMenuColumn = {
+  title: string;
+  keywords: string[];
+  fallbackItems: string[];
+  items: string[];
+};
+
+const DEFAULT_DEVICE_COLUMNS: DeviceMenuColumn[] = [
   {
-    title: "LAPTOP VĂN PHÒNG",
-    items: ["MacBook Air M2", "MacBook Pro M3", "Dell XPS 13", "HP Spectre x360", "Lenovo ThinkPad X1", "ASUS Zenbook 14", "Acer Swift 5", "Surface Laptop 6", "LG Gram 16"],
+    title: "Máy ảnh",
+    keywords: ["may anh", "camera", "canon", "sony", "nikon", "fujifilm"],
+    fallbackItems: [
+      "Sony A7 IV",
+      "Canon EOS R6",
+      "Nikon Z6 II",
+      "Fujifilm X-T5",
+    ],
+    items: [],
   },
   {
-    title: "LAPTOP GAMING",
-    items: ["ROG Zephyrus G14", "ROG Strix G16", "MSI Katana 15", "Acer Predator Helios", "Lenovo Legion 5", "HP Omen 16", "Alienware m16", "Gigabyte Aorus 15", "Dell G15"],
+    title: "Flycam",
+    keywords: ["flycam", "drone", "dji", "mavic", "mini"],
+    fallbackItems: ["DJI Mavic 3", "DJI Air 3", "DJI Mini 4 Pro", "DJI Avata 2"],
+    items: [],
   },
   {
-    title: "MÁY ẢNH & LEN",
-    items: ["Sony A7 IV", "Sony FX30", "Canon EOS R6", "Canon R5", "Nikon Z6 II", "Fujifilm X-T5", "24-70mm f/2.8", "70-200mm f/2.8", "16-35mm f/4"],
+    title: "Phụ kiện quay",
+    keywords: ["gimbal", "tripod", "lens", "ong kinh", "filter", "rig"],
+    fallbackItems: ["DJI RS 4", "DJI RS 4 Pro", "Sony FE 24-70", "Filter ND"],
+    items: [],
   },
   {
-    title: "DRONE & GIMBAL",
-    items: ["DJI Mini 4 Pro", "DJI Air 3", "DJI Mavic 3", "DJI Avata 2", "DJI RS 4", "DJI RS 4 Pro", "Zhiyun Crane 4", "Insta360 Flow Pro", "Hohem iSteady M7"],
-  },
-  {
-    title: "AUDIO & STREAMING",
-    items: ["Rode Wireless Pro", "DJI Mic 2", "Shure SM7B", "Elgato Wave 3", "Elgato Facecam Pro", "ATEM Mini Pro", "GoXLR Mini", "Stream Deck MK.2", "Neewer Key Light"],
-  },
-  {
-    title: "MÁY CHIẾU & MÀN HÌNH",
-    items: ["BenQ TK700", "Epson EH-TW7000", "ViewSonic X100", "Samsung Smart Monitor", "LG UltraFine 32", "Dell 4K 27", "Màn chiếu 120 inch", "Giá treo máy chiếu", "Bộ chuyển HDMI"],
+    title: "Âm thanh & livestream",
+    keywords: ["audio", "micro", "mic", "livestream", "stream", "rode"],
+    fallbackItems: ["Rode Wireless Pro", "DJI Mic 2", "Shure SM7B", "ATEM Mini Pro"],
+    items: [],
   },
 ];
+
+const normalizeText = (text: string) =>
+  text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+const buildDeviceColumns = (
+  products: Array<{ title: string; category: string }>,
+): DeviceMenuColumn[] => {
+  return DEFAULT_DEVICE_COLUMNS.map((column) => {
+    const matched = products
+      .filter((product) => {
+        const haystack = normalizeText(`${product.title} ${product.category}`);
+        return column.keywords.some((keyword) =>
+          haystack.includes(normalizeText(keyword)),
+        );
+      })
+      .map((product) => product.title);
+
+    const items = Array.from(new Set(matched)).slice(0, 8);
+
+    return {
+      ...column,
+      items: items.length ? items : column.fallbackItems,
+    };
+  });
+};
 
 interface AuthUser {
   id: number;
@@ -40,7 +82,6 @@ interface AuthUser {
   email: string;
   phone: string;
   roles?: Array<{ id: number; name: string }>;
-
 }
 
 export default function Header() {
@@ -51,12 +92,15 @@ export default function Header() {
   const [isMegaOpen, setIsMegaOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [deviceColumns, setDeviceColumns] = useState<DeviceMenuColumn[]>(
+    DEFAULT_DEVICE_COLUMNS,
+  );
 
   // Refs
   const megaAreaRef = useRef<HTMLLIElement | null>(null);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
 
-  // ─── AUTH STATE ────────────────────────────────
+  // ─── AUTH STATE (từ feature của bạn) ───────────────────────────────────────
   const [authUser, setAuthUser] = useState<AuthUser | null>(() => {
     try {
       const saved = localStorage.getItem("auth_user");
@@ -66,6 +110,21 @@ export default function Header() {
     }
   });
 
+  // ─── Load device sections (từ dev) ─────────────────────────────────────────
+  useEffect(() => {
+    async function loadDeviceSections() {
+      try {
+        const productItems = await getProducts();
+        setDeviceColumns(buildDeviceColumns(productItems));
+      } catch {
+        setDeviceColumns(buildDeviceColumns([]));
+      }
+    }
+
+    void loadDeviceSections();
+  }, []);
+
+  // ─── Auth storage listener (từ feature) ────────────────────────────────────
   useEffect(() => {
     const handleStorageChange = () => {
       try {
@@ -84,9 +143,9 @@ export default function Header() {
     };
   }, []);
 
-  const avatarUrl = authUser
-    ? `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser.full_name)}&background=2563eb&color=ffffff&size=128`
-    : "";
+  const handleBackToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const clearSearch = () => setKeyword("");
 
@@ -121,37 +180,54 @@ export default function Header() {
   };
 
   const handleAccountClick = () => {
-    if (!authUser) {
-      setIsAccountOpen((p) => !p);
-    } else {
-      setIsAccountOpen((p) => !p);
-    }
+    setIsAccountOpen((p) => !p);
   };
 
+  const avatarUrl = authUser
+    ? `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser.full_name)}&background=2563eb&color=ffffff&size=128`
+    : "";
+
   return (
-    <header className="bg-white border-b border-slate-200 text-slate-900 sticky top-0 z-50 shadow-sm">
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 text-slate-900 shadow-sm backdrop-blur supports-backdrop-filter:bg-white/85">
       {/* TOP BAR */}
-      <div className="flex items-center justify-between px-4 py-3 gap-4 h-20 max-w-7xl mx-auto sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-20 max-w-7xl items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
         {/* LOGO */}
-        <Link to="/" className="flex items-center gap-3 shrink-0">
-          <div className="h-11 w-11 rounded-xl bg-blue-600 text-white font-bold text-lg flex items-center justify-center">
-            RT
+        <Link
+          to="/"
+          onClick={handleBackToTop}
+          className="flex items-center gap-3 shrink-0 z-10"
+        >
+          <div className="grid h-11 w-11 place-items-center rounded-xl bg-linear-to-br from-blue-600 to-cyan-500 text-white shadow-md shadow-blue-500/20">
+            <span className="text-base font-extrabold tracking-wide">RT</span>
           </div>
-          <span className="text-2xl font-bold tracking-tight text-slate-900 hidden sm:block">
-            RentalTech
-          </span>
+          <div className="hidden sm:block">
+            <p className="text-2xl font-bold leading-none tracking-tight text-slate-900">
+              RentalTech
+            </p>
+            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+              Thuê nhanh, dùng chuẩn
+            </p>
+          </div>
         </Link>
 
         {/* Desktop search */}
-        <div className="hidden sm:block flex-1 max-w-3xl">
-          <form onSubmit={(e) => e.preventDefault()} role="search">
-            <div className="relative flex-1 max-w-xl">
-              <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+        <div className="hidden md:flex flex-1 justify-center min-w-0 px-2">
+          <form
+            className="group w-full max-w-2xl"
+            onSubmit={(event) => event.preventDefault()}
+            role="search"
+            aria-label="Tìm kiếm sản phẩm"
+          >
+            <div className="relative w-full">
+              <Search
+                size={20}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+              />
               <input
                 value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                placeholder="Tìm thiết bị cần thuê (laptop, camera, drone...)"
-                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-10 text-[15px] text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
+                onChange={(event) => setKeyword(event.target.value)}
+                placeholder="Tìm thiết bị cần thuê (laptop, máy ảnh, drone...)"
+                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-12 text-[15px] text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
               />
               {keyword.length > 0 && (
                 <button type="button" onClick={clearSearch}
@@ -164,17 +240,34 @@ export default function Header() {
         </div>
 
         {/* Mobile search icon */}
-        <div className="flex items-center gap-2 sm:hidden">
-          <button type="button" onClick={() => setIsMobileSearchOpen(true)}
-            className="h-10 w-10 rounded-full grid place-items-center text-slate-600 hover:text-blue-600 hover:bg-slate-100 transition-colors">
+        <div className="flex items-center gap-2 md:hidden">
+          <button
+            type="button"
+            onClick={() => setIsMobileSearchOpen(true)}
+            className="h-10 w-10 rounded-full grid place-items-center text-slate-600 hover:text-blue-600 hover:bg-slate-100 transition-colors"
+            aria-label="Tìm kiếm"
+          >
             <Search size={20} />
           </button>
+          {keyword.length > 0 && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="h-10 w-10 rounded-full grid place-items-center bg-slate-100 text-slate-500 hover:text-slate-700 hover:bg-slate-200 transition-colors"
+              aria-label="Xóa nội dung tìm kiếm"
+            >
+              <X size={16} />
+            </button>
+          )}
         </div>
 
         {/* Right icons */}
-        <div className="flex gap-2 sm:gap-3 shrink-0">
-          <button type="button"
-            className="h-10 w-10 rounded-full grid place-items-center text-slate-600 hover:text-rose-500 hover:bg-slate-100 transition-colors">
+        <div className="flex gap-2 sm:gap-3 shrink-0 ml-auto z-10">
+          <button
+            type="button"
+            className="h-10 w-10 rounded-full grid place-items-center text-slate-600 hover:text-rose-500 hover:bg-slate-100 transition-colors"
+            aria-label="Danh sách yêu thích"
+          >
             <Heart size={24} />
           </button>
 
@@ -182,7 +275,7 @@ export default function Header() {
           <div ref={accountMenuRef} className="relative">
             <button
               type="button"
-              onClick={() => setIsAccountOpen(!isAccountOpen)}
+              onClick={handleAccountClick}
               onBlur={() => setTimeout(() => setIsAccountOpen(false), 150)}
               className="cursor-pointer h-10 w-10 rounded-full flex items-center justify-center text-slate-600 hover:text-blue-600 hover:bg-slate-100 transition-colors"
             >
@@ -198,94 +291,103 @@ export default function Header() {
             </button>
 
             {isAccountOpen && (
-              <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-xl shadow-xl py-2 z-50">
+              <div className="absolute right-0 top-full mt-3 w-64 rounded-lg border border-slate-200 bg-white shadow-xl ring-1 ring-black/5 z-50 overflow-clip">
                 {authUser ? (
                   <>
-                    {/* User info header */}
-                    <div className="px-4 py-2 border-b border-gray-100">
-                      <p className="text-sm font-medium text-gray-900 truncate">{authUser.full_name}</p>
-                      <p className="text-xs text-gray-500 truncate">{authUser.email}</p>
+                    <div className="bg-slate-50 px-4 py-4">
+                      <p className="text-sm font-semibold text-slate-900 truncate">{authUser.full_name}</p>
+                      <p className="text-xs text-slate-500 truncate">{authUser.email}</p>
                     </div>
-
-                    {/* Menu items */}
-                    <Link
-                      to="/account?tab=profile"
-                      onClick={() => setIsAccountOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                      <User className="w-4 h-4 text-gray-500" />
-                      My Profile
-                    </Link>
-
-                    <Link
-                      to="/account?tab=orders"
-                      onClick={() => setIsAccountOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                      <Package className="w-4 h-4 text-gray-500" />
-                      My Orders
-                    </Link>
-
-                    <Link
-                      to="/account?tab=settings"
-                      onClick={() => setIsAccountOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                      <Settings className="w-4 h-4 text-gray-500" />
-                      Settings
-                    </Link>
-
-                    {/* Admin Panel */}
+                    <div className="flex flex-col gap-2 p-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAccountOpen(false);
+                          navigator("/account?tab=profile");
+                        }}
+                        className="cursor-pointer flex items-center gap-3 rounded-2xl px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors w-full text-left"
+                      >
+                        <User className="w-4 h-4" />
+                        Hồ sơ của tôi
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAccountOpen(false);
+                          navigator("/account?tab=orders");
+                        }}
+                        className="cursor-pointer flex items-center gap-3 rounded-2xl px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors w-full text-left"
+                      >
+                        <Package className="w-4 h-4" />
+                        Đơn thuê của tôi
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAccountOpen(false);
+                          navigator("/account?tab=settings");
+                        }}
+                        className="cursor-pointer flex items-center gap-3 rounded-2xl px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors w-full text-left"
+                      >
+                        <Settings className="w-4 h-4" />
+                        Cài đặt
+                      </button>
+                    </div>
+                    {/* Admin Panel - từ feature của bạn */}
                     {authUser.roles?.some(role => role.name === 'ADMIN') && (
                       <Link
                         to="/admin/dashboard"
                         onClick={() => setIsAccountOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2 text-sm text-[#0052CC] hover:bg-gray-50 transition-colors"
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-[#0052CC] hover:bg-gray-50 transition-colors mx-2"
                       >
                         <LayoutDashboard className="w-4 h-4" />
                         Admin Panel
                       </Link>
                     )}
-
-                    {/* Divider và Sign Out */}
-                    <div className="border-t border-gray-100 mt-1 pt-1">
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        Sign Out
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="flex w-full items-center justify-center gap-2 bg-rose-50 p-3 text-sm font-semibold text-rose-600 hover:bg-rose-100 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Đăng xuất
+                    </button>
                   </>
                 ) : (
-                  <>
-                    <Link
-                      to="/signin"
-                      onClick={() => setIsAccountOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  <div className="flex flex-col p-4 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator("/signin");
+                        setIsAccountOpen(false);
+                      }}
+                      className="rounded-2xl bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
                     >
-                      <User className="w-4 h-4 text-gray-500" />
-                      Sign In
-                    </Link>
-                    <Link
-                      to="/signup"
-                      onClick={() => setIsAccountOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      Đăng nhập
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator("/signup");
+                        setIsAccountOpen(false);
+                      }}
+                      className="rounded-2xl bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
                     >
-                      <Package className="w-4 h-4 text-gray-500" />
-                      Create Account
-                    </Link>
-                  </>
+                      Tạo tài khoản
+                    </button>
+                  </div>
                 )}
               </div>
             )}
           </div>
 
           {/* Cart */}
-          <button type="button"
+          <button
+            type="button"
             className="cursor-pointer relative h-10 w-10 rounded-full grid place-items-center text-slate-600 hover:text-amber-500 hover:bg-slate-100 transition-colors"
-            onClick={() => navigator("/cart")}>
+            aria-label="Giỏ hàng"
+            onClick={() => navigator("/cart")}
+          >
             <ShoppingCart size={24} />
             <span className="absolute -right-1 -top-1 min-w-5 h-5 rounded-full bg-orange-500 text-white text-xs px-1 grid place-items-center font-semibold">
               2
@@ -326,7 +428,9 @@ export default function Header() {
         <div className="mx-auto flex max-w-7xl justify-center px-4 py-3 sm:px-6 lg:px-8">
           <ul className="flex items-center gap-8 text-sm font-semibold text-slate-700">
             <li>
-              <Link to="/" className="hover:text-blue-600 transition-colors">Trang Chủ</Link>
+              <Link to="/" className="hover:text-blue-600 transition-colors">
+                Trang chủ
+              </Link>
             </li>
             <li ref={megaAreaRef} onMouseEnter={() => setIsMegaOpen(true)} onMouseLeave={() => setIsMegaOpen(false)}>
               <button type="button"
@@ -334,22 +438,41 @@ export default function Header() {
                 onClick={() => setIsMegaOpen((p) => !p)}
                 aria-haspopup="menu" aria-expanded={isMegaOpen}
               >
-                Thiết Bị
-                <ChevronDown size={14} className={`transition-transform ${isMegaOpen ? "rotate-180" : ""}`} />
+                Thiết bị
+                <ChevronDown
+                  size={14}
+                  className={`transition-transform ${isMegaOpen ? "rotate-180" : ""}`}
+                />
               </button>
               {isMegaOpen && (
                 <div className="absolute inset-x-0 top-full z-50 -translate-y-2.5"
                   onMouseLeave={() => setIsMegaOpen(false)}>
                   <div className="mx-auto w-[min(1200px,94vw)]">
-                    <div className="max-h-[72vh] overflow-y-auto rounded-3xl border border-slate-100 bg-white p-6 text-slate-700 shadow-lg">
-                      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        {MEGA_MENU_SECTIONS.map((section) => (
-                          <div key={section.title} className="p-4">
-                            <p className="mb-3 text-base font-bold text-slate-900">{section.title}</p>
+                    <div className="max-h-[72vh] overflow-y-auto rounded-3xl bg-white p-6 text-slate-700 shadow-xl shadow-slate-900/10 ring-1 ring-slate-200/60">
+                      <div className="mb-4 pb-4">
+                        <div className="h-px w-full bg-linear-to-r from-transparent via-slate-200 to-transparent mb-3" />
+                        <p className="text-sm font-medium text-slate-500">
+                          Danh mục thiết bị và sản phẩm gợi ý
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-1 gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                        {deviceColumns.map((column) => (
+                          <div
+                            key={column.title}
+                            className="rounded-2xl bg-slate-50/90 p-4 shadow-sm ring-1 ring-slate-200/70"
+                          >
+                            <p className="mb-3 text-base font-bold text-slate-900">
+                              {column.title}
+                            </p>
                             <ul className="space-y-2 text-sm text-slate-600">
-                              {section.items.map((item) => (
+                              {column.items.map((item) => (
                                 <li key={item}>
-                                  <Link to="/" className="transition-colors hover:text-blue-600">{item}</Link>
+                                  <Link
+                                    to="/products"
+                                    className="transition-colors hover:text-blue-600"
+                                  >
+                                    {item}
+                                  </Link>
                                 </li>
                               ))}
                             </ul>
@@ -361,32 +484,101 @@ export default function Header() {
                 </div>
               )}
             </li>
-            <li><Link to="/" className="hover:text-blue-600 transition-colors">Giới thiệu</Link></li>
-            <li><Link to="/" className="hover:text-blue-600 transition-colors">Liên Hệ</Link></li>
+            <li>
+              <Link to="/" className="hover:text-blue-600 transition-colors">
+                Giới thiệu
+              </Link>
+            </li>
+            <li>
+              <Link to="/" className="hover:text-blue-600 transition-colors">
+                Liên hệ
+              </Link>
+            </li>
           </ul>
         </div>
       </nav>
 
+      {/* Mobile mega menu */}
+      {isMegaOpen && (
+        <div className="fixed inset-x-0 bottom-14 z-40 max-h-[56vh] overflow-y-auto bg-white p-4 shadow-[0_-8px_30px_-4px_rgba(15,23,42,0.08)] sm:hidden before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:z-10 before:h-px before:bg-linear-to-r before:from-transparent before:via-slate-200 before:to-transparent">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-sm font-semibold text-slate-900">Thiết bị</p>
+            <button
+              type="button"
+              onClick={() => setIsMegaOpen(false)}
+              className="rounded-md p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+              aria-label="Đóng danh mục thiết bị"
+            >
+              <X size={16} />
+            </button>
+          </div>
+          <div className="space-y-3">
+            {deviceColumns.map((column) => (
+              <div
+                key={column.title}
+                className="rounded-xl bg-slate-50/95 p-3 shadow-sm"
+              >
+                <p className="mb-2 text-sm font-semibold text-slate-800">
+                  {column.title}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {column.items.map((product) => (
+                    <Link
+                      key={product}
+                      to="/products"
+                      onClick={() => setIsMegaOpen(false)}
+                      className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-sm ring-1 ring-slate-200/80 hover:ring-blue-200 hover:text-blue-600"
+                    >
+                      {product}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Mobile bottom nav */}
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2">
-          <Link to="/" className="flex flex-col items-center text-xs text-slate-600 hover:text-blue-600">
-            <span>Trang Chủ</span>
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur-md supports-backdrop-filter:bg-white/90">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-slate-300/70 to-transparent" />
+        <div className="mx-auto grid max-w-7xl grid-cols-5 gap-1 px-2 pt-1.5 pb-2">
+          <Link
+            to="/"
+            className="flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-blue-600 active:scale-[0.98]"
+          >
+            Trang chủ
           </Link>
-          <button type="button" onClick={() => setIsMegaOpen((p) => !p)}
-            className="flex flex-col items-center text-xs text-slate-600 hover:text-blue-600">
-            Thiết Bị
+          <button
+            type="button"
+            onClick={() => setIsMegaOpen((prev) => !prev)}
+            className={`flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-medium transition-colors hover:bg-slate-100 active:scale-[0.98] ${isMegaOpen ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:text-blue-600"}`}
+            aria-label="Danh mục thiết bị"
+          >
+            Thiết bị
           </button>
-          <button type="button" onClick={() => setIsMobileSearchOpen(true)}
-            className="flex flex-col items-center text-xs text-slate-600 hover:text-blue-600">
+          <button
+            type="button"
+            onClick={() => setIsMobileSearchOpen(true)}
+            className="flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-blue-600 active:scale-[0.98]"
+            aria-label="Tìm kiếm"
+          >
             Tìm kiếm
           </button>
-          <button type="button" onClick={handleAccountClick}
-            className="flex flex-col items-center text-xs text-slate-600 hover:text-blue-600">
+          <button
+            type="button"
+            onClick={handleAccountClick}
+            className="flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-blue-600 active:scale-[0.98]"
+            aria-label="Tài khoản"
+          >
             Tài khoản
           </button>
-          <button type="button" onClick={() => navigator("/cart")}
-            className="flex flex-col items-center text-xs text-slate-600 hover:text-blue-600 relative">
+          <button
+            type="button"
+            onClick={() => navigator("/cart")}
+            className="relative flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-blue-600 active:scale-[0.98]"
+            aria-label="Giỏ hàng"
+          >
             Giỏ hàng
           </button>
         </div>

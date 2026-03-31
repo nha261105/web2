@@ -30,31 +30,31 @@
 
 ## 2. Trạng thái triển khai
 
-###  Đã implement
+### Đã implement
 
-| Endpoint                                | Middleware                |
-| --------------------------------------- | ------------------------- |
-| `POST /api/users`                       | public                    |
-| `POST /api/auth/sign-in`                | public                    |
-| `POST /api/auth/sign-out`               | auth.token                |
-| `GET /api/auth/me`                      | auth.token                |
-| `POST /api/user-tokens/check-token`     | auth.token                |
-| `GET /api/roles`                        | auth.token + role:ADMIN   |
-| `GET /api/permissions`                  | auth.token + role:ADMIN   |
-| `POST /api/roles/{id}/permissions`      | auth.token + role:ADMIN   |
-| `GET /api/users/{id}/roles`             | auth.token + role:ADMIN   |
-| `POST /api/users/{id}/roles`            | auth.token + role:ADMIN   |
-| `DELETE /api/users/{id}/roles/{roleId}` | auth.token + role:ADMIN   |
-| `GET /api/rentals`                      | auth.token + role:ADMIN   |
-| `POST /api/rentals`                     | auth.token + role:ADMIN   |
-| `GET /api/rentals/{id}`                 | auth.token + role:ADMIN   |
-| `PATCH /api/rentals/{id}`               | auth.token + role:ADMIN   |
-| `POST /api/return-orders`               | auth.token + role:ADMIN   |
-| `PATCH /api/return-orders/{id}`         | auth.token + role:ADMIN   |
-| `POST /api/rental-issues`               | auth.token + role:ADMIN   |
-| `PATCH /api/rental-issues/{id}`         | auth.token + role:ADMIN   |
-| `POST /api/transactions`                | auth.token + role:ADMIN   |
-| `PATCH /api/transactions/{id}`          | auth.token + role:ADMIN   |
+| Endpoint                                | Middleware              |
+| --------------------------------------- | ----------------------- |
+| `POST /api/users`                       | public                  |
+| `POST /api/auth/sign-in`                | public                  |
+| `POST /api/auth/sign-out`               | auth.token              |
+| `GET /api/auth/me`                      | auth.token              |
+| `POST /api/user-tokens/check-token`     | auth.token              |
+| `GET /api/roles`                        | auth.token + role:ADMIN |
+| `GET /api/permissions`                  | auth.token + role:ADMIN |
+| `POST /api/roles/{id}/permissions`      | auth.token + role:ADMIN |
+| `GET /api/users/{id}/roles`             | auth.token + role:ADMIN |
+| `POST /api/users/{id}/roles`            | auth.token + role:ADMIN |
+| `DELETE /api/users/{id}/roles/{roleId}` | auth.token + role:ADMIN |
+| `GET /api/rentals`                      | auth.token + role:ADMIN |
+| `POST /api/rentals`                     | auth.token + role:ADMIN |
+| `GET /api/rentals/{id}`                 | auth.token + role:ADMIN |
+| `PATCH /api/rentals/{id}`               | auth.token + role:ADMIN |
+| `POST /api/return-orders`               | auth.token + role:ADMIN |
+| `PATCH /api/return-orders/{id}`         | auth.token + role:ADMIN |
+| `POST /api/rental-issues`               | auth.token + role:ADMIN |
+| `PATCH /api/rental-issues/{id}`         | auth.token + role:ADMIN |
+| `POST /api/transactions`                | auth.token + role:ADMIN |
+| `PATCH /api/transactions/{id}`          | auth.token + role:ADMIN |
 
 **Auth hardening đã hoàn tất:**
 
@@ -64,28 +64,29 @@
 
 ---
 
-###  Chưa làm — danh sách & tên nhánh
+### Chưa làm — danh sách & tên nhánh
 
-| Module           | Endpoints chính                                                          | Nhánh GitHub                 |
-| ---------------- | ------------------------------------------------------------------------ | ---------------------------- |
-| **User CRUD**    | `GET/PATCH/DELETE /api/users`, `/api/users/me`                           | `feature/user-crud`          |
-| **User Address** | CRUD `/api/users/{id}/addresses`                                         | `feature/user-address`       |
-| **Category**     | CRUD `/api/categories`                                                   | `feature/catalog-category`   |
-| **Brand**        | CRUD `/api/brands`                                                       | `feature/catalog-brand`      |
-| **Product**      | CRUD `/api/products` + ảnh                                               | `feature/catalog-product`    |
-| **Coupon**       | CRUD `/api/coupons` + validate                                           | `feature/catalog-coupon`     |
-| **Combo**        | CRUD `/api/combos` + details                                             | `feature/catalog-combo`      |
-| **Supplier**     | CRUD `/api/suppliers`                                                    | `feature/inventory-supplier` |
-| **Import Order** | CRUD `/api/import-orders`                                                | `feature/inventory-import`   |
-| **Inventory**    | CRUD `/api/inventory` + status + availability                            | `feature/inventory-stock`    |
-| **Rental**       | CRUD `/api/rentals` + flow (approve / deposit / pickup / complete / cancel) | `feature/rental-core`     |
-| **Return**       | CRUD `/api/return-orders`                                                | `feature/rental-return`      |
-| **Rental Issue** | CRUD `/api/rental-issues` + resolve                                      | `feature/rental-issue`       |
-| **Transaction**  | CRUD `/api/transactions`                                                 | `feature/rental-transaction` |
-| **Review**       | CRUD `/api/reviews`                                                      | `feature/review`             |
-| **Notification** | CRUD `/api/notifications`                                                | `feature/notification`       |
+| Module           | Endpoints chính                                                             | Nhánh GitHub                 |
+| ---------------- | --------------------------------------------------------------------------- | ---------------------------- |
+| **User CRUD**    | `GET/PATCH/DELETE /api/users`, `/api/users/me`                              | `feature/user-crud`          |
+| **User Address** | CRUD `/api/users/{id}/addresses`                                            | `feature/user-address`       |
+| **Category**     | CRUD `/api/categories`                                                      | `feature/catalog-category`   |
+| **Brand**        | CRUD `/api/brands`                                                          | `feature/catalog-brand`      |
+| **Product**      | CRUD `/api/products` + ảnh                                                  | `feature/catalog-product`    |
+| **Coupon**       | CRUD `/api/coupons` + validate                                              | `feature/catalog-coupon`     |
+| **Combo**        | CRUD `/api/combos` + details                                                | `feature/catalog-combo`      |
+| **Supplier**     | CRUD `/api/suppliers`                                                       | `feature/inventory-supplier` |
+| **Import Order** | CRUD `/api/import-orders`                                                   | `feature/inventory-import`   |
+| **Inventory**    | CRUD `/api/inventory` + status + availability                               | `feature/inventory-stock`    |
+| **Rental**       | CRUD `/api/rentals` + flow (approve / deposit / pickup / complete / cancel) | `feature/rental-core`        |
+| **Return**       | CRUD `/api/return-orders`                                                   | `feature/rental-return`      |
+| **Rental Issue** | CRUD `/api/rental-issues` + resolve                                         | `feature/rental-issue`       |
+| **Transaction**  | CRUD `/api/transactions`                                                    | `feature/rental-transaction` |
+| **Review**       | CRUD `/api/reviews`                                                         | `feature/review`             |
+| **Notification** | CRUD `/api/notifications`                                                   | `feature/notification`       |
 
 > **Quy tắc đặt tên nhánh:**
+>
 > - `feature/<module>` — khi làm tính năng mới
 > - `fix/<vấn-đề>` — khi sửa lỗi
 
@@ -154,7 +155,13 @@ tests/
 // app/Models/Product.php
 class Product extends Model
 {
-    protected $fillable = ['name', 'description', 'price_per_day', 'category_id', 'status'];
+    protected $fillable = [
+        'name',
+        'description',
+        'price_per_day',
+        'category_id',
+        'status',
+    ];
 
     public function category(): BelongsTo
     {
@@ -172,7 +179,10 @@ class ProductService
     public function list(array $filters): LengthAwarePaginator
     {
         return Product::with(['category'])
-            ->when($filters['search'] ?? null, fn($q, $s) => $q->where('name', 'like', "%$s%"))
+            ->when(
+                $filters['search'] ?? null,
+                fn($q, $s) => $q->where('name', 'like', "%$s%"),
+            )
             ->paginate($filters['per_page'] ?? 15);
     }
 
@@ -196,14 +206,21 @@ class ProductController extends Controller
         $result = $this->service->list($request->all());
         return ApiResponse::success([
             'data' => ProductResource::collection($result),
-            'meta' => ['total' => $result->total(), 'last_page' => $result->lastPage()],
+            'meta' => [
+                'total' => $result->total(),
+                'last_page' => $result->lastPage(),
+            ],
         ]);
     }
 
     public function store(CreateProductRequest $request): JsonResponse
     {
         $product = $this->service->create($request->validated());
-        return ApiResponse::success(['data' => new ProductResource($product)], 'Created', 201);
+        return ApiResponse::success(
+            ['data' => new ProductResource($product)],
+            'Created',
+            201,
+        );
     }
 }
 ```
@@ -213,8 +230,8 @@ class ProductController extends Controller
 ```php
 // routes/api.php
 Route::prefix('products')->group(function () {
-    Route::get('/', [ProductController::class, 'index']);          // public
-    Route::get('/{id}', [ProductController::class, 'show']);       // public
+    Route::get('/', [ProductController::class, 'index']); // public
+    Route::get('/{id}', [ProductController::class, 'show']); // public
 
     Route::middleware('auth.token')->group(function () {
         Route::middleware('role:ADMIN')->group(function () {
@@ -264,18 +281,18 @@ public function toArray(Request $request): array
 
 Tất cả controller và middleware **phải** dùng helper chung: `App\Support\ApiResponse`.
 
->  Không được `return response()->json([...])` trực tiếp trong controller / middleware (trừ trường hợp đặc biệt có lý do rõ ràng).
+> Không được `return response()->json([...])` trực tiếp trong controller / middleware (trừ trường hợp đặc biệt có lý do rõ ràng).
 
 ### Các method được phép dùng
 
-| Method | HTTP Status | Code |
-| ------ | ----------- | ---- |
-| `ApiResponse::success($data, $message, $status)` | 200 (default) | — |
-| `ApiResponse::error($message, $code, $status, $errors)` | tuỳ | tuỳ |
-| `ApiResponse::unauthorized($message)` | 401 | `UNAUTHORIZED` |
-| `ApiResponse::forbidden($message)` | 403 | `FORBIDDEN` |
-| `ApiResponse::validation($errors, $message)` | 422 | `VALIDATION_ERROR` |
-| `ApiResponse::internalError($message)` | 500 | `INTERNAL_ERROR` |
+| Method                                                  | HTTP Status   | Code               |
+| ------------------------------------------------------- | ------------- | ------------------ |
+| `ApiResponse::success($data, $message, $status)`        | 200 (default) | —                  |
+| `ApiResponse::error($message, $code, $status, $errors)` | tuỳ           | tuỳ                |
+| `ApiResponse::unauthorized($message)`                   | 401           | `UNAUTHORIZED`     |
+| `ApiResponse::forbidden($message)`                      | 403           | `FORBIDDEN`        |
+| `ApiResponse::validation($errors, $message)`            | 422           | `VALIDATION_ERROR` |
+| `ApiResponse::internalError($message)`                  | 500           | `INTERNAL_ERROR`   |
 
 ### Quy tắc sử dụng
 
@@ -290,7 +307,7 @@ Tất cả controller và middleware **phải** dùng helper chung: `App\Support
 return ApiResponse::success(
     ['rental' => new RentalResource($rental)],
     'Rental created',
-    201
+    201,
 );
 
 return ApiResponse::unauthorized('Token không hợp lệ hoặc đã hết hạn.');
@@ -343,12 +360,12 @@ php artisan db:seed --class=RolePermissionSeeder
 
 ### Tổng quan
 
-| Người          | UI (Frontend)                                                                 | API (Backend)                                          |
-| -------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------ |
-| **Bảo**        | `HomePage`, `ProductDetailPage`                                               | Catalog (Category, Brand, Product, Coupon, Combo)      |
-| **Cường**      | `SignInPage`, `SignUpPage`, `CartPage`, `CheckoutPage` + 3 step con           | Inventory (Supplier, Import, Stock) + Review + Notification |
-| **Danh**       | Account pages (profile, địa chỉ, lịch sử đơn)                                | User CRUD + User Address                               |
-| **Hoàng Anh**  | Toàn bộ Admin (Dashboard, Products, Orders, Categories, Users, Reports, Settings) | Rental flow (core + return + issue + transaction)  |
+| Người         | UI (Frontend)                                                                     | API (Backend)                                               |
+| ------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| **Bảo**       | `HomePage`, `ProductDetailPage`                                                   | Catalog (Category, Brand, Product, Coupon, Combo)           |
+| **Cường**     | `SignInPage`, `SignUpPage`, `CartPage`, `CheckoutPage` + 3 step con               | Inventory (Supplier, Import, Stock) + Review + Notification |
+| **Danh**      | Account pages (profile, địa chỉ, lịch sử đơn)                                     | User CRUD + User Address                                    |
+| **Hoàng Anh** | Toàn bộ Admin (Dashboard, Products, Orders, Categories, Users, Reports, Settings) | Rental flow (core + return + issue + transaction)           |
 
 ---
 
@@ -357,13 +374,15 @@ php artisan db:seed --class=RolePermissionSeeder
 #### Bảo — Home + Product UI + Catalog API
 
 **Frontend:**
+
 - `HomePage.tsx` — kết nối API thật: `GET /categories`, `GET /products` (filter / sort / search)
 - `ProductDetailPage.tsx` — kết nối API thật: `GET /products/{id}`, `GET /reviews`
 
 **Backend:**
+
 - `feature/catalog-category` — Category CRUD
 - `feature/catalog-brand` — Brand CRUD
-- `feature/catalog-product` — Product CRUD + ảnh *(download ảnh từ Google → lưu string URL vào DB)*
+- `feature/catalog-product` — Product CRUD + ảnh _(download ảnh từ Google → lưu string URL vào DB)_
 - `feature/catalog-coupon` — Coupon CRUD + validate
 - `feature/catalog-combo` — Combo CRUD + details
 
@@ -372,11 +391,13 @@ php artisan db:seed --class=RolePermissionSeeder
 #### Cường — Cart/Checkout UI + Inventory API
 
 **Frontend:**
+
 - `SignUpPage.tsx` — kết nối API: `POST /api/users`
 - `CartPage.tsx` — kết nối: `GET /inventory/availability`, `POST /coupons/validate`
 - `CheckoutPage.tsx` + `ShippingStep`, `PaymentStep`, `ConfirmStep` — kết nối: `POST /rentals`, `POST /rental-details`, `POST /transactions`
 
 **Backend:**
+
 - `feature/inventory-supplier` — Supplier CRUD
 - `feature/inventory-import` — Import order CRUD
 - `feature/inventory-stock` — Inventory CRUD + status + availability
@@ -388,9 +409,11 @@ php artisan db:seed --class=RolePermissionSeeder
 #### Danh — Account UI + User API
 
 **Frontend:**
-- Account pages — profile user, danh sách địa chỉ, lịch sử đơn thuê *(các page này chưa có trong route, cần tạo mới)*
+
+- Account pages — profile user, danh sách địa chỉ, lịch sử đơn thuê _(các page này chưa có trong route, cần tạo mới)_
 
 **Backend:**
+
 - `feature/user-crud` — `GET /users`, `PATCH /users/{id}`, `PATCH /users/{id}/status`, `DELETE /users/{id}`
 - `feature/user-address` — CRUD `/users/{id}/addresses` + set default
 
@@ -399,8 +422,9 @@ php artisan db:seed --class=RolePermissionSeeder
 #### Hoàng Anh — Admin UI + Rental API
 
 **Frontend (Admin):**
+
 - `AdminDashboard.tsx` — connect dashboard metrics API
-- `AdminProducts.tsx` — connect Catalog API của Bảo *(cần Bảo merge trước, xử lý mock tạm)*
+- `AdminProducts.tsx` — connect Catalog API của Bảo _(cần Bảo merge trước, xử lý mock tạm)_
 - `AdminOrders.tsx` — connect Rental API (tự làm)
 - `AdminCategories.tsx` — connect Catalog API của Bảo
 - `AdminUsers.tsx` — connect User API của Danh
@@ -408,6 +432,7 @@ php artisan db:seed --class=RolePermissionSeeder
 - `AdminSettings.tsx` — connect settings/policies endpoints
 
 **Backend:**
+
 - `feature/rental-core` — Rental CRUD + status flow (approve / deposit / pickup / complete / cancel)
 - `feature/rental-return` — Return order + details
 - `feature/rental-issue` — Rental issue + resolve

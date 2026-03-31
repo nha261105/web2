@@ -25,6 +25,11 @@ export default function SignInPage() {
   const [password, setPassword] = useState("");
   const [isRemember, setIsRemember] = useState(false);
 
+  const getRedirectPathByRole = (roles: string[] | undefined) => {
+    if (roles?.includes("ADMIN")) return "/admin";
+    return "/";
+  };
+
   useEffect(() => {
     async function validateToken() {
       const res = await checkToken();
@@ -39,6 +44,7 @@ export default function SignInPage() {
     if (res.success) {
       const userData = res.data.user;
 
+      // Kiểm tra user có bị khóa không
       if (userData.status !== 'ACTIVE') {
         toast.error("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ hỗ trợ.");
         return;
@@ -50,14 +56,12 @@ export default function SignInPage() {
       localStorage.setItem("token", token);
       localStorage.setItem("auth_user", JSON.stringify(userData));
 
-      const isAdmin = userData?.roles?.some((role: Role) => role.name === 'ADMIN');
-
-      if (isAdmin) {
-        navigate("/admin");
-      } else {
-        navigate("/");
-      }
+      // Lấy roles từ userData để redirect
+      const roles = userData?.roles?.map((role: Role) => role.name);
+      const redirectPath = getRedirectPathByRole(roles);
+      navigate(redirectPath, { replace: true });
     } else {
+      // Xử lý lỗi từ backend
       if (res.code === 'FORBIDDEN' || res.message?.includes('khóa')) {
         toast.error("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ hỗ trợ.");
       } else {
@@ -65,6 +69,7 @@ export default function SignInPage() {
       }
     }
   };
+  
   const textLeftPanel = [
     "500+ professional tech products",
     "Flexible daily, weekly & monthly plans",

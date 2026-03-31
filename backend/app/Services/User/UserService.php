@@ -13,10 +13,9 @@ class UserService
         return User::with(['roles', 'userInfo'])
             ->withCount('rentals')
             ->withSum('rentals', 'total_price')
-            ->orderBy('created_at')
+            ->orderBy('created_at', 'desc')
             ->paginate($perPage);
     }
-
 
     public function getActiveUsers(): Collection
     {
@@ -36,14 +35,22 @@ class UserService
             ->find($id);
     }
 
-    private function emailExists(string $email): bool
+    private function emailExists(string $email, ?int $excludeId = null): bool
     {
-        return User::where('email', $email)->exists();
+        $query = User::where('email', $email);
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        }
+        return $query->exists();
     }
 
-    private function phoneExists(string $phone): bool
+    private function phoneExists(string $phone, ?int $excludeId = null): bool
     {
-        return User::where('phone', $phone)->exists();
+        $query = User::where('phone', $phone);
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        }
+        return $query->exists();
     }
 
     public function createUser(array $data): User
@@ -58,14 +65,14 @@ class UserService
 
         return User::create([
             'email' => $data['email'],
-            'hash_password' => $data['password'],
+            'hash_password' => bcrypt($data['password']),
             'full_name' => $data['full_name'],
             'phone' => $data['phone'],
             'status' => $data['status'] ?? 'ACTIVE',
         ]);
     }
 
-    public function updateUser($userId, array $data): User
+    public function updateUser(int $userId, array $data): User
     {
         $user = User::findOrFail($userId);
 

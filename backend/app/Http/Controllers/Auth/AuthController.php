@@ -15,6 +15,16 @@ use App\Http\Resources\UserResource;
 
 class AuthController extends Controller
 {
+    private function verifyPassword(string $plainPassword, string $hashedPassword): array
+    {
+        try {
+            return [Hash::check($plainPassword, $hashedPassword), false];
+        } catch (\RuntimeException) {
+            // Accept legacy hashes (e.g. $2a$...) then upgrade them after successful login.
+            return [password_verify($plainPassword, $hashedPassword), true];
+        }
+    }
+
     /**
      * Đăng nhập bằng email và mật khẩu
      */
@@ -31,10 +41,31 @@ class AuthController extends Controller
             $password = $validated['password'];
             $isRemember = (bool) ($validated['isRemember'] ?? false);
 
-            $user = User::with('roles.permissions')->where('email', $email)->first();
+            $user = User::with('roles.permissions')
+                ->where('email', $email)
+                ->first();
 
-            if (!$user || !Hash::check($password, $user->hash_password)) {
-                return ApiResponse::error('Email or password is incorrect', 'INVALID_CREDENTIALS', 401);
+            if (!$user) {
+                return ApiResponse::error(
+                    'Email or password is incorrect',
+                    'INVALID_CREDENTIALS',
+                    401,
+                );
+            }
+
+            [$isPasswordValid, $shouldUpgradeHash] = $this->verifyPassword($password, $user->hash_password);
+
+            if (!$isPasswordValid) {
+                return ApiResponse::error(
+                    'Email or password is incorrect',
+                    'INVALID_CREDENTIALS',
+                    401,
+                );
+            }
+
+            if ($shouldUpgradeHash) {
+                $user->hash_password = $password;
+                $user->save();
             }
 
             if ($user->status !== 'ACTIVE') {
@@ -55,15 +86,19 @@ class AuthController extends Controller
                 ->unique()
                 ->values();
 
-            return ApiResponse::success([
-                'user' => new UserResource($user),
-                'roles' => $user->roles->pluck('name')->values(),
-                'permissions' => $permissions,
-                'token' => [
-                    'access_token' => $tokenRecord->token,
-                    'expires_at' => $tokenRecord->expires_at,
+            // Kết hợp: dùng UserResource từ feature, giữ cấu trúc từ dev
+            return ApiResponse::success(
+                [
+                    'user' => new UserResource($user),
+                    'roles' => $user->roles->pluck('name')->values(),
+                    'permissions' => $permissions,
+                    'token' => [
+                        'access_token' => $tokenRecord->token,
+                        'expires_at' => $tokenRecord->expires_at,
+                    ],
                 ],
-            ], 'Sign in successful');
+                'Sign in successful',
+            );
         } catch (Throwable $e) {
             report($e);
 
@@ -81,6 +116,7 @@ class AuthController extends Controller
 
         $user->load('roles.permissions');
 
+        // Giữ nguyên response từ dev (không dùng resource)
         return ApiResponse::success([
             'user' => $user,
             'roles' => $user->roles->pluck('name')->values(),

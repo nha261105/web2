@@ -29,9 +29,7 @@ class User extends Authenticatable
         'status',
     ];
 
-    protected $hidden = [
-        'hash_password',
-    ];
+    protected $hidden = ['hash_password'];
 
     // test false ->true
     public $timestamps = true;
@@ -49,7 +47,12 @@ class User extends Authenticatable
 
     public function roles(): BelongsToMany
     {
-        return $this->belongsToMany(Role::class, 'user_roles', 'user_id', 'role_id');
+        return $this->belongsToMany(
+            Role::class,
+            'user_roles',
+            'user_id',
+            'role_id',
+        );
     }
 
     public function hasRole(string $roleName): bool
@@ -59,9 +62,11 @@ class User extends Authenticatable
 
     public function hasPermission(string $permissionName): bool
     {
-        return $this->roles()->whereHas('permissions', function ($query) use ($permissionName) {
-            $query->where('name', $permissionName);
-        })->exists();
+        return $this->roles()
+            ->whereHas('permissions', function ($query) use ($permissionName) {
+                $query->where('name', $permissionName);
+            })
+            ->exists();
     }
 
     public function scopeActive(Builder $query): Builder
