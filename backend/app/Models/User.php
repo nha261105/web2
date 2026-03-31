@@ -8,6 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Rental;
+use App\Models\Address;
+use App\Models\UserInfo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+
 
 class User extends Authenticatable
 {
@@ -47,12 +52,10 @@ class User extends Authenticatable
         return $this->belongsToMany(Role::class, 'user_roles', 'user_id', 'role_id');
     }
 
- public function hasRole(string $roleName): bool
-{
-    // Đảm bảo quan hệ 'roles' đã được định nghĩa đúng (BelongsToMany)
-    // Dùng pluck để lấy mảng tên các Role và kiểm tra
-    return $this->roles->pluck('name')->contains($roleName);
-}
+    public function hasRole(string $roleName): bool
+    {
+        return $this->roles->pluck('name')->contains($roleName);
+    }
 
     public function hasPermission(string $permissionName): bool
     {
@@ -85,5 +88,15 @@ class User extends Authenticatable
     public function getAuthPassword()
     {
         return $this->hash_password;
+    }
+
+    public function rentals(): HasMany
+    {
+        return $this->hasMany(Rental::class, 'user_id');
+    }
+
+    public function userInfo(): HasOne
+    {
+        return $this->hasOne(UserInfo::class);
     }
 }
