@@ -44,17 +44,19 @@ class UserController extends Controller
     public function index(Request $request): JsonResponse
     {
         $perPage = $request->query('per_page', 15);
-        $users = $this->userService->listUsers((int)$perPage);
+        $users   = $this->userService->listUsers((int)$perPage);
 
-        return ApiResponse::success([
-            'users' => UserResource::collection($users)->resolve(),
-            'meta'  => [
+        return ApiResponse::success(
+            UserResource::collection($users)->resolve(),
+            'Fetched successfully',
+            200,
+            [
                 'total'        => $users->total(),
                 'current_page' => $users->currentPage(),
                 'per_page'     => $users->perPage(),
                 'last_page'    => $users->lastPage(),
-            ],
-        ], 'Fetched successfully');
+            ]
+        );
     }
 
     /**
@@ -112,5 +114,26 @@ class UserController extends Controller
         } catch (\Exception $e) {
             return ApiResponse::error('Người dùng không tồn tại hoặc lỗi hệ thống', 'UPDATE_STATUS_FAILED', 404);
         }
+    }
+
+    /**
+     * GET /api/users/{id} (Admin)
+     */
+    public function show(int $id): JsonResponse
+    {
+        $user = $this->userService->getUserById($id);
+
+        if (!$user) {
+            return ApiResponse::notFound('User not found');
+        }
+
+        $user->load(['roles', 'userInfo']);
+        $user->loadCount('rentals');
+        $user->loadSum('rentals', 'total_price');
+
+        return ApiResponse::success(
+            ['user' => new UserResource($user)],
+            'Fetched successfully'
+        );
     }
 }
