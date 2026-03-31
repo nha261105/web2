@@ -25,7 +25,7 @@ interface User {
   created_at: string;
   roles?: { id: number; name: string }[];
   rentals_count: number;
-  rentals_sum_total_price: number;
+  total_spent: number;
   kyc_status?: string;
   verified_at?: string;
   id_card_number?: string;
@@ -355,7 +355,7 @@ export default function AdminUsers() {
                     {user.rentals_count ?? 0}
                   </TableCell>
                   <TableCell className="text-sm text-gray-700">
-                    {Number(user.rentals_sum_total_price ?? 0).toLocaleString("vi-VN")}₫
+                    {Number(user.total_spent ?? 0).toLocaleString("vi-VN")}₫
                   </TableCell>
 
                   <TableCell className="text-sm text-gray-500">{formatDate(user.created_at)}</TableCell>
@@ -532,7 +532,7 @@ export default function AdminUsers() {
                 { label: "Role", value: viewTarget.roles?.[0]?.name || "CUSTOMER" },
                 { label: "Joined", value: formatDate(viewTarget.created_at) },
                 { label: "Orders", value: `${viewTarget.rentals_count ?? 0} orders` },
-                { label: "Spent", value: `${Number(viewTarget.rentals_sum_total_price ?? 0).toLocaleString("vi-VN")}₫` },
+                { label: "Spent", value: `${Number(viewTarget.total_spent ?? 0).toLocaleString("vi-VN")}₫` },
               ].map((row) => (
                 <div key={row.label} className="flex justify-between py-2 border-b border-gray-50 last:border-0">
                   <span className="text-gray-500">{row.label}</span>

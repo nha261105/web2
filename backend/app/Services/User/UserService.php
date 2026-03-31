@@ -10,10 +10,13 @@ class UserService
 {
     public function listUsers(int $perPage = 15): LengthAwarePaginator
     {
-        return User::withCount('rentals')
+        return User::with(['roles', 'userInfo'])
+            ->withCount('rentals')
             ->withSum('rentals', 'total_price')
+            ->orderBy('created_at')
             ->paginate($perPage);
     }
+
 
     public function getActiveUsers(): Collection
     {
@@ -27,7 +30,10 @@ class UserService
 
     public function getUserById(int $id): ?User
     {
-        return User::with(['roles', 'userInfo'])->find($id);
+        return User::with(['roles', 'userInfo'])
+            ->withCount('rentals')
+            ->withSum('rentals', 'total_price')
+            ->find($id);
     }
 
     private function emailExists(string $email): bool
