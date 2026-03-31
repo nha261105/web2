@@ -14,6 +14,11 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { Fragment } from "react/jsx-runtime";
 
+interface Role {
+  id: number;
+  name: string;
+}
+
 export default function SignInPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -28,21 +33,38 @@ export default function SignInPage() {
     validateToken();
   }, [navigate]);
 
-  const handleSignIn = async (e: React.MouseEvent<HTMLDivElement>) => { 
-    e.preventDefault();
+  const handleSignIn = async () => {
+    const res = await signin(email, password, isRemember);
 
-    const res = await signin( email, password, isRemember ); 
-    
     if (res.success) {
-      toast.success("Đăng nhập thành công!");
-      localStorage.setItem("token", res.data.token.access_token ?? res.data.token);
-      localStorage.setItem("auth_user", JSON.stringify(res.data.user));
-      navigate("/"); 
-    } else {
-      toast.error(res.message || "Sai email hoặc mật khẩu!");
-    }
-  }
+      const userData = res.data.user;
 
+      if (userData.status !== 'ACTIVE') {
+        toast.error("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ hỗ trợ.");
+        return;
+      }
+
+      toast.success("Đăng nhập thành công!");
+
+      const token = res.data.token.access_token || res.data.token;
+      localStorage.setItem("token", token);
+      localStorage.setItem("auth_user", JSON.stringify(userData));
+
+      const isAdmin = userData?.roles?.some((role: Role) => role.name === 'ADMIN');
+
+      if (isAdmin) {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
+    } else {
+      if (res.code === 'FORBIDDEN' || res.message?.includes('khóa')) {
+        toast.error("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ hỗ trợ.");
+      } else {
+        toast.error(res.message || "Sai email hoặc mật khẩu!");
+      }
+    }
+  };
   const textLeftPanel = [
     "500+ professional tech products",
     "Flexible daily, weekly & monthly plans",
@@ -128,7 +150,7 @@ export default function SignInPage() {
               onClick={handleSignIn}
             />
             <MyHrefText text="Hoặc đăng nhập với" />
-            <MyGoogleButton className="" onHandle={() => {}} />
+            <MyGoogleButton className="" onHandle={() => { }} />
           </div>
         </div>
       </div>

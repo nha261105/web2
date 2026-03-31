@@ -9,6 +9,7 @@ import ProfilePage from "./Account/ProfilePage";
 import SettingsPage from "./Account/SettingsPage";
 import OrdersPage from "./Account/OrdersPage";
 import AddressPage from "./Account/AddressPage";
+import { toast } from "react-hot-toast";
 
 interface AuthUser {
   id: number;
@@ -42,21 +43,37 @@ export default function AccountPage() {
       if (!tokenRes.success) {
         setIsLoggedIn(false);
         setRentalsLoading(false);
+        localStorage.removeItem("token");
+        localStorage.removeItem("auth_user");
         return;
       }
 
-      // Fetch getMe + getMyRentals song song — chỉ 1 lần duy nhất khi mount
       const [meRes, rentalsRes] = await Promise.all([
         getMe(),
         getMyRentals(),
       ]);
 
       if (meRes.success) {
-        setAuthUser(meRes.data.user);
+        const user = meRes.data.user;
+
+        if (user.status !== 'ACTIVE') {
+          toast.error("Tài khoản của bạn đã bị khóa. Vui lòng đăng nhập lại.");
+          await signout();
+          localStorage.removeItem("token");
+          localStorage.removeItem("auth_user");
+          setIsLoggedIn(false);
+          setAuthUser(null);
+          navigate("/signin");
+          return;
+        }
+
+        setAuthUser(user);
         setIsLoggedIn(true);
-        localStorage.setItem("auth_user", JSON.stringify(meRes.data.user));
+        localStorage.setItem("auth_user", JSON.stringify(user));
       } else {
         setIsLoggedIn(false);
+        localStorage.removeItem("token");
+        localStorage.removeItem("auth_user");
       }
 
       if (rentalsRes.success) {
@@ -66,43 +83,48 @@ export default function AccountPage() {
       setRentalsLoading(false);
     }
     init();
-  }, []);
+  }, [navigate]);
 
   // ─── Tab logic ────────────────────────────────────────────────────────────
   const getAccountPageFromTab = (tab: string | null) => {
     switch (tab) {
-      case "orders":    return "My Orders";
-      case "settings":  return "Settings";
+      case "orders": return "My Orders";
+      case "settings": return "Settings";
       case "addresses": return "Addresses";
-      default:          return "Profile";
+      default: return "Profile";
     }
   };
 
   const getTabFromLabel = (label: string) => {
     switch (label) {
-      case "My Orders":  return "orders";
-      case "Settings":   return "settings";
-      case "Addresses":  return "addresses";
-      default:           return "profile";
+      case "My Orders": return "orders";
+      case "Settings": return "settings";
+      case "Addresses": return "addresses";
+      default: return "profile";
     }
   };
 
   const accountPage = useMemo(() => getAccountPageFromTab(tabParam), [tabParam]);
 
   const NAV_ITEMS = [
-    { label: "Profile",   icon: User },
+    { label: "Profile", icon: User },
     { label: "Addresses", icon: MapPin },
     { label: "My Orders", icon: Package },
-    { label: "Settings",  icon: Settings },
+    { label: "Settings", icon: Settings },
   ];
 
   // ─── Logout ───────────────────────────────────────────────────────────────
   const handleLogout = async () => {
     await signout();
+
+    localStorage.removeItem("token");
     localStorage.removeItem("auth_user");
+
     setIsLoggedIn(false);
     setAuthUser(null);
     setRentals([]);
+    setRentalsLoading(false);
+
     navigate("/");
   };
 
@@ -148,11 +170,10 @@ export default function AccountPage() {
                   {NAV_ITEMS.map((item) => (
                     <button
                       key={item.label}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer w-full ${
-                        item.label === accountPage
-                          ? "bg-blue-50 text-[#0052CC]"
-                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                      }`}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer w-full ${item.label === accountPage
+                        ? "bg-blue-50 text-[#0052CC]"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        }`}
                       onClick={() =>
                         navigate(`/account?tab=${getTabFromLabel(item.label)}`)
                       }
@@ -180,11 +201,10 @@ export default function AccountPage() {
                     onClick={() =>
                       navigate(`/account?tab=${getTabFromLabel(item.label)}`)
                     }
-                    className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-xs font-medium transition-colors whitespace-nowrap px-2 ${
-                      item.label === accountPage
-                        ? "bg-[#0052CC] text-white"
-                        : "text-gray-500"
-                    }`}
+                    className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-xs font-medium transition-colors whitespace-nowrap px-2 ${item.label === accountPage
+                      ? "bg-[#0052CC] text-white"
+                      : "text-gray-500"
+                      }`}
                   >
                     <item.icon className="w-3.5 h-3.5" />
                     {item.label}
@@ -200,7 +220,6 @@ export default function AccountPage() {
                 <AddressPage userId={authUser.id} />
               </div>
 
-              {/* Truyền data đã preload — không loading khi switch tab */}
               <div className={accountPage === "My Orders" ? "block" : "hidden"}>
                 <OrdersPage
                   initialRentals={rentals}
