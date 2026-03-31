@@ -11,8 +11,10 @@ export const API_ENDPOINTS = {
   //User
   usersMe: "/api/users/me",
   updateMe: "/api/users/me",
-
   users: "/api/users",
+
+  //Roles
+  roles: "/api/roles",
 
 } as const;
 
