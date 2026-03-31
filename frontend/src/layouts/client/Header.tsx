@@ -3,33 +3,34 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   Search, Heart, User, ShoppingCart, X,
   ChevronDown, Settings, Package, LogOut,
+  LayoutDashboard,
 } from "lucide-react";
 import { signout } from "@/services/usersService";
 
 const MEGA_MENU_SECTIONS = [
   {
     title: "LAPTOP VĂN PHÒNG",
-    items: ["MacBook Air M2","MacBook Pro M3","Dell XPS 13","HP Spectre x360","Lenovo ThinkPad X1","ASUS Zenbook 14","Acer Swift 5","Surface Laptop 6","LG Gram 16"],
+    items: ["MacBook Air M2", "MacBook Pro M3", "Dell XPS 13", "HP Spectre x360", "Lenovo ThinkPad X1", "ASUS Zenbook 14", "Acer Swift 5", "Surface Laptop 6", "LG Gram 16"],
   },
   {
     title: "LAPTOP GAMING",
-    items: ["ROG Zephyrus G14","ROG Strix G16","MSI Katana 15","Acer Predator Helios","Lenovo Legion 5","HP Omen 16","Alienware m16","Gigabyte Aorus 15","Dell G15"],
+    items: ["ROG Zephyrus G14", "ROG Strix G16", "MSI Katana 15", "Acer Predator Helios", "Lenovo Legion 5", "HP Omen 16", "Alienware m16", "Gigabyte Aorus 15", "Dell G15"],
   },
   {
     title: "MÁY ẢNH & LEN",
-    items: ["Sony A7 IV","Sony FX30","Canon EOS R6","Canon R5","Nikon Z6 II","Fujifilm X-T5","24-70mm f/2.8","70-200mm f/2.8","16-35mm f/4"],
+    items: ["Sony A7 IV", "Sony FX30", "Canon EOS R6", "Canon R5", "Nikon Z6 II", "Fujifilm X-T5", "24-70mm f/2.8", "70-200mm f/2.8", "16-35mm f/4"],
   },
   {
     title: "DRONE & GIMBAL",
-    items: ["DJI Mini 4 Pro","DJI Air 3","DJI Mavic 3","DJI Avata 2","DJI RS 4","DJI RS 4 Pro","Zhiyun Crane 4","Insta360 Flow Pro","Hohem iSteady M7"],
+    items: ["DJI Mini 4 Pro", "DJI Air 3", "DJI Mavic 3", "DJI Avata 2", "DJI RS 4", "DJI RS 4 Pro", "Zhiyun Crane 4", "Insta360 Flow Pro", "Hohem iSteady M7"],
   },
   {
     title: "AUDIO & STREAMING",
-    items: ["Rode Wireless Pro","DJI Mic 2","Shure SM7B","Elgato Wave 3","Elgato Facecam Pro","ATEM Mini Pro","GoXLR Mini","Stream Deck MK.2","Neewer Key Light"],
+    items: ["Rode Wireless Pro", "DJI Mic 2", "Shure SM7B", "Elgato Wave 3", "Elgato Facecam Pro", "ATEM Mini Pro", "GoXLR Mini", "Stream Deck MK.2", "Neewer Key Light"],
   },
   {
     title: "MÁY CHIẾU & MÀN HÌNH",
-    items: ["BenQ TK700","Epson EH-TW7000","ViewSonic X100","Samsung Smart Monitor","LG UltraFine 32","Dell 4K 27","Màn chiếu 120 inch","Giá treo máy chiếu","Bộ chuyển HDMI"],
+    items: ["BenQ TK700", "Epson EH-TW7000", "ViewSonic X100", "Samsung Smart Monitor", "LG UltraFine 32", "Dell 4K 27", "Màn chiếu 120 inch", "Giá treo máy chiếu", "Bộ chuyển HDMI"],
   },
 ];
 
@@ -38,12 +39,14 @@ interface AuthUser {
   full_name: string;
   email: string;
   phone: string;
+  roles?: Array<{ id: number; name: string }>;
+
 }
 
 export default function Header() {
   const navigator = useNavigate();
   const [keyword, setKeyword] = useState("");
-  
+
   // Menu State
   const [isMegaOpen, setIsMegaOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
@@ -53,7 +56,7 @@ export default function Header() {
   const megaAreaRef = useRef<HTMLLIElement | null>(null);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
 
-  // ─── AUTH STATE (Đồng bộ với LocalStorage) ────────────────────────────────
+  // ─── AUTH STATE ────────────────────────────────
   const [authUser, setAuthUser] = useState<AuthUser | null>(() => {
     try {
       const saved = localStorage.getItem("auth_user");
@@ -73,8 +76,8 @@ export default function Header() {
       }
     };
     window.addEventListener("storage", handleStorageChange);
-    window.addEventListener("auth_changed", handleStorageChange); 
-    
+    window.addEventListener("auth_changed", handleStorageChange);
+
     return () => {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("auth_changed", handleStorageChange);
@@ -88,42 +91,42 @@ export default function Header() {
   const clearSearch = () => setKeyword("");
 
   useEffect(() => {
-      if (!isMegaOpen) return;
-      const handler = (e: MouseEvent) => {
-        if (megaAreaRef.current && !megaAreaRef.current.contains(e.target as Node))
-          setIsMegaOpen(false);
-      };
-      document.addEventListener("mousemove", handler);
-      return () => document.removeEventListener("mousemove", handler);
-    }, [isMegaOpen]);
+    if (!isMegaOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (megaAreaRef.current && !megaAreaRef.current.contains(e.target as Node))
+        setIsMegaOpen(false);
+    };
+    document.addEventListener("mousemove", handler);
+    return () => document.removeEventListener("mousemove", handler);
+  }, [isMegaOpen]);
 
-    useEffect(() => {
-      if (!isAccountOpen) return;
-      const handler = (e: MouseEvent) => {
-        if (accountMenuRef.current && !accountMenuRef.current.contains(e.target as Node))
-          setIsAccountOpen(false);
-      };
-      document.addEventListener("mousedown", handler);
-      return () => document.removeEventListener("mousedown", handler);
-    }, [isAccountOpen]);
+  useEffect(() => {
+    if (!isAccountOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (accountMenuRef.current && !accountMenuRef.current.contains(e.target as Node))
+        setIsAccountOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [isAccountOpen]);
 
   const handleLogout = async () => {
-      await signout();
-      localStorage.removeItem("auth_user");
-      localStorage.removeItem("token");
-      setAuthUser(null);
-      setIsAccountOpen(false);
-      window.dispatchEvent(new Event("auth_changed")); // Thông báo cho toàn app
-      navigator("/");
-    };
+    await signout();
+    localStorage.removeItem("auth_user");
+    localStorage.removeItem("token");
+    setAuthUser(null);
+    setIsAccountOpen(false);
+    window.dispatchEvent(new Event("auth_changed"));
+    navigator("/");
+  };
 
-    const handleAccountClick = () => {
-      if (!authUser) {
-        navigator("/signin");
-      } else {
-        setIsAccountOpen((p) => !p);
-      }
-    };
+  const handleAccountClick = () => {
+    if (!authUser) {
+      setIsAccountOpen((p) => !p);
+    } else {
+      setIsAccountOpen((p) => !p);
+    }
+  };
 
   return (
     <header className="bg-white border-b border-slate-200 text-slate-900 sticky top-0 z-50 shadow-sm">
@@ -177,50 +180,104 @@ export default function Header() {
 
           {/* Account */}
           <div ref={accountMenuRef} className="relative">
-            <button type="button"
-              className="cursor-pointer h-10 min-w-10 rounded-full px-2 flex items-center gap-2 text-slate-600 hover:text-blue-600 hover:bg-slate-100 transition-colors"
-              onClick={handleAccountClick}
-              aria-expanded={authUser ? isAccountOpen : undefined}
+            <button
+              type="button"
+              onClick={() => setIsAccountOpen(!isAccountOpen)}
+              onBlur={() => setTimeout(() => setIsAccountOpen(false), 150)}
+              className="cursor-pointer h-10 w-10 rounded-full flex items-center justify-center text-slate-600 hover:text-blue-600 hover:bg-slate-100 transition-colors"
             >
-              {!!authUser && authUser ? (
-                <>
-                  <img src={avatarUrl} alt={authUser.full_name}
-                    className="h-8 w-8 rounded-full object-cover" />
-                  <span className="hidden sm:inline-block text-sm font-medium max-w-28 truncate">
-                    {authUser.full_name}
-                  </span>
-                </>
+              {authUser ? (
+                <img
+                  src={avatarUrl}
+                  alt={authUser.full_name}
+                  className="h-8 w-8 rounded-full object-cover"
+                />
               ) : (
                 <User size={24} />
               )}
             </button>
 
-            {!!authUser && isAccountOpen && (
-              <div className="absolute right-0 top-full mt-3 w-64 rounded-lg border border-slate-200 bg-white shadow-xl ring-1 ring-black/5 z-50 overflow-clip">
-                <div className="bg-slate-50 px-4 py-4">
-                  <p className="text-sm font-semibold text-slate-900 truncate">{authUser?.full_name}</p>
-                  <p className="text-xs text-slate-500 truncate">{authUser?.email}</p>
-                </div>
-                <div className="flex flex-col gap-1 p-3">
-                  {[
-                    { label: "My Profile", tab: "profile",  icon: User },
-                    { label: "My Orders",  tab: "orders",   icon: Package },
-                    { label: "Settings",   tab: "settings", icon: Settings },
-                  ].map((item) => (
-                    <button key={item.tab} type="button"
-                      onClick={() => { setIsAccountOpen(false); navigator(`/account?tab=${item.tab}`); }}
-                      className="cursor-pointer flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors w-full text-left"
+            {isAccountOpen && (
+              <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-gray-200 rounded-xl shadow-xl py-2 z-50">
+                {authUser ? (
+                  <>
+                    {/* User info header */}
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <p className="text-sm font-medium text-gray-900 truncate">{authUser.full_name}</p>
+                      <p className="text-xs text-gray-500 truncate">{authUser.email}</p>
+                    </div>
+
+                    {/* Menu items */}
+                    <Link
+                      to="/account?tab=profile"
+                      onClick={() => setIsAccountOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                     >
-                      <item.icon className="w-4 h-4" />
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-                <button type="button" onClick={handleLogout}
-                  className="flex w-full items-center justify-center gap-2 bg-rose-50 p-3 text-sm font-semibold text-rose-600 hover:bg-rose-100 transition-colors">
-                  <LogOut className="w-4 h-4" />
-                  Sign Out
-                </button>
+                      <User className="w-4 h-4 text-gray-500" />
+                      My Profile
+                    </Link>
+
+                    <Link
+                      to="/account?tab=orders"
+                      onClick={() => setIsAccountOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <Package className="w-4 h-4 text-gray-500" />
+                      My Orders
+                    </Link>
+
+                    <Link
+                      to="/account?tab=settings"
+                      onClick={() => setIsAccountOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <Settings className="w-4 h-4 text-gray-500" />
+                      Settings
+                    </Link>
+
+                    {/* Admin Panel */}
+                    {authUser.roles?.some(role => role.name === 'ADMIN') && (
+                      <Link
+                        to="/admin/dashboard"
+                        onClick={() => setIsAccountOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-[#0052CC] hover:bg-gray-50 transition-colors"
+                      >
+                        <LayoutDashboard className="w-4 h-4" />
+                        Admin Panel
+                      </Link>
+                    )}
+
+                    {/* Divider và Sign Out */}
+                    <div className="border-t border-gray-100 mt-1 pt-1">
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Sign Out
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/signin"
+                      onClick={() => setIsAccountOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <User className="w-4 h-4 text-gray-500" />
+                      Sign In
+                    </Link>
+                    <Link
+                      to="/signup"
+                      onClick={() => setIsAccountOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <Package className="w-4 h-4 text-gray-500" />
+                      Create Account
+                    </Link>
+                  </>
+                )}
               </div>
             )}
           </div>
