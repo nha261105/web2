@@ -33,6 +33,10 @@ class AuthenticateToken
             );
         }
 
+        if ($token->user->status !== 'ACTIVE') {
+            return ApiResponse::forbidden('Your account has been locked. Please contact support.');
+        }
+
         $token->lastused_at = Carbon::now();
         $token->save();
 

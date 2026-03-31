@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Address extends Model
 {
+    use HasFactory;
     protected $table = 'addresses';
 
     protected $fillable = [
@@ -20,5 +22,5 @@ class Address extends Model
         'is_default'
     ];
 
-    public $timestamps = false;
+    public $timestamps = true;
 }

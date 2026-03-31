@@ -38,6 +38,7 @@ Route::prefix('brands')->group(function () {
     Route::get('/', [BrandController::class, 'index']);
     Route::get('/{id}', [BrandController::class, 'show']);
 });
+
 // Product public routes
 Route::prefix('products')->group(function () {
     Route::get('/', [ProductController::class, 'index']);
@@ -62,78 +63,74 @@ Route::post('/coupons/check', [CouponController::class, 'check']);
 Route::middleware(['auth.token'])->group(function () {
     Route::post('/auth/sign-out', [AuthController::class, 'signOut']);
     Route::get('/auth/me', [AuthController::class, 'me']);
-    Route::post('/user-tokens/check-token', [
-        UserTokenController::class,
-        'check',
-    ]);
+    Route::post('/user-tokens/check-token', [UserTokenController::class, 'check']);
+
+    Route::get('/users/me', [UserController::class, 'me']);
+    Route::patch('/users/me', [UserController::class, 'updateMe']);
+
+    // address crud
+    Route::prefix('users/{userId}/addresses')->group(function () {
+        Route::get('/', [AddressController::class, 'index']);
+        Route::post('/', [AddressController::class, 'store']);
+        Route::patch('/{id}', [AddressController::class, 'update']);
+        Route::delete('/{id}', [AddressController::class, 'destroy']);
+    });
+
+    // rental user
+    Route::get('/rentals', [RentalController::class, 'index']);
 
     Route::middleware(['role:ADMIN'])->group(function () {
+        Route::get('/users', [UserController::class, 'index']);
+        Route::get('/users/{id}', [UserController::class, 'show']);
+        Route::delete('/users/{id}', [UserController::class, 'destroy']);
+        Route::patch('/users/{id}/status', [UserController::class, 'updateStatus']);
+        
         Route::get('/roles', [RbacController::class, 'roles']);
         Route::get('/permissions', [RbacController::class, 'permissions']);
-        Route::post('/roles/{id}/permissions', [
-            RbacController::class,
-            'syncRolePermissions',
-        ]);
+        Route::post('/roles/{id}/permissions', [RbacController::class, 'syncRolePermissions']);
         Route::get('/users/{id}/roles', [RbacController::class, 'userRoles']);
-        Route::post('/users/{id}/roles', [
-            RbacController::class,
-            'assignRoleToUser',
-        ]);
-        Route::delete('/users/{id}/roles/{roleId}', [
-            RbacController::class,
-            'removeRoleFromUser',
-        ]);
+        Route::post('/users/{id}/roles', [RbacController::class, 'assignRoleToUser']);
+        Route::delete('/users/{id}/roles/{roleId}', [RbacController::class, 'removeRoleFromUser']);
 
-        //Rental CRUD
-        Route::get('/rentals', [RentalController::class, 'index']);
+        // Rental CRUD
         Route::post('/rentals', [RentalController::class, 'store']);
         Route::get('/rentals/{id}', [RentalController::class, 'show']);
         Route::patch('/rentals/{id}', [RentalController::class, 'update']);
 
         // Return order
         Route::post('/return-orders', [ReturnOrderController::class, 'store']);
-        Route::patch('/return-orders/{id}', [
-            ReturnOrderController::class,
-            'update',
-        ]);
+        Route::patch('/return-orders/{id}', [ReturnOrderController::class, 'update']);
 
         // Rental issue
         Route::post('/rental-issues', [RentalIssueController::class, 'store']);
-        Route::patch('/rental-issues/{id}', [
-            RentalIssueController::class,
-            'update',
-        ]);
+        Route::patch('/rental-issues/{id}', [RentalIssueController::class, 'update']);
 
         // Transaction
         Route::post('/transactions', [TransactionController::class, 'store']);
-        Route::patch('/transactions/{id}', [
-            TransactionController::class,
-            'update',
-        ]);
+        Route::patch('/transactions/{id}', [TransactionController::class, 'update']);
 
-        // Category
+        // Category admin
         Route::prefix('categories')->group(function () {
             Route::post('/', [CategoryController::class, 'store']);
             Route::patch('/{category}', [CategoryController::class, 'update']);
-            Route::delete('/{category}', [
-                CategoryController::class,
-                'destroy',
-            ]);
+            Route::delete('/{category}', [CategoryController::class, 'destroy']);
         });
-        // Brands
+
+        // Brands admin
         Route::prefix('brands')->group(function () {
             Route::post('/', [BrandController::class, 'store']);
             Route::patch('/{brand}', [BrandController::class, 'update']);
             Route::delete('/{brand}', [BrandController::class, 'destroy']);
         });
-        // Products
+
+        // Products admin
         Route::prefix('products')->group(function () {
             Route::post('/', [ProductController::class, 'store']);
             Route::patch('/{product}', [ProductController::class, 'update']);
             Route::delete('/{product}', [ProductController::class, 'destroy']);
         });
 
-        // Coupons
+        // Coupons admin
         Route::prefix('coupons')->group(function () {
             Route::get('/', [CouponController::class, 'index']);
             Route::post('/', [CouponController::class, 'store']);
@@ -142,106 +139,18 @@ Route::middleware(['auth.token'])->group(function () {
             Route::delete('/{coupon}', [CouponController::class, 'destroy']);
         });
 
-        // Combos
+        // Combos admin
         Route::prefix('combos')->group(function () {
             Route::post('/', [ComboController::class, 'store']);
             Route::patch('/{combo}', [ComboController::class, 'update']);
             Route::delete('/{combo}', [ComboController::class, 'destroy']);
         });
 
-        // Rental policies
+        // Rental policies admin
         Route::prefix('rental-policies')->group(function () {
             Route::post('/', [RentalPolicyController::class, 'store']);
-            Route::patch('/{rentalPolicy}', [
-                RentalPolicyController::class,
-                'update',
-            ]);
-            Route::delete('/{rentalPolicy}', [
-                RentalPolicyController::class,
-                'destroy',
-            ]);
-        });
-    });
-    Route::middleware(['auth.token'])->group(function () {
-        Route::post('/auth/sign-out', [AuthController::class, 'signOut']);
-        Route::get('/auth/me', [AuthController::class, 'me']);
-        Route::post('/user-tokens/check-token', [
-            UserTokenController::class,
-            'check',
-        ]);
-
-        Route::get('/users/me', [UserController::class, 'me']);
-        Route::patch('/users/me', [UserController::class, 'updateMe']);
-
-        // address crud
-        Route::prefix('users/{userId}/addresses')->group(function () {
-            Route::get('/', [AddressController::class, 'index']);
-            Route::post('/', [AddressController::class, 'store']);
-            Route::patch('/{id}', [AddressController::class, 'update']);
-            Route::delete('/{id}', [AddressController::class, 'destroy']);
-        });
-
-        Route::middleware(['role:ADMIN'])->group(function () {
-            Route::get('/users', [UserController::class, 'index']);
-            Route::delete('/users/{id}', [UserController::class, 'destroy']);
-            Route::get('/roles', [RbacController::class, 'roles']);
-            Route::get('/permissions', [RbacController::class, 'permissions']);
-            Route::post('/roles/{id}/permissions', [
-                RbacController::class,
-                'syncRolePermissions',
-            ]);
-            Route::get('/users/{id}/roles', [
-                RbacController::class,
-                'userRoles',
-            ]);
-            Route::post('/users/{id}/roles', [
-                RbacController::class,
-                'assignRoleToUser',
-            ]);
-            Route::delete('/users/{id}/roles/{roleId}', [
-                RbacController::class,
-                'removeRoleFromUser',
-            ]);
-            Route::patch('/users/{id}/status', [
-                UserController::class,
-                'updateStatus',
-            ]);
-
-            //Rental CRUD
-            Route::get('/rentals', [RentalController::class, 'index']);
-            Route::post('/rentals', [RentalController::class, 'store']);
-            Route::get('/rentals/{id}', [RentalController::class, 'show']);
-            Route::patch('/rentals/{id}', [RentalController::class, 'update']);
-
-            // Return order
-            Route::post('/return-orders', [
-                ReturnOrderController::class,
-                'store',
-            ]);
-            Route::patch('/return-orders/{id}', [
-                ReturnOrderController::class,
-                'update',
-            ]);
-
-            // Rental issue
-            Route::post('/rental-issues', [
-                RentalIssueController::class,
-                'store',
-            ]);
-            Route::patch('/rental-issues/{id}', [
-                RentalIssueController::class,
-                'update',
-            ]);
-
-            // Transaction
-            Route::post('/transactions', [
-                TransactionController::class,
-                'store',
-            ]);
-            Route::patch('/transactions/{id}', [
-                TransactionController::class,
-                'update',
-            ]);
+            Route::patch('/{rentalPolicy}', [RentalPolicyController::class, 'update']);
+            Route::delete('/{rentalPolicy}', [RentalPolicyController::class, 'destroy']);
         });
     });
 });

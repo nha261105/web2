@@ -10,15 +10,19 @@ class ApiResponse
         array $data = [],
         string $message = 'Success',
         int $status = 200,
+        array $meta = []
     ): JsonResponse {
-        return response()->json(
-            [
-                'success' => true,
-                'message' => $message,
-                'data' => $data,
-            ],
-            $status,
-        );
+        $payload = [
+            'success' => true,
+            'message' => $message,
+            'data' => $data,
+        ];
+
+        if (!empty($meta)) {
+            $payload['meta'] = $meta;
+        }
+
+        return response()->json($payload, $status);
     }
 
     public static function error(
@@ -50,6 +54,12 @@ class ApiResponse
         string $message = 'Forbidden',
     ): JsonResponse {
         return self::error($message, 'FORBIDDEN', 403);
+    }
+
+    public static function notFound(
+        string $message = 'Resource not found'
+    ): JsonResponse {
+        return self::error($message, 'NOT_FOUND', 404);
     }
 
     public static function validation(

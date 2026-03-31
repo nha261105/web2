@@ -7,13 +7,16 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Rental;
+use App\Models\Address;
+use App\Models\UserInfo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+
 
 class User extends Authenticatable
 {
     use HasFactory;
-    use HasApiTokens;
     use SoftDeletes;
 
     protected $table = 'users';
@@ -54,7 +57,7 @@ class User extends Authenticatable
 
     public function hasRole(string $roleName): bool
     {
-        return $this->roles()->where('name', $roleName)->exists();
+        return $this->roles->pluck('name')->contains($roleName);
     }
 
     public function hasPermission(string $permissionName): bool
@@ -79,5 +82,26 @@ class User extends Authenticatable
     public function addresses(): HasMany
     {
         return $this->hasMany(Address::class, 'user_id');
+    }
+
+    /**
+     * Get the password for the user.
+     * Overrides the default getAuthPassword method to use 'hash_password' column.
+     *
+     * @return string
+     */
+    public function getAuthPassword()
+    {
+        return $this->hash_password;
+    }
+
+    public function rentals(): HasMany
+    {
+        return $this->hasMany(Rental::class, 'user_id');
+    }
+
+    public function userInfo(): HasOne
+    {
+        return $this->hasOne(UserInfo::class);
     }
 }

@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Throwable;
+use App\Http\Resources\UserResource;
 
 class AuthController extends Controller
 {
@@ -67,6 +68,10 @@ class AuthController extends Controller
                 $user->save();
             }
 
+            if ($user->status !== 'ACTIVE') {
+                return ApiResponse::forbidden('Your account has been locked. Please contact support.');
+            }
+
             $tokenRecord = UserTokens::create([
                 'user_id' => $user->id,
                 'token' => hash('sha256', Str::random(40)),
@@ -81,9 +86,10 @@ class AuthController extends Controller
                 ->unique()
                 ->values();
 
+            // Kết hợp: dùng UserResource từ feature, giữ cấu trúc từ dev
             return ApiResponse::success(
                 [
-                    'user' => $user,
+                    'user' => new UserResource($user),
                     'roles' => $user->roles->pluck('name')->values(),
                     'permissions' => $permissions,
                     'token' => [
@@ -110,6 +116,7 @@ class AuthController extends Controller
 
         $user->load('roles.permissions');
 
+        // Giữ nguyên response từ dev (không dùng resource)
         return ApiResponse::success([
             'user' => $user,
             'roles' => $user->roles->pluck('name')->values(),

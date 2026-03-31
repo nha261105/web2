@@ -15,7 +15,7 @@ class UpdateAddressRequest extends FormRequest
     {
         return [
             'receive_name' => 'sometimes|string|max:255',
-            'receive_phone' => 'sometimes|string|max:20',
+            'receive_phone' => ['sometimes', 'regex:/^(0|\+84)[0-9]{9}$/'],
             'city' => 'sometimes|string',
             'district' => 'sometimes|string',
             'ward' => 'sometimes|string',

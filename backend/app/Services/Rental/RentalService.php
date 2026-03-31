@@ -7,9 +7,23 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class RentalService
 {
-    public function paginate(array $filters): LengthAwarePaginator
+    public function paginate(array $filters, $user): LengthAwarePaginator
     {
-        return Rental::query()->paginate((int) ($filters['per_page'] ?? 15));
+        $query = Rental::query();
+
+        if (!$user) {
+            return $query->where('id', 0)->paginate($filters['per_page'] ?? 15);
+        }
+
+        if (!$user->hasRole('ADMIN')) {
+            $query->where('user_id', (int) $user->id);
+        }
+
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        return $query->latest()->paginate($filters['per_page'] ?? 15);
     }
 
     public function create(array $data): Rental

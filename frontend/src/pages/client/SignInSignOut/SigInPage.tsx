@@ -14,6 +14,11 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { Fragment } from "react/jsx-runtime";
 
+interface Role {
+  id: number;
+  name: string;
+}
+
 export default function SignInPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -34,17 +39,37 @@ export default function SignInPage() {
   }, [navigate]);
 
   const handleSignIn = async () => {
-    const result = await signin(email, password, isRemember);
+    const res = await signin(email, password, isRemember);
 
-    if (result.success) {
-      const roles = result?.data?.roles as string[] | undefined;
-      navigate(getRedirectPathByRole(roles), { replace: true });
-      toast.success("Đăng nhập thành công");
+    if (res.success) {
+      const userData = res.data.user;
+
+      // Kiểm tra user có bị khóa không
+      if (userData.status !== 'ACTIVE') {
+        toast.error("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ hỗ trợ.");
+        return;
+      }
+
+      toast.success("Đăng nhập thành công!");
+
+      const token = res.data.token.access_token || res.data.token;
+      localStorage.setItem("token", token);
+      localStorage.setItem("auth_user", JSON.stringify(userData));
+
+      // Lấy roles từ userData để redirect
+      const roles = userData?.roles?.map((role: Role) => role.name);
+      const redirectPath = getRedirectPathByRole(roles);
+      navigate(redirectPath, { replace: true });
     } else {
-      alert(result.message); // hiển thị lỗi
+      // Xử lý lỗi từ backend
+      if (res.code === 'FORBIDDEN' || res.message?.includes('khóa')) {
+        toast.error("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ hỗ trợ.");
+      } else {
+        toast.error(res.message || "Sai email hoặc mật khẩu!");
+      }
     }
   };
-
+  
   const textLeftPanel = [
     "500+ professional tech products",
     "Flexible daily, weekly & monthly plans",
@@ -130,7 +155,7 @@ export default function SignInPage() {
               onClick={handleSignIn}
             />
             <MyHrefText text="Hoặc đăng nhập với" />
-            <MyGoogleButton className="" onHandle={() => {}} />
+            <MyGoogleButton className="" onHandle={() => { }} />
           </div>
         </div>
       </div>

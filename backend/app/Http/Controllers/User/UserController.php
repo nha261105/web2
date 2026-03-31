@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Http\Requests\User\UpdateUserRequest;
 use App\Support\ApiResponse;
+use App\Http\Requests\User\UpdateUserStatusRequest;
 
 class UserController extends Controller
 {
@@ -55,16 +56,15 @@ class UserController extends Controller
         $users = $this->userService->listUsers((int) $perPage);
 
         return ApiResponse::success(
-            [
-                'data' => UserResource::collection($users),
-                'meta' => [
-                    'total' => $users->total(),
-                    'current_page' => $users->currentPage(),
-                    'per_page' => $users->perPage(),
-                    'last_page' => $users->lastPage(),
-                ],
-            ],
+            UserResource::collection($users)->resolve(),
             'Fetched successfully',
+            200,
+            [
+                'total' => $users->total(),
+                'current_page' => $users->currentPage(),
+                'per_page' => $users->perPage(),
+                'last_page' => $users->lastPage(),
+            ]
         );
     }
 
@@ -92,7 +92,7 @@ class UserController extends Controller
             $authUser = $request->attributes->get('auth_user');
             $user = $this->userService->updateUser(
                 $authUser->id,
-                $request->all(),
+                $request->validated(),
             );
 
             return ApiResponse::success(
@@ -122,17 +122,10 @@ class UserController extends Controller
     /**
      * PATCH /api/users/{id}/status (Admin)
      */
-    public function updateStatus(Request $request, $id): JsonResponse
+    public function updateStatus(UpdateUserStatusRequest $request, $id): JsonResponse
     {
         try {
-            $request->validate([
-                'status' => 'required|in:ACTIVE,INACTIVE',
-            ]);
-
-            $user = $this->userService->updateUser($id, [
-                'status' => $request->status,
-            ]);
-
+            $user = $this->userService->updateUser((int) $id, $request->validated());
             return ApiResponse::success(
                 [
                     'user' => new UserResource($user),
@@ -141,10 +134,31 @@ class UserController extends Controller
             );
         } catch (\Exception $e) {
             return ApiResponse::error(
-                'Cập nhật trạng thái thất bại',
+                'Người dùng không tồn tại hoặc lỗi hệ thống',
                 'UPDATE_STATUS_FAILED',
-                400,
+                404,
             );
         }
+    }
+
+    /**
+     * GET /api/users/{id} (Admin)
+     */
+    public function show(int $id): JsonResponse
+    {
+        $user = $this->userService->getUserById($id);
+
+        if (!$user) {
+            return ApiResponse::notFound('User not found');
+        }
+
+        $user->load(['roles', 'userInfo']);
+        $user->loadCount('rentals');
+        $user->loadSum('rentals', 'total_price');
+
+        return ApiResponse::success(
+            ['user' => new UserResource($user)],
+            'Fetched successfully'
+        );
     }
 }

@@ -11,7 +11,7 @@ export interface Address {
   district: string;
   ward: string;
   street: string;
-  note: string | null;
+  note?: string;
   is_default: boolean;
   created_at?: string;
   updated_at?: string;
