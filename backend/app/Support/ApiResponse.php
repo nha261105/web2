@@ -6,13 +6,23 @@ use Illuminate\Http\JsonResponse;
 
 class ApiResponse
 {
-    public static function success(array $data = [], string $message = 'Success', int $status = 200): JsonResponse
-    {
-        return response()->json([
+    public static function success(
+        array $data = [],
+        string $message = 'Success',
+        int $status = 200,
+        array $meta = []
+    ): JsonResponse {
+        $payload = [
             'success' => true,
             'message' => $message,
-            'data' => $data,
-        ], $status);
+            'data'    => $data,
+        ];
+
+        if (!empty($meta)) {
+            $payload['meta'] = $meta;
+        }
+
+        return response()->json($payload, $status);
     }
 
     public static function error(string $message, string $code, int $status, array $errors = []): JsonResponse
@@ -38,6 +48,11 @@ class ApiResponse
     public static function forbidden(string $message = 'Forbidden'): JsonResponse
     {
         return self::error($message, 'FORBIDDEN', 403);
+    }
+
+    public static function notFound(string $message = 'Resource not found'): JsonResponse
+    {
+        return self::error($message, 'NOT_FOUND', 404);
     }
 
     public static function validation(array $errors, string $message = 'Validation failed'): JsonResponse

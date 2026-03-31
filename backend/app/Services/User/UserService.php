@@ -10,7 +10,9 @@ class UserService
 {
     public function listUsers(int $perPage = 15): LengthAwarePaginator
     {
-        return User::paginate($perPage);
+        return User::withCount('rentals')
+            ->withSum('rentals', 'total_price')
+            ->paginate($perPage);
     }
 
     public function getActiveUsers(): Collection
@@ -25,7 +27,7 @@ class UserService
 
     public function getUserById(int $id): ?User
     {
-        return User::find($id);
+        return User::with(['roles', 'userInfo'])->find($id);
     }
 
     private function emailExists(string $email): bool
@@ -60,11 +62,22 @@ class UserService
     public function updateUser($userId, array $data): User
     {
         $user = User::findOrFail($userId);
-        if (isset($data['password'])) {
-            $data['hash_password'] = $data['password'];
+
+        if (isset($data['email']) && $this->emailExists($data['email'], $userId)) {
+            throw new \Exception('Email already exists');
         }
+
+        if (isset($data['phone']) && $this->phoneExists($data['phone'], $userId)) {
+            throw new \Exception('Phone number already exists');
+        }
+
+        if (isset($data['password'])) {
+            $data['hash_password'] = bcrypt($data['password']);
+            unset($data['password']);
+        }
+
         $user->update($data);
-        return $user;
+        return $user->fresh();
     }
 
     public function deleteUser(int $id): bool
