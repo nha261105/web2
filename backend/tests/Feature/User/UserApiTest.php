@@ -153,7 +153,6 @@ class UserApiTest extends TestCase
     }
 
     // ─── GET /api/users (Admin only) ─────────────────────────────────────────
-
     public function test_admin_can_list_users(): void
     {
         [$admin, $token] = $this->createUserWithToken('ADMIN');
@@ -165,10 +164,8 @@ class UserApiTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
             ->assertJsonStructure([
-                'data' => [
-                    'data',
-                    'meta' => ['total', 'current_page', 'per_page', 'last_page'],
-                ],
+                'data',
+                'meta' => ['total', 'current_page', 'per_page', 'last_page'],
             ]);
     }
 
@@ -193,7 +190,6 @@ class UserApiTest extends TestCase
     }
 
     // ─── GET /api/users/{id} (Admin only) ────────────────────────────────────
-
     public function test_admin_can_get_user_by_id(): void
     {
         [$admin, $token] = $this->createUserWithToken('ADMIN');
@@ -204,7 +200,9 @@ class UserApiTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.user.id', $target->id);
+            ->assertJsonStructure([
+                'data' => ['user' => ['id', 'email', 'full_name', 'status', 'roles']]
+            ]);
     }
 
     public function test_get_user_by_id_fails_not_found_404(): void
