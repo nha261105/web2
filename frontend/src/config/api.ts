@@ -12,6 +12,8 @@ export const API_ENDPOINTS = {
   usersMe: "/api/users/me",
   updateMe: "/api/users/me",
 
+  users: "/api/users",
+
 } as const;
 
 export const addressEndpoints = {
