@@ -2,12 +2,14 @@
 
 namespace Tests\Feature\Rental;
 
-use Tests\TestCase;
+use App\Models\Rental;
 use App\Models\Role;
 use App\Models\User;
-use App\Models\Rental;
-use App\Models\Address;
+use App\Models\UserTokens;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Tests\TestCase;
+use App\Models\Address;
 use PHPUnit\Framework\Attributes\Test;
 use Illuminate\Support\Str;
 
@@ -15,22 +17,83 @@ class RentalApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function createUserWithToken(string $role = null): array
+    private function createTokenFor(User $user): string
     {
-        $user = User::factory()->create(['status' => 'ACTIVE']);
+        $token = bin2hex(random_bytes(16));
 
-        if ($role) {
-            $roleModel = Role::firstOrCreate(['name' => $role]);
-            $user->roles()->attach($roleModel->id);
-        }
-
-        $token = Str::random(60);
-        $user->tokens()->create([
-            'token'      => $token,
-            'expires_at' => now()->addDays(30),
+        UserTokens::create([
+            'user_id' => $user->id,
+            'token' => $token,
+            'expires_at' => now()->addHours(2),
+            'lastused_at' => now(),
         ]);
 
-        return [$user, $token];
+        return $token;
+    }
+
+    private function createAdminToken(): string
+    {
+        $admin = User::factory()->create();
+        $adminRole = Role::firstOrCreate(['name' => 'ADMIN']);
+        $admin->roles()->attach($adminRole->id);
+
+        return $this->createTokenFor($admin);
+    }
+
+    public function test_rentals_index_requires_authentication(): void
+    {
+        $this->getJson('/api/rentals')->assertStatus(401);
+    }
+
+    public function test_rentals_index_returns_403_for_non_admin_user(): void
+    {
+        $user = User::factory()->create();
+        $customerRole = Role::firstOrCreate(['name' => 'CUSTOMER']);
+        $user->roles()->attach($customerRole->id);
+        $token = $this->createTokenFor($user);
+
+        $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->getJson('/api/rentals')
+            ->assertStatus(403);
+    }
+
+    public function test_admin_can_get_rentals_index(): void
+    {
+        $adminToken = $this->createAdminToken();
+
+        $customer = User::factory()->create();
+        $addressId = DB::table('addresses')->insertGetId([
+            'user_id' => $customer->id,
+            'receive_name' => 'Receiver',
+            'receive_phone' => '0911222333',
+            'city' => 'HCM',
+            'district' => 'District 1',
+            'ward' => 'Ben Nghe',
+            'street' => '1 Nguyen Hue',
+            'is_default' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        Rental::create([
+            'user_id' => $customer->id,
+            'address_id' => $addressId,
+            'code' => 'RNT-001',
+            'start_date' => now()->toDateTimeString(),
+            'end_date' => now()->addDays(2)->toDateTimeString(),
+            'total_price' => 200000,
+            'deposit_amount' => 50000,
+            'status' => 'PENDING',
+        ]);
+
+        $this->withHeader('Authorization', 'Bearer ' . $adminToken)
+            ->getJson('/api/rentals')
+            ->assertStatus(200)
+            ->assertJsonStructure([
+                'success',
+                'message',
+                'data' => ['items', 'meta'],
+            ]);
     }
 
     #[Test]

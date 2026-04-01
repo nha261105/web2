@@ -1,8 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { FormEvent } from "react";
-import { PRODUCTS, CATEGORIES } from "../client/data";
-import type { Product } from "../client/data";
-import { Plus, Search, Edit2, Trash2, ChevronDown } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, AlertCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,218 +10,221 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-
-function KitBadge({ type }: { type: string }) {
-  const styles: Record<string, string> = {
-    new: "bg-blue-50 text-blue-700",
-    sale: "bg-red-50 text-red-600",
-    bestseller: "bg-yellow-50 text-yellow-700",
-  };
-  return (
-    <span
-      className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${styles[type] ?? "bg-gray-100 text-gray-600"}`}
-    >
-      {type}
-    </span>
-  );
-}
+import {
+  getAdminProducts,
+  createAdminProduct,
+  updateAdminProduct,
+  deleteAdminProduct,
+  type Product,
+  AdminApiError,
+} from "@/services/adminProductsService";
 
 type AddProductFormState = {
-  title: string;
-  brand: string;
-  category: string;
-  price: string;
-  available: string;
-  image: string;
-  badge: "" | "new" | "sale" | "bestseller";
+  name: string;
+  description?: string;
+  brand_id?: string;
+  category_id?: string;
+  deposit_price: string;
+  daily_price: string;
+  status: string;
 };
 
 const initialFormState: AddProductFormState = {
-  title: "",
-  brand: "",
-  category: "",
-  price: "",
-  available: "",
-  image: "",
-  badge: "",
+  name: "",
+  description: "",
+  brand_id: "",
+  category_id: "",
+  deposit_price: "",
+  daily_price: "",
+  status: "AVAILABLE",
 };
 
-const toFormState = (product: Product): AddProductFormState => ({
-  title: product.title,
-  brand: product.brand,
-  category: product.category,
-  price: String(product.price),
-  available: String(product.available),
-  image: product.image,
-  badge: product.badge ?? "",
-});
-
 export default function AdminProducts() {
-  const [products, setProducts] = useState(PRODUCTS);
+  const [products, setProducts] = useState<Product[]>([]);
+  console.log(products)
+  const [total, setTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [form, setForm] = useState<AddProductFormState>(initialFormState);
-  const [editForm, setEditForm] = useState<AddProductFormState>(initialFormState);
+  const [editForm, setEditForm] =
+    useState<AddProductFormState>(initialFormState);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedProductForDelete, setSelectedProductForDelete] =
+    useState<Product | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  const filtered = products.filter((p) => {
-    const matchSearch =
-      p.title.toLowerCase().includes(search.toLowerCase()) ||
-      p.brand.toLowerCase().includes(search.toLowerCase());
-    const matchCategory =
-      categoryFilter === "" || p.category === categoryFilter;
-    return matchSearch && matchCategory;
-  });
+  const loadProducts = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const result = await getAdminProducts(1, 20, search || undefined);
+      setProducts(result.products);
+      setTotal(result.total);
+    } catch (err) {
+      const message =
+        err instanceof AdminApiError ? err.message : "Failed to load products";
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [search]);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
+
+  const handleAddProduct = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!form.name || !form.deposit_price || !form.daily_price || !form.status) {
+      setError("Please fill in all required fields");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await createAdminProduct({
+        name: form.name,
+        description: form.description || undefined,
+        brand_id: form.brand_id ? Number(form.brand_id) : undefined,
+        category_id: form.category_id ? Number(form.category_id) : undefined,
+        deposit_price: String(form.deposit_price),
+        daily_price: String(form.daily_price),
+        status: form.status,
+      });
+      setForm(initialFormState);
+      setIsAddDialogOpen(false);
+      await loadProducts();
+    } catch (err) {
+      const message =
+        err instanceof AdminApiError ? err.message : "Failed to create product";
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditProduct = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!editingProductId) return;
+    if (
+      !editForm.name ||
+      !editForm.deposit_price ||
+      !editForm.daily_price ||
+      !editForm.status
+    ) {
+      setError("Please fill in all required fields");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await updateAdminProduct(editingProductId, {
+        name: editForm.name,
+        description: editForm.description || undefined,
+        brand_id: editForm.brand_id ? Number(editForm.brand_id) : undefined,
+        category_id: editForm.category_id
+          ? Number(editForm.category_id)
+          : undefined,
+        deposit_price: String(editForm.deposit_price),
+        daily_price: String(editForm.daily_price),
+        status: editForm.status,
+      });
+      setEditForm(initialFormState);
+      setIsEditDialogOpen(false);
+      setEditingProductId(null);
+      await loadProducts();
+    } catch (err) {
+      const message =
+        err instanceof AdminApiError ? err.message : "Failed to update product";
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteProduct = async () => {
+    if (!selectedProductForDelete) return;
+
+    try {
+      setIsSubmitting(true);
+      await deleteAdminProduct(selectedProductForDelete.id);
+      setIsDeleteDialogOpen(false);
+      setSelectedProductForDelete(null);
+      await loadProducts();
+    } catch (err) {
+      const message =
+        err instanceof AdminApiError ? err.message : "Failed to delete product";
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const openEdit = (product: Product) => {
     setEditingProductId(product.id);
-    setEditForm(toFormState(product));
+    setEditForm({
+      name: product.name,
+      description: product.description,
+      brand_id: product.brand?.id.toString() || "",
+      category_id: product.category?.id.toString() || "",
+      deposit_price: String(product.deposit_price),
+      daily_price: String(product.daily_price || ""),
+      status: String(product.status),
+    });
     setIsEditDialogOpen(true);
   };
 
-  const closeEditDialog = () => {
-    setIsEditDialogOpen(false);
-    setEditingProductId(null);
-    setEditForm(initialFormState);
-  };
+  const filtered = products.filter((p) => {
+    const keyword = search.toLowerCase().trim();
+    const name = String(p.name ?? "").toLowerCase();
+    const brandName = String(p.brand?.name ?? "").toLowerCase();
+    const categoryName = String(p.category?.name ?? "").toLowerCase();
 
-  const openAdd = () => {
-    setIsAddDialogOpen(true);
-  };
-
-  const handleFormChange = (
-    key: keyof AddProductFormState,
-    value: AddProductFormState[keyof AddProductFormState],
-  ) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const resetForm = () => {
-    setForm(initialFormState);
-  };
-
-  const handleEditFormChange = (
-    key: keyof AddProductFormState,
-    value: AddProductFormState[keyof AddProductFormState],
-  ) => {
-    setEditForm((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const handleAddProduct = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const price = Number(form.price);
-    const available = Number(form.available);
-    if (
-      !form.title ||
-      !form.brand ||
-      !form.category ||
-      Number.isNaN(price) ||
-      Number.isNaN(available)
-    ) {
-      return;
-    }
-
-    const safeImage =
-      form.image.trim() ||
-      "https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=600";
-
-    const newProduct: Product = {
-      id: crypto.randomUUID(),
-      title: form.title.trim(),
-      description: "No description yet.",
-      price,
-      priceLabel: `$${price}/day`,
-      image: safeImage,
-      gallery: [safeImage],
-      badge: form.badge || undefined,
-      category: form.category,
-      brand: form.brand.trim(),
-      rating: 0,
-      reviews: 0,
-      available,
-      specs: {},
-      tags: [],
-    };
-
-    setProducts((prev) => [newProduct, ...prev]);
-    setIsAddDialogOpen(false);
-    resetForm();
-  };
-
-  const handleDelete = (id: string) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
-  };
-
-  const handleEditProduct = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    if (!editingProductId) {
-      return;
-    }
-
-    const price = Number(editForm.price);
-    const available = Number(editForm.available);
-
-    if (
-      !editForm.title ||
-      !editForm.brand ||
-      !editForm.category ||
-      Number.isNaN(price) ||
-      Number.isNaN(available)
-    ) {
-      return;
-    }
-
-    const safeImage =
-      editForm.image.trim() ||
-      "https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=600";
-
-    setProducts((prev) =>
-      prev.map((product) => {
-        if (product.id !== editingProductId) {
-          return product;
-        }
-
-        return {
-          ...product,
-          title: editForm.title.trim(),
-          brand: editForm.brand.trim(),
-          category: editForm.category,
-          price,
-          priceLabel: `$${price}/day`,
-          image: safeImage,
-          gallery: [safeImage],
-          available,
-          badge: editForm.badge || undefined,
-        };
-      }),
+    return (
+      name.includes(keyword) ||
+      brandName.includes(keyword) ||
+      categoryName.includes(keyword)
     );
-
-    closeEditDialog();
-  };
+  });
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Products</h1>
-          <p className="text-sm text-gray-500">
-            {products.length} total products
-          </p>
+          <p className="text-sm text-gray-500">{total} total products</p>
         </div>
-        {/* OPEN POPUP ADD PRODUCTS */}
         <button
-          onClick={openAdd}
+          onClick={() => setIsAddDialogOpen(true)}
           className="flex items-center gap-2 h-10 px-5 bg-[#0052CC] text-white rounded-xl text-sm font-medium hover:bg-[#0747A6] transition-colors"
         >
           <Plus className="w-4 h-4" /> Add Product
         </button>
       </div>
 
-      {/* SEARCH + FILTER */}
+      {/* Error message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
+          <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-red-800">{error}</p>
+            <button
+              onClick={() => setError(null)}
+              className="text-xs text-red-600 hover:text-red-800 mt-1"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Search Bar */}
       <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -235,117 +236,125 @@ export default function AdminProducts() {
             className="w-full h-9 pl-9 pr-4 rounded-lg border border-gray-200 text-sm focus:border-[#0052CC] outline-none"
           />
         </div>
-        <div className="relative">
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="h-9 pl-3 pr-8 rounded-lg border border-gray-200 text-sm appearance-none focus:border-[#0052CC] outline-none bg-white"
-          >
-            <option value="">All Categories</option>
-            {CATEGORIES.map((c) => (
-              <option key={c.id} value={c.name}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-        </div>
       </div>
 
       {/* Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                {[
-                  "Product",
-                  "Category",
-                  "Price/Day",
-                  "Available",
-                  "Badge",
-                  "Actions",
-                ].map((h) => (
-                  <th
-                    key={h}
-                    className="text-left px-5 py-3 text-xs font-medium text-gray-500"
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filtered.map((product) => (
-                <tr
-                  key={product.id}
-                  className="hover:bg-gray-50 transition-colors"
-                >
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={product.image}
-                        alt={product.title}
-                        className="w-10 h-10 rounded-lg object-cover"
-                      />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900 line-clamp-1 max-w-50">
-                          {product.title}
-                        </p>
-                        <p className="text-xs text-gray-500">{product.brand}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3 text-sm text-gray-600">
-                    {product.category}
-                  </td>
-                  <td className="px-5 py-3 text-sm font-medium text-gray-900">
-                    ${product.price}
-                  </td>
-                  <td className="px-5 py-3">
-                    <span
-                      className={`text-sm font-medium ${product.available > 3 ? "text-green-600" : product.available > 0 ? "text-orange-600" : "text-red-600"}`}
-                    >
-                      {product.available}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3">
-                    {product.badge ? (
-                      <KitBadge type={product.badge} />
-                    ) : (
-                      <span className="text-gray-400 text-xs">—</span>
-                    )}
-                  </td>
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => openEdit(product)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-[#0052CC] hover:bg-blue-50 transition-colors"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(product.id)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {filtered.length === 0 && (
+          {isLoading ? (
             <div className="text-center py-12">
-              <p className="text-gray-400 text-sm">No products found</p>
+              <p className="text-gray-400 text-sm">Loading products...</p>
             </div>
+          ) : (
+            <>
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    {[
+                      "Product",
+                      "Category",
+                      "Deposit",
+                      "Daily Rate",
+                      "Status",
+                      "Actions",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        className="text-left px-5 py-3 text-xs font-medium text-gray-500"
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filtered.map((product) => (
+                    <tr
+                      key={product.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-3">
+                          {product.image && (
+                            <img
+                              src={product.image}
+                              alt={product.name}
+                              className="w-10 h-10 rounded-lg object-cover"
+                              onError={(e) => {
+                                const el = e.target as HTMLImageElement;
+                                el.src =
+                                  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Crect fill='%23f0f0f0' width='40' height='40'/%3E%3C/svg%3E";
+                              }}
+                            />
+                          )}
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 line-clamp-1 max-w-50">
+                              {product.name || "Unnamed product"}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {product.brand?.name || "N/A"}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3 text-sm text-gray-600">
+                        {product.category?.name || "N/A"}
+                      </td>
+                      <td className="px-5 py-3 text-sm font-medium text-gray-900">
+                        ${product.deposit_price}
+                      </td>
+                      <td className="px-5 py-3 text-sm font-medium text-gray-900">
+                        ${product.daily_price || "N/A"}
+                      </td>
+                      <td className="px-5 py-3">
+                        <span
+                          className={`text-sm font-medium ${
+                            product.status === "AVAILABLE"
+                              ? "text-green-600"
+                              : product.status === "MAINTENANCE"
+                                ? "text-orange-600"
+                                : "text-red-600"
+                          }`}
+                        >
+                          {product.status}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => openEdit(product)}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-[#0052CC] hover:bg-blue-50 transition-colors"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedProductForDelete(product);
+                              setIsDeleteDialogOpen(true);
+                            }}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {filtered.length === 0 && (
+                <div className="text-center py-12">
+                  <p className="text-gray-400 text-sm">No products found</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
 
+      {/* Add Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add Product</DialogTitle>
             <DialogDescription>
@@ -354,268 +363,228 @@ export default function AdminProducts() {
           </DialogHeader>
 
           <form onSubmit={handleAddProduct} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-700">
-                  Title
-                </label>
-                <input
-                  required
-                  value={form.title}
-                  onChange={(e) => handleFormChange("title", e.target.value)}
-                  className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
-                  placeholder="MacBook Air M3"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-700">
-                  Brand
-                </label>
-                <input
-                  required
-                  value={form.brand}
-                  onChange={(e) => handleFormChange("brand", e.target.value)}
-                  className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
-                  placeholder="Apple"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-700">
-                  Category
-                </label>
-                <select
-                  required
-                  value={form.category}
-                  onChange={(e) => handleFormChange("category", e.target.value)}
-                  className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC] bg-white"
-                >
-                  <option value="" disabled>
-                    Select category
-                  </option>
-                  {CATEGORIES.map((c) => (
-                    <option key={c.id} value={c.name}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-700">
-                  Badge
-                </label>
-                <select
-                  value={form.badge}
-                  onChange={(e) =>
-                    handleFormChange(
-                      "badge",
-                      e.target.value as AddProductFormState["badge"],
-                    )
-                  }
-                  className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC] bg-white"
-                >
-                  <option value="">None</option>
-                  <option value="new">New</option>
-                  <option value="sale">Sale</option>
-                  <option value="bestseller">Bestseller</option>
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-700">
-                  Price / day (USD)
-                </label>
-                <input
-                  required
-                  min={0}
-                  type="number"
-                  value={form.price}
-                  onChange={(e) => handleFormChange("price", e.target.value)}
-                  className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
-                  placeholder="49"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-700">
-                  Available Qty
-                </label>
-                <input
-                  required
-                  min={0}
-                  type="number"
-                  value={form.available}
-                  onChange={(e) =>
-                    handleFormChange("available", e.target.value)
-                  }
-                  className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
-                  placeholder="10"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-gray-700">
-                Image URL (optional)
-              </label>
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-gray-600">Title *</span>
               <input
-                value={form.image}
-                onChange={(e) => handleFormChange("image", e.target.value)}
-                className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
-                placeholder="https://..."
+                required
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
+                placeholder="MacBook Air M3"
               />
-            </div>
+            </label>
 
-            <DialogFooter className="pt-2">
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-gray-600">Deposit Price *</span>
+              <input
+                required
+                type="number"
+                min={0}
+                value={form.deposit_price}
+                onChange={(e) => setForm({ ...form, deposit_price: e.target.value })}
+                className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
+                placeholder="1000"
+              />
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-gray-600">
+                Daily Price *
+              </span>
+              <input
+                required
+                type="number"
+                min={0}
+                value={form.daily_price}
+                onChange={(e) =>
+                  setForm({ ...form, daily_price: e.target.value })
+                }
+                className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
+                placeholder="50"
+              />
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-gray-600">Status *</span>
+              <select
+                required
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value })}
+                className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
+              >
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
+              </select>
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-gray-600">
+                Description (optional)
+              </span>
+              <textarea
+                value={form.description || ""}
+                onChange={(e) =>
+                  setForm({ ...form, description: e.target.value })
+                }
+                className="w-full h-20 px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC] resize-none"
+                placeholder="Product description..."
+              />
+            </label>
+
+            <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => {
+                  setForm(initialFormState);
                   setIsAddDialogOpen(false);
-                  resetForm();
                 }}
               >
                 Cancel
               </Button>
-              <Button type="submit" className="bg-[#0052CC] hover:bg-[#0747A6]">
-                Save Product
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="bg-[#0052CC] hover:bg-[#0747A6]"
+              >
+                {isSubmitting ? "Creating..." : "Create Product"}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
+      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Product</DialogTitle>
-            <DialogDescription>
-              Update product information for your rental inventory.
-            </DialogDescription>
+            <DialogDescription>Update product information.</DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleEditProduct} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-700">
-                  Title
-                </label>
-                <input
-                  required
-                  value={editForm.title}
-                  onChange={(e) =>
-                    handleEditFormChange("title", e.target.value)
-                  }
-                  className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
-                  placeholder="MacBook Air M3"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-700">
-                  Brand
-                </label>
-                <input
-                  required
-                  value={editForm.brand}
-                  onChange={(e) =>
-                    handleEditFormChange("brand", e.target.value)
-                  }
-                  className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
-                  placeholder="Apple"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-700">
-                  Category
-                </label>
-                <select
-                  required
-                  value={editForm.category}
-                  onChange={(e) =>
-                    handleEditFormChange("category", e.target.value)
-                  }
-                  className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC] bg-white"
-                >
-                  <option value="" disabled>
-                    Select category
-                  </option>
-                  {CATEGORIES.map((c) => (
-                    <option key={c.id} value={c.name}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-700">
-                  Badge
-                </label>
-                <select
-                  value={editForm.badge}
-                  onChange={(e) =>
-                    handleEditFormChange(
-                      "badge",
-                      e.target.value as AddProductFormState["badge"],
-                    )
-                  }
-                  className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC] bg-white"
-                >
-                  <option value="">None</option>
-                  <option value="new">New</option>
-                  <option value="sale">Sale</option>
-                  <option value="bestseller">Bestseller</option>
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-700">
-                  Price / day (USD)
-                </label>
-                <input
-                  required
-                  min={0}
-                  type="number"
-                  value={editForm.price}
-                  onChange={(e) => handleEditFormChange("price", e.target.value)}
-                  className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
-                  placeholder="49"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-700">
-                  Available Qty
-                </label>
-                <input
-                  required
-                  min={0}
-                  type="number"
-                  value={editForm.available}
-                  onChange={(e) =>
-                    handleEditFormChange("available", e.target.value)
-                  }
-                  className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
-                  placeholder="10"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-gray-700">
-                Image URL (optional)
-              </label>
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-gray-600">Title *</span>
               <input
-                value={editForm.image}
-                onChange={(e) => handleEditFormChange("image", e.target.value)}
-                className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
-                placeholder="https://..."
+                required
+                value={editForm.name}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, name: e.target.value })
+                }
+                className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
+                placeholder="MacBook Air M3"
               />
-            </div>
+            </label>
 
-            <DialogFooter className="pt-2">
-              <Button type="button" variant="outline" onClick={closeEditDialog}>
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-gray-600">Deposit Price *</span>
+              <input
+                required
+                type="number"
+                min={0}
+                value={editForm.deposit_price}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, deposit_price: e.target.value })
+                }
+                className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
+                placeholder="1000"
+              />
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-gray-600">
+                Daily Price *
+              </span>
+              <input
+                required
+                type="number"
+                min={0}
+                value={editForm.daily_price}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, daily_price: e.target.value })
+                }
+                className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
+                placeholder="50"
+              />
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-gray-600">Status *</span>
+              <select
+                required
+                value={editForm.status}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, status: e.target.value })
+                }
+                className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
+              >
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
+              </select>
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-gray-600">
+                Description (optional)
+              </span>
+              <textarea
+                value={editForm.description || ""}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, description: e.target.value })
+                }
+                className="w-full h-20 px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC] resize-none"
+                placeholder="Product description..."
+              />
+            </label>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(false)}
+              >
                 Cancel
               </Button>
-              <Button type="submit" className="bg-[#0052CC] hover:bg-[#0747A6]">
-                Save Changes
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="bg-[#0052CC] hover:bg-[#0747A6]"
+              >
+                {isSubmitting ? "Updating..." : "Update Product"}
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete Product</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {selectedProductForDelete?.name}?
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleDeleteProduct}
+              disabled={isSubmitting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isSubmitting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

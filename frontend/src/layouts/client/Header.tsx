@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getProducts } from "@/services/catalogService";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { getMe, signout } from "@/services/usersService";
+import { signout } from "@/services/usersService";
 import {
-  Search, Heart, User, ShoppingCart, X,
-  ChevronDown, Settings, Package, LogOut,
+  Search,
+  Heart,
+  User,
+  ShoppingCart,
+  X,
+  ChevronDown,
+  Settings,
+  Package,
+  LogOut,
   LayoutDashboard,
 } from "lucide-react";
 
@@ -31,7 +37,12 @@ const DEFAULT_DEVICE_COLUMNS: DeviceMenuColumn[] = [
   {
     title: "Flycam",
     keywords: ["flycam", "drone", "dji", "mavic", "mini"],
-    fallbackItems: ["DJI Mavic 3", "DJI Air 3", "DJI Mini 4 Pro", "DJI Avata 2"],
+    fallbackItems: [
+      "DJI Mavic 3",
+      "DJI Air 3",
+      "DJI Mini 4 Pro",
+      "DJI Avata 2",
+    ],
     items: [],
   },
   {
@@ -43,7 +54,12 @@ const DEFAULT_DEVICE_COLUMNS: DeviceMenuColumn[] = [
   {
     title: "Âm thanh & livestream",
     keywords: ["audio", "micro", "mic", "livestream", "stream", "rode"],
-    fallbackItems: ["Rode Wireless Pro", "DJI Mic 2", "Shure SM7B", "ATEM Mini Pro"],
+    fallbackItems: [
+      "Rode Wireless Pro",
+      "DJI Mic 2",
+      "Shure SM7B",
+      "ATEM Mini Pro",
+    ],
     items: [],
   },
 ];
@@ -104,7 +120,7 @@ export default function Header() {
   const [authUser, setAuthUser] = useState<AuthUser | null>(() => {
     try {
       const saved = localStorage.getItem("auth_user");
-      return (saved && saved !== "undefined") ? JSON.parse(saved) : null;
+      return saved && saved !== "undefined" ? JSON.parse(saved) : null;
     } catch {
       return null;
     }
@@ -129,7 +145,7 @@ export default function Header() {
     const handleStorageChange = () => {
       try {
         const saved = localStorage.getItem("auth_user");
-        setAuthUser((saved && saved !== "undefined") ? JSON.parse(saved) : null);
+        setAuthUser(saved && saved !== "undefined" ? JSON.parse(saved) : null);
       } catch {
         setAuthUser(null);
       }
@@ -152,7 +168,10 @@ export default function Header() {
   useEffect(() => {
     if (!isMegaOpen) return;
     const handler = (e: MouseEvent) => {
-      if (megaAreaRef.current && !megaAreaRef.current.contains(e.target as Node))
+      if (
+        megaAreaRef.current &&
+        !megaAreaRef.current.contains(e.target as Node)
+      )
         setIsMegaOpen(false);
     };
     document.addEventListener("mousemove", handler);
@@ -162,7 +181,10 @@ export default function Header() {
   useEffect(() => {
     if (!isAccountOpen) return;
     const handler = (e: MouseEvent) => {
-      if (accountMenuRef.current && !accountMenuRef.current.contains(e.target as Node))
+      if (
+        accountMenuRef.current &&
+        !accountMenuRef.current.contains(e.target as Node)
+      )
         setIsAccountOpen(false);
     };
     document.addEventListener("mousedown", handler);
@@ -230,8 +252,11 @@ export default function Header() {
                 className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-12 text-[15px] text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
               />
               {keyword.length > 0 && (
-                <button type="button" onClick={clearSearch}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full grid place-items-center bg-slate-100 text-slate-500 hover:text-slate-700 hover:bg-slate-200 transition-colors">
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full grid place-items-center bg-slate-100 text-slate-500 hover:text-slate-700 hover:bg-slate-200 transition-colors"
+                >
                   <X size={14} />
                 </button>
               )}
@@ -276,7 +301,6 @@ export default function Header() {
             <button
               type="button"
               onClick={handleAccountClick}
-              onBlur={() => setTimeout(() => setIsAccountOpen(false), 150)}
               className="cursor-pointer h-10 w-10 rounded-full flex items-center justify-center text-slate-600 hover:text-blue-600 hover:bg-slate-100 transition-colors"
             >
               {authUser ? (
@@ -295,8 +319,12 @@ export default function Header() {
                 {authUser ? (
                   <>
                     <div className="bg-slate-50 px-4 py-4">
-                      <p className="text-sm font-semibold text-slate-900 truncate">{authUser.full_name}</p>
-                      <p className="text-xs text-slate-500 truncate">{authUser.email}</p>
+                      <p className="text-sm font-semibold text-slate-900 truncate">
+                        {authUser.full_name}
+                      </p>
+                      <p className="text-xs text-slate-500 truncate">
+                        {authUser.email}
+                      </p>
                     </div>
                     <div className="flex flex-col gap-2 p-4">
                       <button
@@ -334,7 +362,7 @@ export default function Header() {
                       </button>
                     </div>
                     {/* Admin Panel - từ feature của bạn */}
-                    {authUser.roles?.some(role => role.name === 'ADMIN') && (
+                    {authUser.roles?.some((role) => role.name === "ADMIN") && (
                       <Link
                         to="/admin/dashboard"
                         onClick={() => setIsAccountOpen(false)}
@@ -355,26 +383,24 @@ export default function Header() {
                   </>
                 ) : (
                   <div className="flex flex-col p-4 gap-2">
-                    <button
-                      type="button"
+                    <Link
+                      to="/signin"
                       onClick={() => {
-                        navigator("/signin");
                         setIsAccountOpen(false);
                       }}
-                      className="rounded-2xl bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+                      className="block rounded-2xl bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
                     >
                       Đăng nhập
-                    </button>
-                    <button
-                      type="button"
+                    </Link>
+                    <Link
+                      to="/signup"
                       onClick={() => {
-                        navigator("/signup");
                         setIsAccountOpen(false);
                       }}
-                      className="rounded-2xl bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+                      className="block rounded-2xl bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
                     >
                       Tạo tài khoản
-                    </button>
+                    </Link>
                   </div>
                 )}
               </div>
@@ -401,20 +427,34 @@ export default function Header() {
         <div className="sm:hidden fixed inset-0 z-50 bg-black/40 p-4">
           <div className="mx-auto h-full max-w-md rounded-xl bg-white p-4 shadow-lg">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-semibold text-slate-800">Tìm kiếm</span>
-              <button type="button" onClick={() => setIsMobileSearchOpen(false)}
-                className="rounded-md p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+              <span className="text-sm font-semibold text-slate-800">
+                Tìm kiếm
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsMobileSearchOpen(false)}
+                className="rounded-md p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              >
                 <X size={20} />
               </button>
             </div>
             <div className="relative">
-              <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input value={keyword} onChange={(e) => setKeyword(e.target.value)}
+              <Search
+                size={20}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
                 placeholder="Tìm thiết bị cần thuê"
-                className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-10 text-sm text-slate-900 outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200" />
+                className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-10 text-sm text-slate-900 outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
+              />
               {keyword.length > 0 && (
-                <button type="button" onClick={clearSearch}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full grid place-items-center bg-slate-100 text-slate-500 hover:text-slate-700">
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full grid place-items-center bg-slate-100 text-slate-500 hover:text-slate-700"
+                >
                   <X size={14} />
                 </button>
               )}
@@ -432,11 +472,17 @@ export default function Header() {
                 Trang chủ
               </Link>
             </li>
-            <li ref={megaAreaRef} onMouseEnter={() => setIsMegaOpen(true)} onMouseLeave={() => setIsMegaOpen(false)}>
-              <button type="button"
+            <li
+              ref={megaAreaRef}
+              onMouseEnter={() => setIsMegaOpen(true)}
+              onMouseLeave={() => setIsMegaOpen(false)}
+            >
+              <button
+                type="button"
                 className={`inline-flex items-center gap-2 transition-colors ${isMegaOpen ? "text-blue-600" : "hover:text-blue-600"}`}
                 onClick={() => setIsMegaOpen((p) => !p)}
-                aria-haspopup="menu" aria-expanded={isMegaOpen}
+                aria-haspopup="menu"
+                aria-expanded={isMegaOpen}
               >
                 Thiết bị
                 <ChevronDown
@@ -445,8 +491,10 @@ export default function Header() {
                 />
               </button>
               {isMegaOpen && (
-                <div className="absolute inset-x-0 top-full z-50 -translate-y-2.5"
-                  onMouseLeave={() => setIsMegaOpen(false)}>
+                <div
+                  className="absolute inset-x-0 top-full z-50 -translate-y-2.5"
+                  onMouseLeave={() => setIsMegaOpen(false)}
+                >
                   <div className="mx-auto w-[min(1200px,94vw)]">
                     <div className="max-h-[72vh] overflow-y-auto rounded-3xl bg-white p-6 text-slate-700 shadow-xl shadow-slate-900/10 ring-1 ring-slate-200/60">
                       <div className="mb-4 pb-4">
@@ -545,14 +593,14 @@ export default function Header() {
         <div className="mx-auto grid max-w-7xl grid-cols-5 gap-1 px-2 pt-1.5 pb-2">
           <Link
             to="/"
-            className="flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-blue-600 active:scale-[0.98]"
+            className="flex min-h-13 flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-blue-600 active:scale-[0.98]"
           >
             Trang chủ
           </Link>
           <button
             type="button"
             onClick={() => setIsMegaOpen((prev) => !prev)}
-            className={`flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-medium transition-colors hover:bg-slate-100 active:scale-[0.98] ${isMegaOpen ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:text-blue-600"}`}
+            className={`flex min-h-13 flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-medium transition-colors hover:bg-slate-100 active:scale-[0.98] ${isMegaOpen ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:text-blue-600"}`}
             aria-label="Danh mục thiết bị"
           >
             Thiết bị
@@ -560,7 +608,7 @@ export default function Header() {
           <button
             type="button"
             onClick={() => setIsMobileSearchOpen(true)}
-            className="flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-blue-600 active:scale-[0.98]"
+            className="flex min-h-13 flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-blue-600 active:scale-[0.98]"
             aria-label="Tìm kiếm"
           >
             Tìm kiếm
@@ -568,7 +616,7 @@ export default function Header() {
           <button
             type="button"
             onClick={handleAccountClick}
-            className="flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-blue-600 active:scale-[0.98]"
+            className="flex min-h-13 flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-blue-600 active:scale-[0.98]"
             aria-label="Tài khoản"
           >
             Tài khoản
@@ -576,7 +624,7 @@ export default function Header() {
           <button
             type="button"
             onClick={() => navigator("/cart")}
-            className="relative flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-blue-600 active:scale-[0.98]"
+            className="relative flex min-h-13 flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-blue-600 active:scale-[0.98]"
             aria-label="Giỏ hàng"
           >
             Giỏ hàng

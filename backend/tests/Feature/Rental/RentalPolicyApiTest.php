@@ -3,6 +3,7 @@
 namespace Tests\Feature\Rental;
 
 use App\Models\RentalPolicy;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -50,6 +51,8 @@ class RentalPolicyApiTest extends TestCase
     public function test_rental_policies_store_with_auth(): void
     {
         $admin = User::factory()->create();
+        $adminRole = Role::firstOrCreate(['name' => 'ADMIN']);
+        $admin->roles()->attach($adminRole->id);
         $token = $admin->tokens()->first()->token;
 
         $response = $this->postJson(

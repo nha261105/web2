@@ -6,7 +6,7 @@ import {
   MyInputForTextIcon,
   MyInputForTextPass,
 } from "@/components/ui/input/my-input-text";
-import { signin } from "@/services/usersService";
+import { getMe, signin } from "@/services/usersService";
 import { checkToken } from "@/services/userTokensService";
 import { ArrowRight, Check, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -14,9 +14,26 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { Fragment } from "react/jsx-runtime";
 
-interface Role {
-  id: number;
-  name: string;
+
+function extractRoles(payload: unknown): string[] {
+  const data = payload as
+    | {
+        roles?: string[];
+        user?: { roles?: Array<{ name?: string }> };
+      }
+    | undefined;
+
+  if (Array.isArray(data?.roles)) {
+    return data.roles;
+  }
+
+  if (Array.isArray(data?.user?.roles)) {
+    return data.user.roles
+      .map((role) => role?.name)
+      .filter((name): name is string => Boolean(name));
+  }
+
+  return [];
 }
 
 export default function SignInPage() {
@@ -33,43 +50,74 @@ export default function SignInPage() {
   useEffect(() => {
     async function validateToken() {
       const res = await checkToken();
-      if (res.success) navigate("/");
+      if (!res.success) {
+        return;
+      }
+
+      const me = await getMe();
+      if (!me?.success) {
+        return;
+      }
+
+      const roles = extractRoles(me?.data);
+      navigate(getRedirectPathByRole(roles), { replace: true });
     }
-    validateToken();
+    void validateToken();
   }, [navigate]);
 
   const handleSignIn = async () => {
     const res = await signin(email, password, isRemember);
 
     if (res.success) {
-      const userData = res.data.user;
+      const payload = (res.data?.data ?? res.data) as {
+        user?: {
+          status?: string;
+          roles?: Array<{ id: number; name: string }>;
+        };
+        token?: { access_token?: string } | string;
+        roles?: string[];
+      };
+      const userData = payload.user;
+
+      if (!userData) {
+        toast.error("Khong lay duoc thong tin nguoi dung");
+        return;
+      }
 
       // Kiểm tra user có bị khóa không
-      if (userData.status !== 'ACTIVE') {
+      if (userData.status !== "ACTIVE") {
         toast.error("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ hỗ trợ.");
         return;
       }
 
       toast.success("Đăng nhập thành công!");
 
-      const token = res.data.token.access_token || res.data.token;
+      const token =
+        typeof payload.token === "string"
+          ? payload.token
+          : payload.token?.access_token;
+
+      if (!token) {
+        toast.error("Khong lay duoc token dang nhap");
+        return;
+      }
+
       localStorage.setItem("token", token);
       localStorage.setItem("auth_user", JSON.stringify(userData));
 
-      // Lấy roles từ userData để redirect
-      const roles = userData?.roles?.map((role: Role) => role.name);
+      const roles = extractRoles(payload);
       const redirectPath = getRedirectPathByRole(roles);
       navigate(redirectPath, { replace: true });
     } else {
       // Xử lý lỗi từ backend
-      if (res.code === 'FORBIDDEN' || res.message?.includes('khóa')) {
+      if (res.code === "FORBIDDEN" || res.message?.includes("khóa")) {
         toast.error("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ hỗ trợ.");
       } else {
         toast.error(res.message || "Sai email hoặc mật khẩu!");
       }
     }
   };
-  
+
   const textLeftPanel = [
     "500+ professional tech products",
     "Flexible daily, weekly & monthly plans",
@@ -155,7 +203,7 @@ export default function SignInPage() {
               onClick={handleSignIn}
             />
             <MyHrefText text="Hoặc đăng nhập với" />
-            <MyGoogleButton className="" onHandle={() => { }} />
+            <MyGoogleButton className="" onHandle={() => {}} />
           </div>
         </div>
       </div>

@@ -23,6 +23,9 @@ export const API_ENDPOINTS = {
   categories: "/api/categories",
   brands: "/api/brands",
   rentalPolicies: "/api/rental-policies",
+
+  // Admin
+  adminDashboard: "/api/admin/dashboard",
 } as const;
 
 export const addressEndpoints = {
