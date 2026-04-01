@@ -23,6 +23,8 @@ export const API_ENDPOINTS = {
   categories: "/api/categories",
   brands: "/api/brands",
   rentalPolicies: "/api/rental-policies",
+  cart: "/api/cart",
+  cartRentNow: "/api/cart/rent-now",
 } as const;
 
 export const addressEndpoints = {

@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Models\RentalDetail;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Rental extends Model
 {
@@ -24,5 +26,16 @@ class Rental extends Model
         'note',
     ];
 
+    protected $casts = [
+        'start_date' => 'datetime',
+        'end_date' => 'datetime',
+        'actual_return_date' => 'datetime',
+    ];
+
     public $timestamps = true;
+
+    public function details(): HasMany
+    {
+        return $this->hasMany(RentalDetail::class, 'rental_id');
+    }
 }

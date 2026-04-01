@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Search } from "lucide-react";
+import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { ProductsCard } from "./ProductContext/ProductCard";
 import type { Product } from "./data";
 import { getCategories, getProducts } from "@/services/catalogService";
+import { addToCart } from "@/services/cartService";
 
 const PRODUCTS_PER_PAGE = 8;
 
@@ -79,6 +81,20 @@ export default function ProductsPage() {
       setPage(totalPages);
     }
   }, [page, totalPages]);
+
+  const handleAddToCart = async (product: Product) => {
+    const response = await addToCart({
+      product_id: Number(product.id),
+      quantity: 1,
+      rental_days: 1,
+    });
+
+    if (response.success) {
+      toast.success("Đã thêm sản phẩm vào giỏ hàng");
+    } else {
+      toast.error(response.message || "Thêm vào giỏ hàng thất bại");
+    }
+  };
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -158,7 +174,12 @@ export default function ProductsPage() {
         )}
 
         {pagedProducts.map((product) => (
-          <ProductsCard key={product.id} product={product} variants="default" />
+          <ProductsCard
+            key={product.id}
+            product={product}
+            variants="default"
+            onAddToCart={() => void handleAddToCart(product)}
+          />
         ))}
       </div>
 

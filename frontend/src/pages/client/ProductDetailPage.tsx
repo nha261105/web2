@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Minus,
@@ -9,10 +9,12 @@ import {
   Star,
   Truck,
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
 import type { Product } from "./data";
 import { getProductById } from "@/services/catalogService";
+import { addToCart, rentNow } from "@/services/cartService";
 
 export default function ProductDetailPage() {
   const PRESET_DURATIONS = [1, 3, 7, 14];
@@ -26,6 +28,8 @@ export default function ProductDetailPage() {
   const [rentalDays, setRentalDays] = useState(1);
   const [customDays, setCustomDays] = useState(1);
   const [quantity, setQuantity] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function loadProduct() {
@@ -60,6 +64,47 @@ export default function ProductDetailPage() {
     if (images.length) setSelectedImage(images[0]);
     else setSelectedImage(undefined);
   }, [images]);
+
+  const handleAddToCart = async () => {
+    if (!product || isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    const response = await addToCart({
+      product_id: Number(product.id),
+      quantity,
+      rental_days: rentalDays,
+    });
+
+    if (response.success) {
+      toast.success("Đã thêm vào giỏ hàng");
+    } else {
+      toast.error(response.message || "Thêm vào giỏ hàng thất bại");
+    }
+    setIsSubmitting(false);
+  };
+
+  const handleRentNow = async () => {
+    if (!product || isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    const response = await rentNow({
+      product_id: Number(product.id),
+      quantity,
+      rental_days: rentalDays,
+    });
+
+    if (response.success) {
+      toast.success("Đã thêm vào giỏ hàng. Đi tới thanh toán");
+      navigate(response.data?.checkout_url ?? "/checkout");
+    } else {
+      toast.error(response.message || "Thuê ngay thất bại");
+    }
+    setIsSubmitting(false);
+  };
 
   const formatVND = (value: number) =>
     new Intl.NumberFormat("vi-VN", {
@@ -145,17 +190,21 @@ export default function ProductDetailPage() {
             </p>
             <div className="rounded-2xl bg-slate-50/70 p-4 ring-1 ring-slate-200/50">
               <dl className="space-y-0">
-                {Object.entries(product.specs).map(([label, value], idx, arr) => (
-                  <div key={label}>
-                    <div className="grid grid-cols-2 gap-2 px-1 py-3 text-sm sm:gap-4 sm:px-2">
-                      <dt className="font-semibold text-slate-700">{label}</dt>
-                      <dd className="text-slate-600">{value}</dd>
+                {Object.entries(product.specs).map(
+                  ([label, value], idx, arr) => (
+                    <div key={label}>
+                      <div className="grid grid-cols-2 gap-2 px-1 py-3 text-sm sm:gap-4 sm:px-2">
+                        <dt className="font-semibold text-slate-700">
+                          {label}
+                        </dt>
+                        <dd className="text-slate-600">{value}</dd>
+                      </div>
+                      {idx < arr.length - 1 ? (
+                        <div className="h-px w-full bg-linear-to-r from-transparent via-slate-300/70 to-transparent" />
+                      ) : null}
                     </div>
-                    {idx < arr.length - 1 ? (
-                      <div className="h-px w-full bg-linear-to-r from-transparent via-slate-300/70 to-transparent" />
-                    ) : null}
-                  </div>
-                ))}
+                  ),
+                )}
               </dl>
             </div>
           </div>
@@ -301,13 +350,21 @@ export default function ProductDetailPage() {
           </div>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <Button className="h-12 rounded-xl bg-blue-600 px-6 text-base font-semibold text-white hover:bg-blue-700">
+            <Button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={isSubmitting || product.available === 0}
+              className="h-12 rounded-xl bg-blue-600 px-6 text-base font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <ShoppingCart className="mr-2" size={18} />
-              Thêm vào giỏ
+              {isSubmitting ? "Đang xử lý..." : "Thêm vào giỏ"}
             </Button>
             <Button
+              type="button"
               variant="outline"
-              className="h-12 rounded-xl border-slate-300 px-6 text-base font-semibold text-slate-800 hover:bg-slate-100"
+              onClick={handleRentNow}
+              disabled={isSubmitting || product.available === 0}
+              className="h-12 rounded-xl border-slate-300 px-6 text-base font-semibold text-slate-800 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Thuê ngay
             </Button>

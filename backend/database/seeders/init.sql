@@ -177,14 +177,14 @@ CREATE TABLE rentals (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,rentals
     coupon_id INT,
-    address_id INT NOT NULL,
+    address_id INT NULL,
     code VARCHAR(100) NOT NULL UNIQUE,
     start_date TIMESTAMP NOT NULL,
     end_date TIMESTAMP NOT NULL,
     actual_return_date TIMESTAMP NULL,
     total_price DECIMAL(10,2) NOT NULL,
     deposit_amount DECIMAL(10,2) NOT NULL,
-    status ENUM('PENDING', 'APPROVED', 'DEPOSITED', 'PICKED_UP', 'COMPLETED', 'CANCELLED') NOT NULL,
+    status ENUM('CART', 'PENDING', 'APPROVED', 'DEPOSITED', 'PICKED_UP', 'COMPLETED', 'CANCELLED') NOT NULL,
     note TEXT,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL
@@ -197,7 +197,9 @@ CREATE TABLE rental_details (
     combo_id INT,
     inventory_id INT,
     quantity INT NOT NULL,
-    price_at_rental DECIMAL(10,2) NOT NULL
+    price_at_rental DECIMAL(10,2) NOT NULL,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
 );
 
 CREATE TABLE rental_issues (

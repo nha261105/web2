@@ -192,7 +192,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('user_id')->constrained('users');
             $table->foreignId('coupon_id')->nullable()->constrained('coupons');
-            $table->foreignId('address_id')->constrained('addresses');
+            $table->foreignId('address_id')->nullable()->constrained('addresses');
             $table->string('code', 100)->unique();
             $table->timestamp('start_date')->nullable();
             $table->timestamp('end_date')->nullable();
@@ -200,6 +200,7 @@ return new class extends Migration {
             $table->decimal('total_price', 10, 2);
             $table->decimal('deposit_amount', 10, 2);
             $table->enum('status', [
+                'CART',
                 'PENDING',
                 'APPROVED',
                 'DEPOSITED',
