@@ -16,12 +16,38 @@ class ProductController extends Controller
     public function __construct(private ProductService $service) {}
     public function index(Request $request): JsonResponse
     {
-        $product = $this->service->list($request->all());
+        $perPage = $request->query('per_page', 20);
+        $search = $request->query('search');
+        $categoryId = $request->query('category_id');
+
+        // For admin, return paginated results
+        $query = \App\Models\Product::with(['category', 'brand', 'images']);
+
+        if ($search) {
+            $query->where('name', 'like', "%$search%")
+                  ->orWhere('description', 'like', "%$search%");
+        }
+
+        if ($categoryId) {
+            $query->where('category_id', $categoryId);
+        }
+
+        $products = $query->paginate($perPage);
+        $productResources = ProductResource::collection($products);
+
         return ApiResponse::success(
             [
-                'items' => ProductResource::collection($product),
+                // Keep both keys for backward compatibility across FE modules.
+                'items' => $productResources,
+                'products' => $productResources,
+                'pagination' => [
+                    'total' => $products->total(),
+                    'current_page' => $products->currentPage(),
+                    'per_page' => $products->perPage(),
+                    'last_page' => $products->lastPage(),
+                ],
             ],
-            'fetched products',
+            'Fetched products',
         );
     }
     public function show(int $id): JsonResponse

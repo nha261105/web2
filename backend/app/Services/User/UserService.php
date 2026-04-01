@@ -10,11 +10,7 @@ class UserService
 {
     public function listUsers(int $perPage = 15): LengthAwarePaginator
     {
-        return User::with(['roles', 'userInfo'])
-            ->withCount('rentals')
-            ->withSum('rentals', 'total_price')
-            ->orderBy('created_at', 'desc')
-            ->paginate($perPage);
+        return User::with('roles')->paginate($perPage);
     }
 
     public function getActiveUsers(): Collection

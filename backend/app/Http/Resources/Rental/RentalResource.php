@@ -22,6 +22,8 @@ class RentalResource extends JsonResource
             'deposit_amount' => $this->deposit_amount,
             'status' => $this->status,
             'note' => $this->note,
+            'user' => $this->whenLoaded('user'),
+            'products' => $this->whenLoaded('products'),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

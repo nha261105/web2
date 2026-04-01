@@ -76,12 +76,35 @@ const formatPriceLabel = (price: number) =>
     currency: "VND",
   }).format(price);
 
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=600";
+
+function toImageUrl(raw: string | null | undefined): string {
+  const value = (raw ?? "").trim();
+
+  if (!value) {
+    return FALLBACK_IMAGE;
+  }
+
+  if (/^https?:\/\//i.test(value)) {
+    return value;
+  }
+
+  if (value.startsWith("//")) {
+    return `${API_BASE_URL}/${value.replace(/^\/+/g, "")}`;
+  }
+
+  if (value.startsWith("/")) {
+    return `${API_BASE_URL}${value}`;
+  }
+
+  return `${API_BASE_URL}/${value.replace(/^\.\//, "")}`;
+}
+
 export function mapBackendProductToUi(product: BackendProduct): Product {
   const dailyPrice = Number(product.daily_price ?? 0);
-  const images = product.images ?? [];
-  const firstImage =
-    images[0] ??
-    "https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=600";
+  const images = (product.images ?? []).map((img) => toImageUrl(img));
+  const firstImage = images[0] ?? FALLBACK_IMAGE;
 
   return {
     id: String(product.id),

@@ -1,0 +1,203 @@
+import axios from "axios";
+import { API_BASE_URL } from "@/config/api";
+
+export class AdminApiError extends Error {
+  status?: number;
+
+  constructor(message: string, status?: number) {
+    super(message);
+    this.name = "AdminApiError";
+    this.status = status;
+  }
+}
+
+export type RentalOrder = {
+  id: number;
+  rental_id?: number;
+  user_id: number;
+  user?: { id: number; name?: string; full_name?: string; email: string };
+  products?: Array<{
+    id: number;
+    title?: string;
+    name?: string;
+    daily_rate?: number;
+  }>;
+  start_date: string;
+  end_date: string;
+  rental_days?: number;
+  total_price?: number;
+  total_amount?: number;
+  status:
+    | "PENDING"
+    | "APPROVED"
+    | "DEPOSITED"
+    | "PICKED_UP"
+    | "COMPLETED"
+    | "CANCELLED";
+  payment_status?: "PENDING" | "PAID" | "REFUNDED";
+  created_at: string;
+  updated_at: string;
+};
+
+export type CreateRentalPayload = {
+  user_id: number;
+  product_ids: number[];
+  start_date: string;
+  end_date: string;
+};
+
+export type UpdateRentalPayload = {
+  status?: string;
+  payment_status?: string;
+};
+
+type RentalsApiResponse = {
+  success: boolean;
+  message: string;
+  data?: {
+    items?: RentalOrder[];
+    rental?: RentalOrder;
+    meta?: {
+      total: number;
+      per_page: number;
+      current_page: number;
+      last_page: number;
+    };
+  };
+};
+
+function getAuthHeader() {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+export async function getAdminOrders(
+  page = 1,
+  limit = 10,
+  status?: string,
+): Promise<{
+  orders: RentalOrder[];
+  total: number;
+  page: number;
+  lastPage: number;
+}> {
+  try {
+    let url = `${API_BASE_URL}/api/rentals?page=${page}&per_page=${limit}`;
+    if (status) url += `&status=${encodeURIComponent(status)}`;
+
+    const response = await axios.get<RentalsApiResponse>(url, {
+      headers: getAuthHeader(),
+    });
+
+    const rentals = response.data.data?.items ?? [];
+    const meta = response.data.data?.meta;
+
+    return {
+      orders: rentals,
+      total: meta?.total ?? rentals.length,
+      page: meta?.current_page ?? page,
+      lastPage: meta?.last_page ?? 1,
+    };
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      const status = err.response?.status;
+      const message =
+        (err.response?.data as { message?: string } | undefined)?.message ??
+        err.message ??
+        "Failed to load orders";
+      throw new AdminApiError(message, status);
+    }
+    throw new AdminApiError("Failed to load orders");
+  }
+}
+
+export async function createAdminOrder(
+  payload: CreateRentalPayload,
+): Promise<RentalOrder> {
+  try {
+    const response = await axios.post<RentalsApiResponse>(
+      `${API_BASE_URL}/api/rentals`,
+      payload,
+      {
+        headers: getAuthHeader(),
+      },
+    );
+
+    const rental = response.data.data?.rental;
+    if (!rental) {
+      throw new AdminApiError("Order creation returned no data");
+    }
+
+    return rental;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      const status = err.response?.status;
+      const message =
+        (err.response?.data as { message?: string } | undefined)?.message ??
+        err.message ??
+        "Failed to create order";
+      throw new AdminApiError(message, status);
+    }
+    throw new AdminApiError("Failed to create order");
+  }
+}
+
+export async function updateAdminOrder(
+  rentalId: number,
+  payload: UpdateRentalPayload,
+): Promise<RentalOrder> {
+  try {
+    const response = await axios.patch<RentalsApiResponse>(
+      `${API_BASE_URL}/api/rentals/${rentalId}`,
+      payload,
+      {
+        headers: getAuthHeader(),
+      },
+    );
+
+    const rental = response.data.data?.rental;
+    if (!rental) {
+      throw new AdminApiError("Order update returned no data");
+    }
+
+    return rental;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      const status = err.response?.status;
+      const message =
+        (err.response?.data as { message?: string } | undefined)?.message ??
+        err.message ??
+        "Failed to update order";
+      throw new AdminApiError(message, status);
+    }
+    throw new AdminApiError("Failed to update order");
+  }
+}
+
+export async function getAdminOrder(rentalId: number): Promise<RentalOrder> {
+  try {
+    const response = await axios.get<RentalsApiResponse>(
+      `${API_BASE_URL}/api/rentals/${rentalId}`,
+      {
+        headers: getAuthHeader(),
+      },
+    );
+
+    const rental = response.data.data?.rental;
+    if (!rental) {
+      throw new AdminApiError("Order not found");
+    }
+
+    return rental;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      const status = err.response?.status;
+      const message =
+        (err.response?.data as { message?: string } | undefined)?.message ??
+        err.message ??
+        "Failed to get order";
+      throw new AdminApiError(message, status);
+    }
+    throw new AdminApiError("Failed to get order");
+  }
+}

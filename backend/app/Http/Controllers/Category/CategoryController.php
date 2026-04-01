@@ -16,11 +16,21 @@ class CategoryController extends Controller
 
     public function index(): JsonResponse
     {
-        $categories = $this->service->list();
+        // Return paginated categories for admin listing
+        $categories = \App\Models\Category::paginate(20);
+        $categoryResources = CategoryResource::collection($categories);
 
         return ApiResponse::success(
             [
-                'items' => CategoryResource::collection($categories),
+                // Keep both keys for backward compatibility across FE modules.
+                'items' => $categoryResources,
+                'categories' => $categoryResources,
+                'pagination' => [
+                    'total' => $categories->total(),
+                    'current_page' => $categories->currentPage(),
+                    'per_page' => $categories->perPage(),
+                    'last_page' => $categories->lastPage(),
+                ],
             ],
             'Fetched categories',
         );

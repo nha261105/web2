@@ -17,6 +17,7 @@ use App\Http\Controllers\Category\CategoryController;
 use App\Http\Controllers\Combos\ComboController;
 use App\Http\Controllers\Coupon\CouponController;
 use App\Http\Controllers\Address\AddressController;
+use App\Http\Controllers\Admin\AdminDashboardController;
 
 /**
  * User Routes
@@ -85,12 +86,27 @@ Route::middleware(['auth.token'])->group(function () {
     Route::patch('/cart/items/{id}', [CartController::class, 'updateItem']);
     Route::delete('/cart/items/{id}', [CartController::class, 'destroyItem']);
 
+    Route::get('/users/me', [UserController::class, 'me']);
+    Route::patch('/users/me', [UserController::class, 'updateMe']);
+
+    // address crud
+    Route::prefix('users/{userId}/addresses')->group(function () {
+        Route::get('/', [AddressController::class, 'index']);
+        Route::post('/', [AddressController::class, 'store']);
+        Route::patch('/{id}', [AddressController::class, 'update']);
+        Route::delete('/{id}', [AddressController::class, 'destroy']);
+    });
+
     Route::middleware(['role:ADMIN'])->group(function () {
+        Route::get('/admin/dashboard', [AdminDashboardController::class, 'index']);
+
         Route::get('/users', [UserController::class, 'index']);
-        Route::get('/users/{id}', [UserController::class, 'show']);
         Route::delete('/users/{id}', [UserController::class, 'destroy']);
-        Route::patch('/users/{id}/status', [UserController::class, 'updateStatus']);
-        
+        Route::patch('/users/{id}/status', [
+            UserController::class,
+            'updateStatus',
+        ]);
+
         Route::get('/roles', [RbacController::class, 'roles']);
         Route::get('/permissions', [RbacController::class, 'permissions']);
         Route::post('/roles/{id}/permissions', [RbacController::class, 'syncRolePermissions']);
@@ -115,22 +131,22 @@ Route::middleware(['auth.token'])->group(function () {
         Route::post('/transactions', [TransactionController::class, 'store']);
         Route::patch('/transactions/{id}', [TransactionController::class, 'update']);
 
-        // Category admin
-        Route::prefix('categories')->group(function () {
+        // Category (Admin)
+        Route::prefix('admin/categories')->group(function () {
+            Route::get('/', [CategoryController::class, 'index']);
             Route::post('/', [CategoryController::class, 'store']);
             Route::patch('/{category}', [CategoryController::class, 'update']);
             Route::delete('/{category}', [CategoryController::class, 'destroy']);
         });
-
-        // Brands admin
-        Route::prefix('brands')->group(function () {
+        // Brands (Admin)
+        Route::prefix('admin/brands')->group(function () {
             Route::post('/', [BrandController::class, 'store']);
             Route::patch('/{brand}', [BrandController::class, 'update']);
             Route::delete('/{brand}', [BrandController::class, 'destroy']);
         });
-
-        // Products admin
-        Route::prefix('products')->group(function () {
+        // Products (Admin)
+        Route::prefix('admin/products')->group(function () {
+            Route::get('/', [ProductController::class, 'index']);
             Route::post('/', [ProductController::class, 'store']);
             Route::patch('/{product}', [ProductController::class, 'update']);
             Route::delete('/{product}', [ProductController::class, 'destroy']);
