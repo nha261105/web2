@@ -7,7 +7,6 @@ import { signout } from "@/services/usersService";
 export default function SideBar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const navigate = useNavigate();
 
   // ─── Lấy thông tin admin từ localStorage ─────────────────────────────────
   const authUser = (() => {

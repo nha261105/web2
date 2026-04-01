@@ -9,11 +9,7 @@ use App\Models\UserTokens;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
-use App\Models\Role;
-use App\Models\User;
-use App\Models\Rental;
 use App\Models\Address;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Illuminate\Support\Str;
 

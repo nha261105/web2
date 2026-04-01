@@ -5,6 +5,27 @@ import TopBar from "./TopBar";
 import { checkToken } from "@/services/userTokensService";
 import { getMe } from "@/services/usersService";
 
+function extractRoles(payload: unknown): string[] {
+  const data = payload as
+    | {
+        roles?: string[];
+        user?: { roles?: Array<{ name?: string }> };
+      }
+    | undefined;
+
+  if (Array.isArray(data?.roles)) {
+    return data.roles;
+  }
+
+  if (Array.isArray(data?.user?.roles)) {
+    return data.user.roles
+      .map((role) => role?.name)
+      .filter((name): name is string => Boolean(name));
+  }
+
+  return [];
+}
+
 export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -27,7 +48,7 @@ export default function AdminLayout() {
       }
 
       const meResult = await getMe();
-      const roles = meResult?.data?.roles as string[] | undefined;
+      const roles = extractRoles(meResult?.data);
       if (!meResult?.success || !roles?.includes("ADMIN")) {
         navigate("/", { replace: true });
         return;
