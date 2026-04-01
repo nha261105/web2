@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { ProductsCard } from "./ProductContext/ProductCard";
 import { reviews, steps } from "./data";
 import type { Product } from "./data";
 import { getCategories, getProducts } from "@/services/catalogService";
+import { addToCart } from "@/services/cartService";
 import {
   ArrowRight,
   ChevronLeft,
@@ -270,6 +272,20 @@ export default function HomePage() {
     : products;
 
   const featuredProducts = visibleProducts.slice(0, 8);
+
+  const handleAddToCart = async (product: Product) => {
+    const response = await addToCart({
+      product_id: Number(product.id),
+      quantity: 1,
+      rental_days: 1,
+    });
+
+    if (response.success) {
+      toast.success("Đã thêm sản phẩm vào giỏ hàng");
+    } else {
+      toast.error(response.message || "Thêm vào giỏ hàng thất bại");
+    }
+  };
 
   const goToNextSlide = () => {
     setActiveSlide((prev) => (prev + 1) % HERO_SLIDES.length);
@@ -581,7 +597,11 @@ export default function HomePage() {
                     className={`transition-all duration-500 ${cardAnimationClass}`}
                     style={{ transitionDelay: `${index * 70}ms` }}
                   >
-                    <ProductsCard product={product} variants="default" />
+                    <ProductsCard
+                      product={product}
+                      variants="default"
+                      onAddToCart={() => void handleAddToCart(product)}
+                    />
                   </div>
                 );
               })}

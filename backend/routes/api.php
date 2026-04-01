@@ -12,6 +12,7 @@ use App\Http\Controllers\Rental\RentalPolicyController;
 use App\Http\Controllers\Rental\ReturnOrderController;
 use App\Http\Controllers\Rental\TransactionController;
 use App\Http\Controllers\User\UserController;
+use App\Http\Controllers\Cart\CartController;
 use App\Http\Controllers\Category\CategoryController;
 use App\Http\Controllers\Combos\ComboController;
 use App\Http\Controllers\Coupon\CouponController;
@@ -79,6 +80,11 @@ Route::middleware(['auth.token'])->group(function () {
 
     // rental user
     Route::get('/rentals', [RentalController::class, 'index']);
+    Route::get('/cart', [CartController::class, 'index']);
+    Route::post('/cart', [CartController::class, 'store']);
+    Route::post('/cart/rent-now', [CartController::class, 'rentNow']);
+    Route::patch('/cart/items/{id}', [CartController::class, 'updateItem']);
+    Route::delete('/cart/items/{id}', [CartController::class, 'destroyItem']);
 
     Route::get('/users/me', [UserController::class, 'me']);
     Route::patch('/users/me', [UserController::class, 'updateMe']);

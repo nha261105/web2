@@ -12,7 +12,13 @@ export interface Rental {
   actual_return_date: string | null;
   total_price: number;
   deposit_amount: number;
-  status: 'PENDING' | 'APPROVED' | 'DEPOSITED' | 'PICKED_UP' | 'COMPLETED' | 'CANCELLED';
+  status:
+    | "PENDING"
+    | "APPROVED"
+    | "DEPOSITED"
+    | "PICKED_UP"
+    | "COMPLETED"
+    | "CANCELLED";
   note: string | null;
   created_at: string;
   updated_at: string;
@@ -38,7 +44,12 @@ export async function getMyRentals(params?: RentalParams) {
     return response.data;
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
-      return error.response?.data || { success: false, message: "Lỗi kết nối server" };
+      return (
+        error.response?.data || {
+          success: false,
+          message: "Lỗi kết nối server",
+        }
+      );
     }
     return { success: false, message: "Đã xảy ra lỗi không xác định" };
   }
