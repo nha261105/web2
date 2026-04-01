@@ -6,12 +6,12 @@ import {
   MyInputForTextIcon,
   MyInputForTextPass,
 } from "@/components/ui/input/my-input-text";
-import { signin } from "@/services/usersService";
+import { getMe, signin } from "@/services/usersService";
 import { checkToken } from "@/services/userTokensService";
 import { ArrowRight, Check, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Fragment } from "react/jsx-runtime";
 
 interface Role {
@@ -21,6 +21,7 @@ interface Role {
 
 export default function SignInPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isRemember, setIsRemember] = useState(false);
@@ -33,9 +34,19 @@ export default function SignInPage() {
   useEffect(() => {
     async function validateToken() {
       const res = await checkToken();
-      if (res.success) navigate("/");
+      if (!res.success) {
+        return;
+      }
+
+      const me = await getMe();
+      if (!me?.success) {
+        return;
+      }
+
+      const roles = me?.data?.roles as string[] | undefined;
+      navigate(getRedirectPathByRole(roles), { replace: true });
     }
-    validateToken();
+    void validateToken();
   }, [navigate]);
 
   const handleSignIn = async () => {

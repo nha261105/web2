@@ -775,7 +775,7 @@ export default function HomePage() {
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {reviews.map((r, index) => (
                 <div
-                  key={r.used_id || index}
+                  key={`${r.used_id ?? r.user_id ?? "review"}-${index}`}
                   className="relative flex flex-col justify-between rounded-[32px] bg-white p-8 shadow-lg shadow-slate-200/35 ring-1 ring-slate-200/55 transition-all hover:-translate-y-1 hover:shadow-xl hover:ring-slate-300/50"
                 >
                   <div>

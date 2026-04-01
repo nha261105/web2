@@ -1,19 +1,50 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { Search, UserPlus, Trash2, AlertCircle } from "lucide-react";
 import {
-  Search, UserPlus, Trash2, Loader2, X,
-  ShieldCheck, ShieldOff, ChevronLeft, ChevronRight,
-  Users, UserCheck, UserX, MoreVertical, Mail, Shield,
-  Eye, Save,
-} from "lucide-react";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
-  Table, TableBody, TableCell, TableHead,
-  TableHeader, TableRow,
-} from "@/components/ui/table";
-import {
-  getAllUsers, updateUserStatus, deleteUser,
-  createUser, getUserRoles, assignRole, removeRole, getAllRoles
-} from "@/services/usersService";
+  getAdminUsers,
+  createAdminUser,
+  deleteAdminUser,
+  type User,
+  AdminApiError,
+} from "@/services/adminUsersService";
+
+type FormState = {
+  name: string;
+  email: string;
+  password: string;
+  phone?: string;
+};
+
+const initialFormState: FormState = {
+  name: "",
+  email: "",
+  password: "",
+  phone: "",
+};
+
+function getUserInitials(name: string | null | undefined): string {
+  const safeName = String(name ?? "").trim();
+  if (!safeName) {
+    return "NA";
+  }
+
+  return safeName
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface User {

@@ -25,4 +25,19 @@ class Rental extends Model
     ];
 
     public $timestamps = true;
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function products()
+    {
+        return $this->belongsToMany(Product::class, 'rental_details', 'rental_id', 'product_id');
+    }
+
+    public function combos()
+    {
+        return $this->belongsToMany(Combo::class, 'rental_details', 'rental_id', 'combo_id');
+    }
 }

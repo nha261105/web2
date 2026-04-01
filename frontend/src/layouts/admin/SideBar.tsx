@@ -4,8 +4,8 @@ import {
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { signout } from "@/services/usersService";
-
 export default function SideBar() {
+  const navigate = useNavigate();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -32,12 +32,10 @@ export default function SideBar() {
     return location.pathname.startsWith(address);
   };
 
-  // ─── Logout → về /signin ─────────────────────────────────────────────────
   const handleLogout = async () => {
     await signout();
     localStorage.removeItem("token");
-    localStorage.removeItem("auth_user");
-    navigate("/signin");
+    navigate("/signin", { replace: true });
   };
 
   return (
