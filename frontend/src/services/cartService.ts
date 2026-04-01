@@ -140,3 +140,71 @@ export async function rentNow(payload: AddToCartPayload) {
     };
   }
 }
+
+export async function updateCartItem(
+  itemId: number,
+  payload: { quantity?: number; rental_days?: number },
+) {
+  try {
+    const response = await axios.patch(
+      `${API_BASE_URL}${API_ENDPOINTS.cartItem(itemId)}`,
+      payload,
+      {
+        headers: getAuthHeader(),
+      },
+    );
+
+    return response.data as {
+      success: boolean;
+      message: string;
+      data?: {
+        item?: CartItem;
+      };
+    };
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      return (
+        error.response?.data || {
+          success: false,
+          message: "Không thể kết nối đến server",
+        }
+      );
+    }
+
+    return {
+      success: false,
+      message: "Đã xảy ra lỗi không xác định khi cập nhật giỏ hàng",
+    };
+  }
+}
+
+export async function removeCartItem(itemId: number) {
+  try {
+    const response = await axios.delete(
+      `${API_BASE_URL}${API_ENDPOINTS.cartItem(itemId)}`,
+      {
+        headers: getAuthHeader(),
+      },
+    );
+
+    return response.data as {
+      success: boolean;
+      message: string;
+      data?: unknown;
+    };
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      return (
+        error.response?.data || {
+          success: false,
+          message: "Không thể kết nối đến server",
+        }
+      );
+    }
+
+    return {
+      success: false,
+      message: "Đã xảy ra lỗi không xác định khi xóa item giỏ hàng",
+    };
+  }
+}

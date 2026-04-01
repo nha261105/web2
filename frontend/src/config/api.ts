@@ -25,6 +25,7 @@ export const API_ENDPOINTS = {
   rentalPolicies: "/api/rental-policies",
   cart: "/api/cart",
   cartRentNow: "/api/cart/rent-now",
+  cartItem: (itemId: number) => `/api/cart/items/${itemId}`,
 } as const;
 
 export const addressEndpoints = {

@@ -11,7 +11,12 @@ import {
   RightCartLayout,
 } from "@/layouts/client/CartLayout";
 import { ArrowRight, ShieldCheck, Tag } from "lucide-react";
-import { getMyCart, type CartItem } from "@/services/cartService";
+import {
+  getMyCart,
+  updateCartItem,
+  removeCartItem,
+  type CartItem,
+} from "@/services/cartService";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("en-US", {
@@ -22,6 +27,9 @@ const formatCurrency = (value: number) =>
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isProcessingItemId, setIsProcessingItemId] = useState<number | null>(
+    null,
+  );
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
@@ -57,6 +65,54 @@ export default function CartPage() {
     () => cartItems.reduce((sum, item) => sum + item.quantity, 0),
     [cartItems],
   );
+
+  const handleCartItemChange = async (
+    item: CartItem,
+    updates: { quantity?: number; rental_days?: number },
+  ) => {
+    if (
+      updates.quantity === item.quantity &&
+      updates.rental_days === item.rental_days
+    ) {
+      return;
+    }
+
+    setErrorMessage("");
+    setIsProcessingItemId(item.id);
+
+    const response = await updateCartItem(item.id, updates);
+
+    setIsProcessingItemId(null);
+
+    if (response.success && response.data?.item) {
+      setCartItems((prev) =>
+        prev.map((cartItem) =>
+          cartItem.id === item.id
+            ? (response.data?.item ?? cartItem)
+            : cartItem,
+        ),
+      );
+      return;
+    }
+
+    setErrorMessage(response.message || "Không thể cập nhật giỏ hàng.");
+  };
+
+  const handleRemoveItem = async (itemId: number) => {
+    setErrorMessage("");
+    setIsProcessingItemId(itemId);
+
+    const response = await removeCartItem(itemId);
+
+    setIsProcessingItemId(null);
+
+    if (response.success) {
+      setCartItems((prev) => prev.filter((item) => item.id !== itemId));
+      return;
+    }
+
+    setErrorMessage(response.message || "Không thể xóa sản phẩm khỏi giỏ.");
+  };
 
   return (
     <CartLayout>
@@ -129,7 +185,14 @@ export default function CartPage() {
                             {priceLabel}
                           </div>
                         </div>
-                        <MyTrash2 size={19} />
+                        <button
+                          type="button"
+                          onClick={() => void handleRemoveItem(item.id)}
+                          disabled={isProcessingItemId === item.id}
+                          className="text-gray-400 hover:text-red-600"
+                        >
+                          <MyTrash2 size={19} />
+                        </button>
                       </div>
                       <div className="w-full flex flex-row justify-between items-end">
                         <div className="flex flex-row gap-x-9 gap-y-1 flex-wrap">
@@ -138,7 +201,10 @@ export default function CartPage() {
                             <MyNumericInput
                               min={1}
                               max={100}
-                              defaultValue={item.quantity}
+                              value={item.quantity}
+                              onChange={(quantity) =>
+                                void handleCartItemChange(item, { quantity })
+                              }
                             />
                           </div>
                           <div className="flex flex-row gap-2 items-center">
@@ -148,7 +214,10 @@ export default function CartPage() {
                             <MyNumericInput
                               min={1}
                               max={100}
-                              defaultValue={item.rental_days}
+                              value={item.rental_days}
+                              onChange={(rental_days) =>
+                                void handleCartItemChange(item, { rental_days })
+                              }
                             />
                           </div>
                         </div>

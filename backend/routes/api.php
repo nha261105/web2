@@ -82,6 +82,8 @@ Route::middleware(['auth.token'])->group(function () {
     Route::get('/cart', [CartController::class, 'index']);
     Route::post('/cart', [CartController::class, 'store']);
     Route::post('/cart/rent-now', [CartController::class, 'rentNow']);
+    Route::patch('/cart/items/{id}', [CartController::class, 'updateItem']);
+    Route::delete('/cart/items/{id}', [CartController::class, 'destroyItem']);
 
     Route::middleware(['role:ADMIN'])->group(function () {
         Route::get('/users', [UserController::class, 'index']);

@@ -2,45 +2,29 @@ import { MyBackButton, MyButton } from "@/components/ui/input/my-button";
 import { MyFrameWithInfo2 } from "@/components/ui/my-frame";
 import { ArrowRight, Search } from "lucide-react";
 import { Fragment } from "react/jsx-runtime";
+import { type CartItem } from "@/services/cartService";
 
 type ConfirmStepType = {
   onChange: (value: number) => void;
   onSuccess: (value: boolean) => void;
+  items: CartItem[];
 };
 
-export default function ConfirmStep({ onChange, onSuccess }: ConfirmStepType) {
-  const products = [
-    {
-      img: "https://lh7-rt.googleusercontent.com/docsz/AD_4nXd-JmBSGuLeZSkBuj38razGDVv45PcjJ6KhweCCwwHv1HfqwAwW8lY8HEba9IzJK0B_Z_9E8vcAiV02YF4jLO9eGgA6f-zqqOsCr8FtmhgCreaR5SSd9FxkuK2fr0Vdj6J_6r1tNHNmYACFiWkAs4EO1KHK?key=tE_qip6BHPL4g00JXL_X6Q",
-      name: "MacBook Pro 16-inch M3 Max",
-      price: "3d × 1",
-      total: "$3204",
-    },
-    {
-      img: "https://lh7-rt.googleusercontent.com/docsz/AD_4nXd-JmBSGuLeZSkBuj38razGDVv45PcjJ6KhweCCwwHv1HfqwAwW8lY8HEba9IzJK0B_Z_9E8vcAiV02YF4jLO9eGgA6f-zqqOsCr8FtmhgCreaR5SSd9FxkuK2fr0Vdj6J_6r1tNHNmYACFiWkAs4EO1KHK?key=tE_qip6BHPL4g00JXL_X6Q",
-      name: "MacBook Pro 16-inch M3 Max",
-      price: "3d × 1",
-      total: "$3204",
-    },
-    {
-      img: "https://lh7-rt.googleusercontent.com/docsz/AD_4nXd-JmBSGuLeZSkBuj38razGDVv45PcjJ6KhweCCwwHv1HfqwAwW8lY8HEba9IzJK0B_Z_9E8vcAiV02YF4jLO9eGgA6f-zqqOsCr8FtmhgCreaR5SSd9FxkuK2fr0Vdj6J_6r1tNHNmYACFiWkAs4EO1KHK?key=tE_qip6BHPL4g00JXL_X6Q",
-      name: "MacBook Pro 16-inch M3 Max",
-      price: "3d × 1",
-      total: "$3204",
-    },
-    {
-      img: "https://lh7-rt.googleusercontent.com/docsz/AD_4nXd-JmBSGuLeZSkBuj38razGDVv45PcjJ6KhweCCwwHv1HfqwAwW8lY8HEba9IzJK0B_Z_9E8vcAiV02YF4jLO9eGgA6f-zqqOsCr8FtmhgCreaR5SSd9FxkuK2fr0Vdj6J_6r1tNHNmYACFiWkAs4EO1KHK?key=tE_qip6BHPL4g00JXL_X6Q",
-      name: "MacBook Pro 16-inch M3 Max",
-      price: "3d × 1",
-      total: "$3204",
-    },
-    {
-      img: "https://lh7-rt.googleusercontent.com/docsz/AD_4nXd-JmBSGuLeZSkBuj38razGDVv45PcjJ6KhweCCwwHv1HfqwAwW8lY8HEba9IzJK0B_Z_9E8vcAiV02YF4jLO9eGgA6f-zqqOsCr8FtmhgCreaR5SSd9FxkuK2fr0Vdj6J_6r1tNHNmYACFiWkAs4EO1KHK?key=tE_qip6BHPL4g00JXL_X6Q",
-      name: "MacBook Pro 16-inch M3 Max",
-      price: "3d × 1",
-      total: "$3204",
-    },
-  ];
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(value);
+
+export default function ConfirmStep({
+  onChange,
+  onSuccess,
+  items,
+}: ConfirmStepType) {
+  const subtotal = items.reduce(
+    (sum, item) => sum + item.unit_price * item.quantity * item.rental_days,
+    0,
+  );
 
   return (
     <div className="w-full flex flex-col border-gray-300 bg-white border p-5 rounded-lg gap-8">
@@ -49,35 +33,46 @@ export default function ConfirmStep({ onChange, onSuccess }: ConfirmStepType) {
         <div className="text-base font-semibold">Xem lại đơn hàng của bạn</div>
       </div>
       <div className="flex flex-col w-full bg-white gap-3">
-        {products.map((item, index) => (
-          <Fragment key={index}>
-            <div className="flex flex-row gap-2 items-center">
-              <img
-                src={item.img}
-                alt="meme"
-                className="w-15 h-15 rounded-md cursor-pointer"
-              />
-              <div className="w-full flex flex-col justify-between">
-                <div className="w-full flex flex-row justify-between">
-                  <div className="flex flex-col gap-0.5">
-                    <div className="text-xs font-semibold">{item.name}</div>
-                    <div className="text-xs font-medium text-gray-500">
-                      {item.price}
+        {items.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-gray-300 p-5 text-center text-gray-500">
+            Giỏ hàng trống
+          </div>
+        ) : (
+          items.map((item) => {
+            const name =
+              item.product?.name ?? item.combo?.name ?? "Unknown item";
+            const itemTotal =
+              item.unit_price * item.quantity * item.rental_days;
+            return (
+              <Fragment key={item.id}>
+                <div className="flex flex-row gap-2 items-center">
+                  <div className="w-full flex flex-col justify-between">
+                    <div className="flex flex-col gap-0.5">
+                      <div className="text-xs font-semibold">{name}</div>
+                      <div className="text-xs font-medium text-gray-500">
+                        {item.quantity} x {item.rental_days} ngày
+                      </div>
                     </div>
                   </div>
+                  <div className="text-xs font-bold">
+                    {formatCurrency(itemTotal)}
+                  </div>
                 </div>
-              </div>
-              <div className="text-xs font-bold">{item.total}</div>
-            </div>
-            <hr />
-          </Fragment>
-        ))}
+                <hr />
+              </Fragment>
+            );
+          })
+        )}
       </div>
 
       <div className="w-full flex flex-col gap-5">
         <MyFrameWithInfo2
           txts={["Gửi đến", "Thanh toán", "Thành tiền"]}
-          txts2={["Nguyễn Thanh Sang", "Thẻ tín dụng", "3636 VNĐ"]}
+          txts2={[
+            "Thông tin giao hàng",
+            "Thẻ tín dụng",
+            formatCurrency(subtotal),
+          ]}
         />
 
         <div className="flex flex-row gap-3 items-center">

@@ -3,12 +3,14 @@ import { MyInputForText } from "@/components/ui/input/my-input-text";
 import MyRadioSelect from "@/components/ui/input/my-radio-select";
 import { ArrowRight, MapPin } from "lucide-react";
 import { useState } from "react";
+import type { Address } from "@/services/addressService";
 
 type ShippingStepType = {
   onChange: (value: number) => void;
+  address?: Address | null;
 };
 
-export default function ShippingStep({ onChange }: ShippingStepType) {
+export default function ShippingStep({ onChange, address }: ShippingStepType) {
   const [selectedOption, setSelectedOption] = useState("1");
 
   return (
@@ -39,41 +41,65 @@ export default function ShippingStep({ onChange }: ShippingStepType) {
           />
         </div>
 
-        {/* Họ và tên */}
-        <div className="w-full flex flex-row gap-x-3 gap-y-5 flex-wrap">
-          <MyInputForText
-            defaultValue=""
-            htmlFor="first-name"
-            title="Họ"
-            placeholder="Nguyễn Thanh"
-            className="sm:flex-1"
-          />
-          <MyInputForText
-            defaultValue=""
-            htmlFor="last-name"
-            title="Tên"
-            placeholder="Sang"
-            className="sm:flex-1"
-          />
-        </div>
+        {address ? (
+          <div className="w-full rounded-2xl border border-gray-200 bg-slate-50 p-5">
+            <div className="text-sm font-semibold text-gray-700">
+              Địa chỉ giao hàng
+            </div>
+            <div className="mt-3 text-sm text-gray-600">
+              <div>
+                {address.receive_name} • {address.receive_phone}
+              </div>
+              <div>{address.street}</div>
+              <div>
+                {address.ward}, {address.district}, {address.city}
+              </div>
+              {address.note ? (
+                <div className="text-xs text-gray-500 mt-2">
+                  Ghi chú: {address.note}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Họ và tên */}
+            <div className="w-full flex flex-row gap-x-3 gap-y-5 flex-wrap">
+              <MyInputForText
+                defaultValue=""
+                htmlFor="first-name"
+                title="Họ"
+                placeholder="Nguyễn Thanh"
+                className="sm:flex-1"
+              />
+              <MyInputForText
+                defaultValue=""
+                htmlFor="last-name"
+                title="Tên"
+                placeholder="Sang"
+                className="sm:flex-1"
+              />
+            </div>
 
-        {/* Email + SĐT */}
-        <div className="w-full flex flex-row gap-x-3 gap-y-5 flex-wrap">
-          <MyInputForText
-            defaultValue=""
-            htmlFor="email"
-            title="Email"
-            placeholder="sgu@example.com"
-            className="sm:flex-1"
-          />
-          <MyInputForText
-            defaultValue=""
-            htmlFor="phone"
-            title="Số điện thoại"
-            placeholder="0123456789"
-            className="sm:flex-1"
-          />
-        </div>
+            {/* Email + SĐT */}
+            <div className="w-full flex flex-row gap-x-3 gap-y-5 flex-wrap">
+              <MyInputForText
+                defaultValue=""
+                htmlFor="email"
+                title="Email"
+                placeholder="sgu@example.com"
+                className="sm:flex-1"
+              />
+              <MyInputForText
+                defaultValue=""
+                htmlFor="phone"
+                title="Số điện thoại"
+                placeholder="0123456789"
+                className="sm:flex-1"
+              />
+            </div>
+          </>
+        )}
 
         {selectedOption === "1" && (
           <>
