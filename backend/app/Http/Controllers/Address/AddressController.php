@@ -130,7 +130,7 @@ class AddressController extends Controller
                     Address::where('user_id', $authUser->id)->update(['is_default' => 0]);
                 }
 
-                $allowed = ['receive_name', 'receive_phone', 'city', 'ward', 'street', 'note', 'is_default'];
+                $allowed = ['receive_name', 'receive_phone', 'city', 'district', 'ward', 'street', 'note', 'is_default'];
                 $payload = array_intersect_key($data, array_flip($allowed));
                 $payload['user_id'] = $authUser->id;
 
@@ -162,7 +162,7 @@ class AddressController extends Controller
                     Address::where('user_id', $authUser->id)->update(['is_default' => 0]);
                 }
 
-                $allowed = ['receive_name', 'receive_phone', 'city', 'ward', 'street', 'note', 'is_default'];
+                $allowed = ['receive_name', 'receive_phone', 'city', 'district', 'ward', 'street', 'note', 'is_default'];
                 $payload = array_intersect_key($data, array_flip($allowed));
 
                 $address->update($payload);

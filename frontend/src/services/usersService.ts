@@ -127,6 +127,23 @@ export async function updateMe(data: {
   }
 }
 
+export async function changePassword(data: {
+  current_password: string;
+  new_password: string;
+  confirm_password: string;
+}) {
+  try {
+    const response = await axios.patch(
+      `${API_BASE_URL}${API_ENDPOINTS.changePassword}`,
+      data,
+      { headers: getAuthHeader() },
+    );
+    return response.data;
+  } catch (err: unknown) {
+    return mapAxiosError(err);
+  }
+}
+
 // ─── Admin — User CRUD ────────────────────────────────────────────────────────
 export async function getAllUsers(page = 1, perPage = 15) {
   try {

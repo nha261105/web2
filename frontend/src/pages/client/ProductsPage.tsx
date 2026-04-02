@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, ArrowRight, LayoutGrid, List, Search } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,8 @@ export default function ProductsPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     async function loadData() {
@@ -178,6 +180,13 @@ export default function ProductsPage() {
   };
 
   const handleAddToCart = async (product: Product) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Bạn cần đăng nhập để thêm vào giỏ hàng!");
+      navigate("/signin", { state: { from: location.pathname } });
+      return;
+    }
+
     const response = await addToCart({
       product_id: Number(product.id),
       quantity: 1,

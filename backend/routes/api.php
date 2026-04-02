@@ -69,6 +69,7 @@ Route::middleware(['auth.token'])->group(function () {
 
     Route::get('/users/me', [UserController::class, 'me']);
     Route::patch('/users/me', [UserController::class, 'updateMe']);
+    Route::patch('/users/me/password', [UserController::class, 'changePassword']);
 
     Route::prefix('users/me/addresses')->group(function () {
         Route::get('/', [AddressController::class, 'indexMe']);
@@ -97,6 +98,7 @@ Route::middleware(['auth.token'])->group(function () {
     Route::get('/cart', [CartController::class, 'index']);
     Route::post('/cart', [CartController::class, 'store']);
     Route::post('/cart/rent-now', [CartController::class, 'rentNow']);
+    Route::post('/cart/checkout', [\App\Http\Controllers\Cart\CheckoutController::class, 'checkout']);
     Route::patch('/cart/return-date', [CartController::class, 'updateReturnDate']);
     Route::patch('/cart/items/{id}', [CartController::class, 'updateItem']);
     Route::delete('/cart/items/{id}', [CartController::class, 'destroyItem']);

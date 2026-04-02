@@ -107,6 +107,29 @@ class UserController extends Controller
     }
 
     /**
+     * PATCH /api/users/me/password
+     */
+    public function changePassword(Request $request): JsonResponse
+    {
+        $authUser = $request->attributes->get('auth_user');
+
+        $validated = $request->validate([
+            'current_password' => ['required', 'string'],
+            'new_password'     => ['required', 'string', 'min:8'],
+            'confirm_password' => ['required', 'string', 'same:new_password'],
+        ]);
+
+        if (!\Illuminate\Support\Facades\Hash::check($validated['current_password'], $authUser->hash_password)) {
+            return ApiResponse::error('Mật khẩu hiện tại không đúng.', 'WRONG_PASSWORD', 422);
+        }
+
+        $authUser->hash_password = $validated['new_password'];
+        $authUser->save();
+
+        return ApiResponse::success([], 'Đổi mật khẩu thành công.');
+    }
+
+    /**
      * DELETE /api/users/{id} (Admin)
      */
     public function destroy($id): JsonResponse

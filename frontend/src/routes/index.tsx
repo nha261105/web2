@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 
 import ClientLayout from "../layouts/client/ClientLayout";
 import AdminLayout from "../layouts/admin/AdminLayout";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 // Client Page
 import HomePage from "../pages/client/HomePage";
@@ -24,14 +25,18 @@ import AccountPage from "@/pages/client/AccountPage";
 export const AppRoutes = () => {
   return (
     <Routes>
-      {/* Route cho client */}
+      {/* Route cho client — public */}
       <Route element={<ClientLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/products/:id" element={<ProductDetailPage />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/account" element={<AccountPage />} />
+
+        {/* Route yêu cầu đăng nhập */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/account" element={<AccountPage />} />
+        </Route>
       </Route>
 
       {/* Route cho admin */}

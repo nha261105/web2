@@ -1,12 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { AlertCircle } from "lucide-react";
 import {
-  getAdminReports,
-  generateRevenueData,
-  generateCategoryData,
-  AdminApiError,
-  type AdminReportsData,
-} from "../../services/adminReportsService";
+  getAdminDashboard,
+  AdminDashboardApiError,
+  type DashboardPayload,
+} from "@/services/adminDashboardService";
 
 interface Metric {
   label: string;
@@ -16,7 +14,7 @@ interface Metric {
 }
 
 export default function AdminReports() {
-  const [data, setData] = useState<AdminReportsData | null>(null);
+  const [data, setData] = useState<DashboardPayload | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<Metric[]>([]);
@@ -25,43 +23,45 @@ export default function AdminReports() {
     try {
       setIsLoading(true);
       setError(null);
-      const result = await getAdminReports();
+      const result = await getAdminDashboard();
       setData(result);
 
-      // Transform metrics for display
-      const dashboardMetrics = result.metrics || {};
+      // Transform cards for display
+      const dashboardMetrics = result.cards;
       const displayMetrics: Metric[] = [
         {
-          label: "Total Users",
-          value: dashboardMetrics.total_users || 0,
-          change: `+${dashboardMetrics.users_this_month || 0} this month`,
+          label: "Total Orders",
+          value: dashboardMetrics.total_orders || 0,
+          change: "Live order count",
           up: true,
         },
         {
-          label: "Total Products",
-          value: dashboardMetrics.total_products || 0,
-          change: "stable",
+          label: "Active Products",
+          value: dashboardMetrics.active_products || 0,
+          change: "Products ready for rent",
           up: true,
         },
         {
           label: "Total Revenue",
-          value: `$${(dashboardMetrics.total_revenue || 0).toLocaleString()}`,
-          change: `+${(dashboardMetrics.revenue_this_month || 0).toLocaleString()} this month`,
+          value: new Intl.NumberFormat("vi-VN", {
+            style: "currency",
+            currency: "VND",
+            maximumFractionDigits: 0,
+          }).format(dashboardMetrics.total_revenue || 0),
+          change: "Total confirmed revenue",
           up: true,
         },
         {
-          label: "Active Rentals",
-          value: dashboardMetrics.active_rentals || 0,
-          change: `vs ${dashboardMetrics.pending_rentals || 0} pending`,
-          up:
-            dashboardMetrics.active_rentals! >=
-            (dashboardMetrics.pending_rentals || 0),
+          label: "New Users",
+          value: dashboardMetrics.new_users || 0,
+          change: "Recently joined",
+          up: true,
         },
       ];
       setMetrics(displayMetrics);
     } catch (err) {
       const message =
-        err instanceof AdminApiError ? err.message : "Failed to load reports";
+        err instanceof AdminDashboardApiError ? err.message : "Failed to load reports";
       setError(message);
     } finally {
       setIsLoading(false);
@@ -73,10 +73,10 @@ export default function AdminReports() {
   }, [loadReports]);
 
   const revenueTrends = data
-    ? generateRevenueData(data.metrics?.total_revenue || 0)
+    ? data.revenue_overview.map(r => ({ month: r.month, amount: Number(r.revenue) }))
     : [];
   const categoryData = data
-    ? generateCategoryData(data.metrics?.total_rentals || 0)
+    ? data.rental_by_category.map(c => ({ category_name: c.category, rental_count: Number(c.rentals) }))
     : [];
 
   return (
@@ -154,9 +154,14 @@ export default function AdminReports() {
                         style={{ height: `${Math.max(height, 10)}%` }}
                         title={`${data.month}: $${data.amount.toLocaleString()}`}
                       >
-                        <div className="absolute -top-6 left-0 right-0 text-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <span className="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                            ${data.amount.toLocaleString()}
+                        <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-center opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                          <span className="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded shadow-sm border border-gray-200">
+                            {new Intl.NumberFormat("vi-VN", {
+                              style: "currency",
+                              currency: "VND",
+                              maximumFractionDigits: 0,
+                              notation: "compact",
+                            }).format(data.amount)}
                           </span>
                         </div>
                       </div>
@@ -179,7 +184,7 @@ export default function AdminReports() {
               <div className="mt-4">
                 <div className="space-y-3">
                   {categoryData.map((cat) => {
-                    const totalRentals = data?.metrics?.total_rentals || 1;
+                    const totalRentals = data?.cards.total_orders || 1;
                     const percentage = (
                       (cat.rental_count / totalRentals) *
                       100
@@ -225,26 +230,26 @@ export default function AdminReports() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div>
-                <p className="text-gray-500">Total Rentals</p>
+                <p className="text-gray-500">Total Orders</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {data?.metrics?.total_rentals || 0}
+                  {data?.cards?.total_orders || 0}
                 </p>
               </div>
               <div>
-                <p className="text-gray-500">Pending Rentals</p>
+                <p className="text-gray-500">Active Products</p>
                 <p className="text-2xl font-bold text-orange-600">
-                  {data?.metrics?.pending_rentals || 0}
+                  {data?.cards?.active_products || 0}
                 </p>
               </div>
               <div>
-                <p className="text-gray-500">Average Rental Value</p>
+                <p className="text-gray-500">Average Order Value</p>
                 <p className="text-2xl font-bold text-blue-600">
-                  $
-                  {data?.metrics?.total_rentals
-                    ? Math.round(
-                        (data.metrics.total_revenue || 0) /
-                          data.metrics.total_rentals,
-                      ).toLocaleString()
+                  {data?.cards?.total_orders
+                    ? new Intl.NumberFormat("vi-VN", {
+                        style: "currency",
+                        currency: "VND",
+                        maximumFractionDigits: 0,
+                      }).format(Math.round((data.cards.total_revenue || 0) / data.cards.total_orders))
                     : 0}
                 </p>
               </div>

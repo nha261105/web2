@@ -9,9 +9,10 @@ import ShippingStep from "./CheckoutStep.tsx/ShippingStep";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import PaymentStep from "./CheckoutStep.tsx/PaymentStep";
 import ConfirmStep from "./CheckoutStep.tsx/ConfirmStep";
-import { getMyCart, type CartItem } from "@/services/cartService";
-import type { Address } from "@/services/adminAddressService";
-import { getAddresses } from "@/services/adminAddressService";
+import { getMyCart, submitCheckout, type CartItem } from "@/services/cartService";
+import type { Address, CreateAddressPayload } from "@/services/addressService";
+import { getAddresses, createAddress } from "@/services/addressService";
+import toast from "react-hot-toast";
 import { Check } from "lucide-react";
 import { MyBackButton } from "@/components/ui/input/my-button";
 import { useNavigate } from "react-router-dom";
@@ -21,6 +22,7 @@ export default function CheckoutPage() {
   const [success, setSuccess] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [defaultAddress, setDefaultAddress] = useState<Address | null>(null);
+  const [newAddressData, setNewAddressData] = useState<CreateAddressPayload | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -55,6 +57,37 @@ export default function CheckoutPage() {
 
     loadCheckout();
   }, []);
+
+  const handleSubmitOrder = async () => {
+    setIsLoading(true);
+
+    let addressId = defaultAddress?.id;
+
+    if (!addressId && newAddressData) {
+      const addrRes = await createAddress(newAddressData);
+      if (addrRes.success && addrRes.data?.address) {
+        addressId = addrRes.data.address.id;
+      } else {
+        toast.error("Không thể tạo địa chỉ mới!");
+        setIsLoading(false);
+        return;
+      }
+    }
+
+    const res = await submitCheckout({
+      address_id: addressId,
+      note: "Customer order",
+    });
+    setIsLoading(false);
+
+    if (res.success) {
+      toast.success("Order Placed Successfully!");
+      setSuccess(true);
+      setCartItems([]);
+    } else {
+      toast.error(res.message || "Checkout failed");
+    }
+  };
 
   if (success)
     return (
@@ -93,14 +126,18 @@ export default function CheckoutPage() {
       <div className="w-full flex flex-row justify-between gap-10 flex-wrap">
         <LeftCartLayout>
           {stepCheckOut == 1 && (
-            <ShippingStep onChange={setStepCheckOut} address={defaultAddress} />
+            <ShippingStep 
+              onChange={setStepCheckOut} 
+              address={defaultAddress} 
+              onNewAddressData={setNewAddressData} 
+            />
           )}
           {stepCheckOut == 2 && <PaymentStep onChange={setStepCheckOut} />}
           {stepCheckOut == 3 && (
             <ConfirmStep
               onChange={setStepCheckOut}
-              onSuccess={setSuccess}
               items={cartItems}
+              submitOrder={handleSubmitOrder}
             />
           )}
         </LeftCartLayout>

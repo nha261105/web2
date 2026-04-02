@@ -9,20 +9,30 @@ use App\Http\Resources\Rental\ReturnOrderResource;
 use App\Services\Rental\ReturnOrderService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ReturnOrderController extends Controller
 {
-    public function __construct(private ReturnOrderService $service) {}
+    public function __construct(private \App\Services\Rental\ReturnOrderFallbackService $service) {}
 
-    public function store(CreateReturnOrderRequest $request): JsonResponse
+    public function store(Request $request): JsonResponse
     {
-        $returnOrder = $this->service->create($request->validated());
+        $validated = $request->validate([
+            'rental_id' => 'required|integer|exists:rentals,id',
+            'items' => 'required|array',
+            'items.*.rental_detail_id' => 'required|integer|exists:rental_details,id',
+            'items.*.condition' => 'required|in:GOOD,DAMAGED,LOST',
+            'items.*.note' => 'nullable|string',
+            'items.*.penalty_fee' => 'nullable|numeric|min:0',
+        ]);
+
+        $returnOrder = $this->service->processReturn($validated['rental_id'], $validated['items']);
 
         return ApiResponse::success(
             [
-                'return_order' => new ReturnOrderResource($returnOrder),
+                'return_order' => $returnOrder,
             ],
-            'Return order created',
+            'Return order processed successfully',
             201,
         );
     }

@@ -88,18 +88,18 @@ export default function AccountPage() {
   // ─── Tab logic ────────────────────────────────────────────────────────────
   const getAccountPageFromTab = (tab: string | null) => {
     switch (tab) {
-      case "orders": return "My Orders";
-      case "settings": return "Settings";
-      case "addresses": return "Addresses";
-      default: return "Profile";
+      case "orders": return "Lịch sử đơn";
+      case "settings": return "Cài đặt";
+      case "addresses": return "Địa chỉ";
+      default: return "Hồ sơ";
     }
   };
 
   const getTabFromLabel = (label: string) => {
     switch (label) {
-      case "My Orders": return "orders";
-      case "Settings": return "settings";
-      case "Addresses": return "addresses";
+      case "Lịch sử đơn": return "orders";
+      case "Cài đặt": return "settings";
+      case "Địa chỉ": return "addresses";
       default: return "profile";
     }
   };
@@ -107,10 +107,10 @@ export default function AccountPage() {
   const accountPage = useMemo(() => getAccountPageFromTab(tabParam), [tabParam]);
 
   const NAV_ITEMS = [
-    { label: "Profile", icon: User },
-    { label: "Addresses", icon: MapPin },
-    { label: "My Orders", icon: Package },
-    { label: "Settings", icon: Settings },
+    { label: "Hồ sơ", icon: User },
+    { label: "Địa chỉ", icon: MapPin },
+    { label: "Lịch sử đơn", icon: Package },
+    { label: "Cài đặt", icon: Settings },
   ];
 
   // ─── Logout ───────────────────────────────────────────────────────────────
@@ -187,7 +187,7 @@ export default function AccountPage() {
                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 w-full transition-colors mt-1 cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" />
-                    Sign Out
+                    Đăng xuất
                   </button>
                 </nav>
               </div>
@@ -212,22 +212,22 @@ export default function AccountPage() {
                 ))}
               </div>
 
-              <div className={accountPage === "Profile" ? "block" : "hidden"}>
+              <div className={accountPage === "Hồ sơ" ? "block" : "hidden"}>
                 <ProfilePage user={authUser} />
               </div>
 
-              <div className={accountPage === "Addresses" ? "block" : "hidden"}>
+              <div className={accountPage === "Địa chỉ" ? "block" : "hidden"}>
                 <AddressPage userId={authUser.id} />
               </div>
 
-              <div className={accountPage === "My Orders" ? "block" : "hidden"}>
+              <div className={accountPage === "Lịch sử đơn" ? "block" : "hidden"}>
                 <OrdersPage
                   initialRentals={rentals}
                   initialLoading={rentalsLoading}
                 />
               </div>
 
-              <div className={accountPage === "Settings" ? "block" : "hidden"}>
+              <div className={accountPage === "Cài đặt" ? "block" : "hidden"}>
                 <SettingsPage />
               </div>
             </div>

@@ -13,11 +13,11 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 const FILTERS = [
-  { id: "all",       label: "All Orders" },
-  { id: "PENDING",   label: "Pending" },
-  { id: "PICKED_UP", label: "Active" },
-  { id: "COMPLETED", label: "Completed" },
-  { id: "CANCELLED", label: "Cancelled" },
+  { id: "all",       label: "Tất cả" },
+  { id: "PENDING",   label: "Chờ xác nhận" },
+  { id: "PICKED_UP", label: "Ang thuê" },
+  { id: "COMPLETED", label: "Hoàn thành" },
+  { id: "CANCELLED", label: "Đã hủy" },
 ];
 
 interface Props {
@@ -72,7 +72,7 @@ export default function OrdersPage({ initialRentals, initialLoading }: Props) {
     <div className="space-y-5">
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-semibold text-gray-900">My Orders</h2>
+          <h2 className="text-base font-semibold text-gray-900">Lịch sử đơn thuê</h2>
           <div className="flex gap-1 bg-gray-100 rounded-lg p-1 flex-wrap">
             {FILTERS.map((f) => (
               <button
@@ -93,7 +93,7 @@ export default function OrdersPage({ initialRentals, initialLoading }: Props) {
         {displayLoading ? (
           <div className="flex flex-col items-center justify-center py-12 text-gray-400 gap-2">
             <Loader2 className="animate-spin text-[#0052CC] w-6 h-6" />
-            <span className="text-sm">Loading orders...</span>
+            <span className="text-sm">Ang tải dữ liệu...</span>
           </div>
 
         ) : displayRentals.length === 0 ? (
@@ -163,7 +163,7 @@ export default function OrdersPage({ initialRentals, initialLoading }: Props) {
                     className="flex items-center gap-1.5 h-8 px-3 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors"
                   >
                     <Eye className="w-3.5 h-3.5" />
-                    View Details
+                    Xem chi tiết
                   </button>
                   {order.status === "COMPLETED" && (
                     <button
@@ -171,7 +171,7 @@ export default function OrdersPage({ initialRentals, initialLoading }: Props) {
                       className="flex items-center gap-1.5 h-8 px-3 bg-blue-50 text-[#0052CC] rounded-lg text-xs font-medium hover:bg-blue-100 transition-colors"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
-                      Rent Again
+                      Thuê lại
                     </button>
                   )}
                 </div>
@@ -182,7 +182,7 @@ export default function OrdersPage({ initialRentals, initialLoading }: Props) {
       </div>
 
       <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5">
-        <p className="text-sm font-medium text-[#0052CC] mb-1">💡 Rental Tip</p>
+        <p className="text-sm font-medium text-[#0052CC] mb-1">💡 Mẹo thuê</p>
         <p className="text-sm text-gray-600">
           Cần gia hạn thuê? Liên hệ với chúng tôi trước ít nhất 24 giờ để
           kiểm tra tình trạng thiết bị.

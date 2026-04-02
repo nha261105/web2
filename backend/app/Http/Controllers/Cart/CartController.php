@@ -124,9 +124,15 @@ class CartController extends Controller
         $payload['quantity'] = $payload['quantity'] ?? 1;
         $payload['rental_days'] = $payload['rental_days'] ?? 1;
 
-        $item = $this->createOrUpdateCartItem($user, $payload);
-        if (!$item) {
-            return ApiResponse::internalError('Unable to add item to cart');
+        try {
+            $item = $this->createOrUpdateCartItem($user, $payload);
+            if (!$item) {
+                return ApiResponse::internalError('Unable to add item to cart');
+            }
+        } catch (\Exception $e) {
+            return ApiResponse::validation([
+                'quantity' => [$e->getMessage()],
+            ]);
         }
 
         $cart = Rental::where('user_id', $user->id)
@@ -169,9 +175,15 @@ class CartController extends Controller
         $payload['quantity'] = $payload['quantity'] ?? 1;
         $payload['rental_days'] = $payload['rental_days'] ?? 1;
 
-        $item = $this->createOrUpdateCartItem($user, $payload);
-        if (!$item) {
-            return ApiResponse::internalError('Unable to add item to cart');
+        try {
+            $item = $this->createOrUpdateCartItem($user, $payload);
+            if (!$item) {
+                return ApiResponse::internalError('Unable to add item to cart');
+            }
+        } catch (\Exception $e) {
+            return ApiResponse::validation([
+                'quantity' => [$e->getMessage()],
+            ]);
         }
 
         $cart = Rental::where('user_id', $user->id)
@@ -205,6 +217,16 @@ class CartController extends Controller
             ->where('rental_id', $cart->id)
             ->first();
         if (!$detail) return ApiResponse::notFound('Cart item not found');
+
+        // Check stock
+        if ($detail->product_id) {
+            $product = $detail->product;
+            if ($product && $payload['quantity'] > $product->stock) {
+                return ApiResponse::validation([
+                    'quantity' => ["Số lượng vượt quá tồn kho hiện tại (Tồn: {$product->stock})"],
+                ]);
+            }
+        }
 
         $detail->quantity = $payload['quantity'];
         $detail->save();
@@ -293,6 +315,17 @@ class CartController extends Controller
             $product = Product::find($productId);
             if (!$product) {
                 return null;
+            }
+
+            // Check stock if adding more
+            $query = RentalDetail::where('rental_id', $cart->id ?? 0)
+                ->where('product_id', $productId)
+                ->whereNull('combo_id');
+            $detail = $query->first();
+
+            $totalRequested = ($detail ? $detail->quantity : 0) + $quantity;
+            if ($totalRequested > $product->stock) {
+                throw new \Exception("Vượt quá số lượng tồn kho (Tồn: {$product->stock})");
             }
         }
 

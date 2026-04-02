@@ -6,8 +6,8 @@ import { type CartItem } from "@/services/cartService";
 
 type ConfirmStepType = {
   onChange: (value: number) => void;
-  onSuccess: (value: boolean) => void;
   items: CartItem[];
+  submitOrder: () => Promise<void>;
 };
 
 const formatCurrency = (value: number) =>
@@ -18,8 +18,8 @@ const formatCurrency = (value: number) =>
 
 export default function ConfirmStep({
   onChange,
-  onSuccess,
   items,
+  submitOrder,
 }: ConfirmStepType) {
   const subtotal = items.reduce(
     (sum, item) => sum + item.unit_price * item.quantity * item.rental_days,
@@ -87,7 +87,7 @@ export default function ConfirmStep({
             text="Thanh toán"
             classname="flex-1"
             color="orange"
-            onClick={() => onSuccess(true)}
+            onClick={submitOrder}
             icon={ArrowRight}
           />
         </div>
