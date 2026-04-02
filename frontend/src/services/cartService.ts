@@ -25,6 +25,7 @@ export type CartItem = {
   type: "product" | "combo";
   quantity: number;
   rental_days: number;
+  return_date?: string;
   unit_price: number;
   total_price: number;
   product?: CartProduct | null;
@@ -141,9 +142,9 @@ export async function rentNow(payload: AddToCartPayload) {
   }
 }
 
-export async function updateCartItem(
+export async function updateCartItemQuantity(
   itemId: number,
-  payload: { quantity?: number; rental_days?: number },
+  payload: { quantity: number },
 ) {
   try {
     const response = await axios.patch(
@@ -159,6 +160,41 @@ export async function updateCartItem(
       message: string;
       data?: {
         item?: CartItem;
+      };
+    };
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      return (
+        error.response?.data || {
+          success: false,
+          message: "Không thể kết nối đến server",
+        }
+      );
+    }
+
+    return {
+      success: false,
+      message: "Đã xảy ra lỗi không xác định khi cập nhật giỏ hàng",
+    };
+  }
+}
+
+export async function updateCartReturnDate(payload: { return_date: string }) {
+  try {
+    const response = await axios.patch(
+      `${API_BASE_URL}${API_ENDPOINTS.cartReturnDate}`,
+      payload,
+      {
+        headers: getAuthHeader(),
+      },
+    );
+
+    return response.data as {
+      success: boolean;
+      message: string;
+      data?: {
+        rental_days?: number;
+        return_date?: string;
       };
     };
   } catch (error: unknown) {

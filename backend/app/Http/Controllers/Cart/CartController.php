@@ -45,7 +45,7 @@ class CartController extends Controller
             $rentalDays = max(1, $start->diffInDays($end) + 1);
         }
 
-        $payload = $rental->details->map(function ($detail) use ($rentalDays) {
+        $payload = $rental->details->map(function ($detail) use ($rentalDays, $rental) {
             $product = $detail->product;
             $combo = $detail->combo;
             $image = null;
@@ -64,6 +64,7 @@ class CartController extends Controller
                 'rental_days' => $rentalDays,
                 'unit_price' => (float) $unitPrice,
                 'total_price' => (float) $totalPrice,
+                'return_date' => $rental->end_date?->format('Y-m-d'),
                 'product' => $product
                     ? [
                         'id' => $product->id,
@@ -187,54 +188,66 @@ class CartController extends Controller
     // Hàm cập nhật sản phẩm
     public function updateItem(Request $request, int $itemId): JsonResponse
     {
-        // Lấy thông tin user
         $user = $request->attributes->get('auth_user');
         if (!$user) return ApiResponse::unauthorized();
 
-        // Lấy thông tin cần update
         $payload = $request->validate([
-            'quantity' => ['nullable', 'integer', 'min:1'],
-            'rental_days' => ['nullable', 'integer', 'min:1'],
+            'quantity' => ['required', 'integer', 'min:1'],
         ]);
 
-        // Kiểm tra có thông tin số lượng || số ngày không
-        if (!isset($payload['quantity']) && !isset($payload['rental_days'])) {
-            return ApiResponse::validation([
-                'quantity' => ['quantity or rental_days is required'],
-            ]);
-        }
-
-        // Lấy giỏ hàng chứa sản phẩm
         $cart = Rental::where('user_id', $user->id)
             ->where('status', 'CART')
             ->first();
         if (!$cart) return ApiResponse::notFound('Cart not found');
 
-        // Lấy thông tin sản phẩm
         $detail = RentalDetail::where('id', $itemId)
             ->where('rental_id', $cart->id)
             ->first();
         if (!$detail) return ApiResponse::notFound('Cart item not found');
 
-        // Cập nhật số lượng
-        if (isset($payload['quantity'])) {
-            $detail->quantity = $payload['quantity'];
-        }
-
-        // Cập nhật số ngày thuê
-        if (isset($payload['rental_days'])) {
-            $cart->end_date = Carbon::parse($cart->start_date ?? Carbon::now())
-                ->addDays(max(1, $payload['rental_days'] - 1));
-            $cart->save();
-        }
-
+        $detail->quantity = $payload['quantity'];
         $detail->save();
+
         $this->updateCartTotals($cart);
 
-        $rentalDays = $this->calculateRentalDays($cart);
-
-        // return response SUCCESS
         return ApiResponse::success([], 'Cart item updated successfully');
+    }
+
+    public function updateReturnDate(Request $request): JsonResponse
+    {
+        $user = $request->attributes->get('auth_user');
+        if (!$user) return ApiResponse::unauthorized();
+
+        $payload = $request->validate([
+            'return_date' => ['required', 'date'],
+        ]);
+
+        $cart = Rental::where('user_id', $user->id)
+            ->where('status', 'CART')
+            ->first();
+        if (!$cart) return ApiResponse::notFound('Cart not found');
+
+        $startDate = $cart->start_date
+            ? Carbon::parse($cart->start_date)
+            : Carbon::now();
+        $returnDate = Carbon::parse($payload['return_date']);
+
+        if ($returnDate->lt($startDate)) {
+            return ApiResponse::validation([
+                'return_date' => ['Return date must be same or after start date'],
+            ]);
+        }
+
+        $cart->start_date = $cart->start_date ?? $startDate;
+        $cart->end_date = $returnDate;
+        $cart->save();
+
+        $this->updateCartTotals($cart);
+
+        return ApiResponse::success([
+            'return_date' => $cart->end_date->format('Y-m-d'),
+            'rental_days' => $this->calculateRentalDays($cart),
+        ], 'Cart return date updated successfully');
     }
 
     /**
@@ -390,6 +403,7 @@ class CartController extends Controller
             'type' => $product ? 'product' : 'combo',
             'quantity' => $detail->quantity,
             'rental_days' => $rentalDays,
+            'return_date' => $detail->rental?->end_date?->format('Y-m-d'),
             'unit_price' => (float) $detail->price_at_rental,
             'total_price' => (float) ($detail->price_at_rental * $detail->quantity * $rentalDays),
             'product' => $product

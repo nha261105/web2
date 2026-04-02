@@ -27,6 +27,7 @@ export const API_ENDPOINTS = {
   // cart
   cart: "/api/cart",
   cartRentNow: "/api/cart/rent-now",
+  cartReturnDate: "/api/cart/return-date",
   cartItem: (itemId: number) => `/api/cart/items/${itemId}`,
 
   // Admin
