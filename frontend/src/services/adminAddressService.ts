@@ -1,5 +1,5 @@
 import axios from "axios";
-import { API_BASE_URL, API_ENDPOINTS } from "@/config/api";
+import { API_BASE_URL, addressEndpoints } from "@/config/api";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 export interface Address {
@@ -37,10 +37,10 @@ function getAuthHeader(): Record<string, string> {
 }
 
 // ─── Lấy danh sách địa chỉ ───────────────────────────────────────────────────
-export async function getAddresses() {
+export async function getAddresses(userId: number) {
   try {
     const response = await axios.get(
-      `${API_BASE_URL}${API_ENDPOINTS.address}`,
+      `${API_BASE_URL}${addressEndpoints.list(userId)}`,
       { headers: getAuthHeader() },
     );
     return response.data;
@@ -50,10 +50,10 @@ export async function getAddresses() {
   }
 }
 
-export async function createAddress(data: CreateAddressPayload) {
+export async function createAddress(userId: number, data: CreateAddressPayload) {
   try {
     const response = await axios.post(
-      `${API_BASE_URL}${API_ENDPOINTS.address}`,
+      `${API_BASE_URL}${addressEndpoints.list(userId)}`,
       data,
       { headers: getAuthHeader() },
     );
@@ -64,10 +64,10 @@ export async function createAddress(data: CreateAddressPayload) {
   }
 }
 
-export async function updateAddress(id: number, data: UpdateAddressPayload) {
+export async function updateAddress(userId: number, id: number, data: UpdateAddressPayload) {
   try {
     const response = await axios.patch(
-      `${API_BASE_URL}${API_ENDPOINTS.addressById(id)}`,
+      `${API_BASE_URL}${addressEndpoints.byId(userId, id)}`,
       data,
       { headers: getAuthHeader() },
     );
@@ -78,10 +78,10 @@ export async function updateAddress(id: number, data: UpdateAddressPayload) {
   }
 }
 
-export async function deleteAddress(id: number) {
+export async function deleteAddress(userId: number, id: number) {
   try {
     const response = await axios.delete(
-      `${API_BASE_URL}${API_ENDPOINTS.addressById(id)}`,
+      `${API_BASE_URL}${addressEndpoints.byId(userId, id)}`,
       { headers: getAuthHeader() },
     );
     return response.data;
@@ -92,6 +92,6 @@ export async function deleteAddress(id: number) {
 }
 
 // ─── Set địa chỉ mặc định ────────────────────────────────────────────────────
-export async function setDefaultAddress(id: number) {
-  return updateAddress(id, { is_default: true });
+export async function setDefaultAddress(userId: number, id: number) {
+  return updateAddress(userId, id, { is_default: true });
 }

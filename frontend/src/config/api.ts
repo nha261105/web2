@@ -30,6 +30,10 @@ export const API_ENDPOINTS = {
   cartReturnDate: "/api/cart/return-date",
   cartItem: (itemId: number) => `/api/cart/items/${itemId}`,
 
+  // Address
+  address: "/api/me/address",
+  addressById: (idAddress: number) => `/api/me/address/${idAddress}`,
+
   // Admin
   adminDashboard: "/api/admin/dashboard",
 } as const;

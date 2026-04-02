@@ -67,7 +67,6 @@ class RentalApiTest extends TestCase
             'receive_name' => 'Receiver',
             'receive_phone' => '0911222333',
             'city' => 'HCM',
-            'district' => 'District 1',
             'ward' => 'Ben Nghe',
             'street' => '1 Nguyen Hue',
             'is_default' => true,
@@ -109,7 +108,6 @@ class RentalApiTest extends TestCase
             'receive_name' => 'Bảo Nguyễn',
             'receive_phone' => '0901000003',
             'city' => 'TP. Hồ Chí Minh',
-            'district' => 'Quận 1',
             'ward' => 'Phường Bến Nghé',
             'street' => '12 Lê Lợi',
             'is_default' => 1

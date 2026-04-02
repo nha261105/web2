@@ -19,7 +19,6 @@ class AddressResource extends JsonResource
             'receive_name' => $this->receive_name,
             'receive_phone' => $this->receive_phone,
             'city' => $this->city,
-            'district' => $this->district,
             'ward' => $this->ward,
             'street' => $this->street,
             'note' => $this->note,

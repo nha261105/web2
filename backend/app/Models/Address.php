@@ -15,12 +15,11 @@ class Address extends Model
         'receive_name',
         'receive_phone',
         'city',
-        'district',
         'ward',
         'street',
         'note',
         'is_default'
     ];
 
-    public $timestamps = true;
+    public $timestamps = false;
 }

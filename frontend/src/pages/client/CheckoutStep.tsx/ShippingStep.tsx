@@ -3,7 +3,7 @@ import { MyInputForText } from "@/components/ui/input/my-input-text";
 import MyRadioSelect from "@/components/ui/input/my-radio-select";
 import { ArrowRight, MapPin } from "lucide-react";
 import { useState } from "react";
-import type { Address } from "@/services/addressService";
+import type { Address } from "@/services/adminAddressService";
 
 type ShippingStepType = {
   onChange: (value: number) => void;
@@ -52,7 +52,7 @@ export default function ShippingStep({ onChange, address }: ShippingStepType) {
               </div>
               <div>{address.street}</div>
               <div>
-                {address.ward}, {address.district}, {address.city}
+                {address.ward}, {address.city}
               </div>
               {address.note ? (
                 <div className="text-xs text-gray-500 mt-2">

@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class CartController extends Controller
 {
@@ -215,23 +216,22 @@ class CartController extends Controller
 
     public function updateReturnDate(Request $request): JsonResponse
     {
+        // Log::info("DEBUG");
         $user = $request->attributes->get('auth_user');
         if (!$user) return ApiResponse::unauthorized();
-
+        
         $payload = $request->validate([
             'return_date' => ['required', 'date'],
-        ]);
-
+            ]);
+            
         $cart = Rental::where('user_id', $user->id)
             ->where('status', 'CART')
             ->first();
         if (!$cart) return ApiResponse::notFound('Cart not found');
-
-        $startDate = $cart->start_date
-            ? Carbon::parse($cart->start_date)
-            : Carbon::now();
+            
+        $startDate = Carbon::now()->startOfDay();
         $returnDate = Carbon::parse($payload['return_date']);
-
+                    
         if ($returnDate->lt($startDate)) {
             return ApiResponse::validation([
                 'return_date' => ['Return date must be same or after start date'],
