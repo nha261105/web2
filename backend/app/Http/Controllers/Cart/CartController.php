@@ -184,44 +184,44 @@ class CartController extends Controller
         ], 'Item added to cart. Ready to checkout');
     }
 
+    // Hàm cập nhật sản phẩm
     public function updateItem(Request $request, int $itemId): JsonResponse
     {
+        // Lấy thông tin user
         $user = $request->attributes->get('auth_user');
-        if (!$user) {
-            return ApiResponse::unauthorized();
-        }
+        if (!$user) return ApiResponse::unauthorized();
 
+        // Lấy thông tin cần update
         $payload = $request->validate([
             'quantity' => ['nullable', 'integer', 'min:1'],
             'rental_days' => ['nullable', 'integer', 'min:1'],
         ]);
 
+        // Kiểm tra có thông tin số lượng || số ngày không
         if (!isset($payload['quantity']) && !isset($payload['rental_days'])) {
             return ApiResponse::validation([
                 'quantity' => ['quantity or rental_days is required'],
             ]);
         }
 
+        // Lấy giỏ hàng chứa sản phẩm
         $cart = Rental::where('user_id', $user->id)
             ->where('status', 'CART')
             ->first();
+        if (!$cart) return ApiResponse::notFound('Cart not found');
 
-        if (!$cart) {
-            return ApiResponse::notFound('Cart not found');
-        }
-
+        // Lấy thông tin sản phẩm
         $detail = RentalDetail::where('id', $itemId)
             ->where('rental_id', $cart->id)
             ->first();
+        if (!$detail) return ApiResponse::notFound('Cart item not found');
 
-        if (!$detail) {
-            return ApiResponse::notFound('Cart item not found');
-        }
-
+        // Cập nhật số lượng
         if (isset($payload['quantity'])) {
             $detail->quantity = $payload['quantity'];
         }
 
+        // Cập nhật số ngày thuê
         if (isset($payload['rental_days'])) {
             $cart->end_date = Carbon::parse($cart->start_date ?? Carbon::now())
                 ->addDays(max(1, $payload['rental_days'] - 1));
@@ -233,37 +233,36 @@ class CartController extends Controller
 
         $rentalDays = $this->calculateRentalDays($cart);
 
-        return ApiResponse::success([
-            'item' => $this->formatCartDetail($detail, $rentalDays),
-        ], 'Cart item updated successfully');
+        // return response SUCCESS
+        return ApiResponse::success([], 'Cart item updated successfully');
     }
 
+    /**
+     * Hàm xóa item khỏi giỏ hàng
+     * */  
     public function destroyItem(Request $request, int $itemId): JsonResponse
     {
+        // Lấy thông tin user
         $user = $request->attributes->get('auth_user');
-        if (!$user) {
-            return ApiResponse::unauthorized();
-        }
+        if (!$user) return ApiResponse::unauthorized();
 
+        // Lấy danh sách sản phẩm trong giỏ hàng
         $cart = Rental::where('user_id', $user->id)
             ->where('status', 'CART')
             ->first();
+        if (!$cart) return ApiResponse::notFound('Cart not found');
 
-        if (!$cart) {
-            return ApiResponse::notFound('Cart not found');
-        }
-
+        // Lấy thông tin sản phẩm trong giỏ hàng
         $detail = RentalDetail::where('id', $itemId)
             ->where('rental_id', $cart->id)
             ->first();
+        if (!$detail) return ApiResponse::notFound('Cart item not found');
 
-        if (!$detail) {
-            return ApiResponse::notFound('Cart item not found');
-        }
-
+        // Xóa item đó và cập nhật lại tổng tiền
         $detail->delete();
         $this->updateCartTotals($cart);
 
+        // Return response
         return ApiResponse::success([], 'Cart item removed successfully');
     }
 

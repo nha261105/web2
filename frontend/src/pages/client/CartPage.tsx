@@ -19,7 +19,7 @@ import {
 } from "@/services/cartService";
 
 const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("en-US", {
+  new Intl.NumberFormat("en-VI", {
     style: "currency",
     currency: "USD",
   }).format(value);
@@ -27,9 +27,6 @@ const formatCurrency = (value: number) =>
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isProcessingItemId, setIsProcessingItemId] = useState<number | null>(
-    null,
-  );
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
@@ -52,6 +49,7 @@ export default function CartPage() {
     loadCart();
   }, []);
 
+  // Tính tổng số tiền cho giỏ hàng
   const subtotal = useMemo(
     () =>
       cartItems.reduce(
@@ -61,57 +59,38 @@ export default function CartPage() {
     [cartItems],
   );
 
-  const totalItems = useMemo(
-    () => cartItems.reduce((sum, item) => sum + item.quantity, 0),
-    [cartItems],
-  );
-
+  // Hàm cập nhật số lượng + số ngày thuê
   const handleCartItemChange = async (
     item: CartItem,
-    updates: { quantity?: number; rental_days?: number },
+    quantity: number,
+    rental_days: number,
   ) => {
-    if (
-      updates.quantity === item.quantity &&
-      updates.rental_days === item.rental_days
-    ) {
-      return;
+    if (quantity === item.quantity && rental_days === item.rental_days) return;
+
+    setCartItems((prev) =>
+      prev.map((cartItem) => {
+        if (cartItem.id === item.id) {
+          cartItem.quantity = quantity;
+          cartItem.rental_days = rental_days;
+        }
+        return cartItem;
+      }),
+    );
+
+    const response = await updateCartItem(item.id, { quantity, rental_days });
+    if (!response.success) {
+      setErrorMessage(response.message || "Không thể cập nhật giỏ hàng.");
     }
-
-    setErrorMessage("");
-    setIsProcessingItemId(item.id);
-
-    const response = await updateCartItem(item.id, updates);
-
-    setIsProcessingItemId(null);
-
-    if (response.success && response.data?.item) {
-      setCartItems((prev) =>
-        prev.map((cartItem) =>
-          cartItem.id === item.id
-            ? (response.data?.item ?? cartItem)
-            : cartItem,
-        ),
-      );
-      return;
-    }
-
-    setErrorMessage(response.message || "Không thể cập nhật giỏ hàng.");
   };
 
+  // Xử lý xóa sản phẩm
   const handleRemoveItem = async (itemId: number) => {
-    setErrorMessage("");
-    setIsProcessingItemId(itemId);
-
+    setCartItems((prev) => prev.filter((item) => item.id !== itemId));
     const response = await removeCartItem(itemId);
 
-    setIsProcessingItemId(null);
-
-    if (response.success) {
-      setCartItems((prev) => prev.filter((item) => item.id !== itemId));
-      return;
+    if (!response.success) {
+      setErrorMessage(response.message || "Không thể xóa sản phẩm khỏi giỏ.");
     }
-
-    setErrorMessage(response.message || "Không thể xóa sản phẩm khỏi giỏ.");
   };
 
   return (
@@ -123,7 +102,7 @@ export default function CartPage() {
       <div className="w-full flex flex-row items-center gap-2">
         <div className="text-xl text-black font-semibold">Shopping Cart</div>
         <div className="text-lg text-gray-500 font-normal">
-          ({totalItems} items)
+          ({cartItems.length} items)
         </div>
       </div>
 
@@ -188,7 +167,6 @@ export default function CartPage() {
                         <button
                           type="button"
                           onClick={() => void handleRemoveItem(item.id)}
-                          disabled={isProcessingItemId === item.id}
                           className="text-gray-400 hover:text-red-600"
                         >
                           <MyTrash2 size={19} />
@@ -203,7 +181,11 @@ export default function CartPage() {
                               max={100}
                               value={item.quantity}
                               onChange={(quantity) =>
-                                void handleCartItemChange(item, { quantity })
+                                void handleCartItemChange(
+                                  item,
+                                  quantity,
+                                  item.rental_days,
+                                )
                               }
                             />
                           </div>
@@ -216,7 +198,11 @@ export default function CartPage() {
                               max={100}
                               value={item.rental_days}
                               onChange={(rental_days) =>
-                                void handleCartItemChange(item, { rental_days })
+                                void handleCartItemChange(
+                                  item,
+                                  item.quantity,
+                                  rental_days,
+                                )
                               }
                             />
                           </div>
