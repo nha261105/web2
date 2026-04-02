@@ -310,7 +310,7 @@ export default function AddressPage({ userId }: AddressPageProps) {
                       )}
                     </div>
                     <p className="text-sm text-gray-600 leading-relaxed">
-                      {addr.street}, {addr.ward}, {addr.district}, {addr.city}
+                      {addr.street}, {addr.ward}, {addr.city}
                     </p>
                     {addr.note && (
                       <p className="text-xs text-gray-400 mt-1 italic">
