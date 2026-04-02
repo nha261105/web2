@@ -38,9 +38,9 @@ CREATE TABLE addresses (
     receive_name VARCHAR(255) NOT NULL,
     receive_phone VARCHAR(50) NOT NULL,
     city VARCHAR(100) NOT NULL,
-    district VARCHAR(100) NOT NULL,
     ward VARCHAR(100) NOT NULL,
     street TEXT NOT NULL,
+    note TEXT NULL, 
     is_default BOOLEAN NOT NULL
 );
 
@@ -435,13 +435,13 @@ INSERT INTO user_info (user_id, card_id, user_img, status) VALUES
 -- ==========================================
 -- addresses
 -- ==========================================
-INSERT INTO addresses (user_id, receive_name, receive_phone, city, district, ward, street, is_default) VALUES
-(3, 'Nguyễn Hữu Bảo',  '0901000003', 'TP. Hồ Chí Minh', 'Quận 1',        'Phường Bến Nghé',   '12 Lê Lợi',          TRUE),
-(4, 'Lê Văn Cường',     '0901000004', 'TP. Hồ Chí Minh', 'Quận 3',        'Phường 4',          '88 Võ Văn Tần',      TRUE),
-(5, 'Phạm Tiến Danh',   '0901000005', 'TP. Hồ Chí Minh', 'Bình Thạnh',    'Phường 25',         '34 Đinh Bộ Lĩnh',   TRUE),
-(6, 'Hoàng Thị Mai',    '0901000006', 'TP. Hồ Chí Minh', 'Quận 7',        'Phường Tân Phú',    '56 Nguyễn Thị Thập', TRUE),
-(6, 'Hoàng Thị Mai',    '0901000006', 'TP. Hồ Chí Minh', 'Quận Tân Bình', 'Phường 2',          '9 Cộng Hòa',         FALSE),
-(7, 'Đinh Quốc Tuấn',   '0901000007', 'Hà Nội',          'Cầu Giấy',      'Phường Dịch Vọng',  '101 Trần Thái Tông', TRUE);
+INSERT INTO addresses (user_id, receive_name, receive_phone, city, ward, street, is_default) VALUES
+(3, 'Nguyễn Hữu Bảo',  '0901000003', 'TP. Hồ Chí Minh',         'Phường Bến Nghé',   '12 Lê Lợi',          TRUE),
+(4, 'Lê Văn Cường',     '0901000004', 'TP. Hồ Chí Minh',         'Phường 4',          '88 Võ Văn Tần',      TRUE),
+(5, 'Phạm Tiến Danh',   '0901000005', 'TP. Hồ Chí Minh',     'Phường 25',         '34 Đinh Bộ Lĩnh',   TRUE),
+(6, 'Hoàng Thị Mai',    '0901000006', 'TP. Hồ Chí Minh',         'Phường Tân Phú',    '56 Nguyễn Thị Thập', TRUE),
+(6, 'Hoàng Thị Mai',    '0901000006', 'TP. Hồ Chí Minh',  'Phường 2',          '9 Cộng Hòa',         FALSE),
+(7, 'Đinh Quốc Tuấn',   '0901000007', 'Hà Nội',                'Phường Dịch Vọng',  '101 Trần Thái Tông', TRUE);
 
 -- ==========================================
 -- categories

@@ -22,7 +22,6 @@ class AddressFactory extends Factory
             'receive_name' => $this->faker->name,
             'receive_phone' => '0901' . $this->faker->numerify('######'),
             'city' => 'TP. Hồ Chí Minh',
-            'district' => 'Quận 1',
             'ward' => 'Phường Bến Nghé',
             'street' => $this->faker->streetAddress,
             'is_default' => 1,

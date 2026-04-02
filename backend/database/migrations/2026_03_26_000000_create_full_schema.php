@@ -40,7 +40,6 @@ return new class extends Migration {
             $table->string('receive_name');
             $table->string('receive_phone', 50);
             $table->string('city', 100);
-            $table->string('district', 100);
             $table->string('ward', 100);
             $table->text('street');
             $table->boolean('is_default');

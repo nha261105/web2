@@ -70,6 +70,20 @@ Route::middleware(['auth.token'])->group(function () {
     Route::get('/users/me', [UserController::class, 'me']);
     Route::patch('/users/me', [UserController::class, 'updateMe']);
 
+    Route::prefix('users/me/addresses')->group(function () {
+        Route::get('/', [AddressController::class, 'indexMe']);
+        Route::post('/', [AddressController::class, 'storeMe']);
+        Route::patch('/{id}', [AddressController::class, 'updateMe']);
+        Route::delete('/{id}', [AddressController::class, 'destroyMe']);
+    });
+
+    Route::prefix('me/address')->group(function () {
+        Route::get('/', [AddressController::class, 'indexMe']);
+        Route::post('/', [AddressController::class, 'storeMe']);
+        Route::patch('/{id}', [AddressController::class, 'updateMe']);
+        Route::delete('/{id}', [AddressController::class, 'destroyMe']);
+    });
+
     // address crud
     Route::prefix('users/{userId}/addresses')->group(function () {
         Route::get('/', [AddressController::class, 'index']);
@@ -86,17 +100,6 @@ Route::middleware(['auth.token'])->group(function () {
     Route::patch('/cart/return-date', [CartController::class, 'updateReturnDate']);
     Route::patch('/cart/items/{id}', [CartController::class, 'updateItem']);
     Route::delete('/cart/items/{id}', [CartController::class, 'destroyItem']);
-
-    Route::get('/users/me', [UserController::class, 'me']);
-    Route::patch('/users/me', [UserController::class, 'updateMe']);
-
-    // address crud
-    Route::prefix('users/{userId}/addresses')->group(function () {
-        Route::get('/', [AddressController::class, 'index']);
-        Route::post('/', [AddressController::class, 'store']);
-        Route::patch('/{id}', [AddressController::class, 'update']);
-        Route::delete('/{id}', [AddressController::class, 'destroy']);
-    });
 
     Route::middleware(['role:ADMIN'])->group(function () {
         Route::get('/admin/dashboard', [AdminDashboardController::class, 'index']);

@@ -10,9 +10,8 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import PaymentStep from "./CheckoutStep.tsx/PaymentStep";
 import ConfirmStep from "./CheckoutStep.tsx/ConfirmStep";
 import { getMyCart, type CartItem } from "@/services/cartService";
-import { getMe } from "@/services/usersService";
-import type { Address } from "@/services/addressService";
-import { getAddresses } from "@/services/addressService";
+import type { Address } from "@/services/adminAddressService";
+import { getAddresses } from "@/services/adminAddressService";
 import { Check } from "lucide-react";
 import { MyBackButton } from "@/components/ui/input/my-button";
 import { useNavigate } from "react-router-dom";
@@ -43,35 +42,13 @@ export default function CheckoutPage() {
         setCartItems(cartResponse.data.items);
       }
 
-      let userId: number | null = null;
-      const authUserRaw = localStorage.getItem("auth_user");
-      if (authUserRaw) {
-        try {
-          const authUser = JSON.parse(authUserRaw);
-          if (authUser?.id) {
-            userId = authUser.id;
-          }
-        } catch {
-          userId = null;
-        }
-      }
-
-      if (!userId) {
-        const meResponse = await getMe();
-        if (meResponse.success && meResponse.data?.user?.id) {
-          userId = meResponse.data.user.id;
-        }
-      }
-
-      if (userId) {
-        const addressesResponse = await getAddresses(userId);
-        const addresses =
-          addressesResponse.data?.addresses || addressesResponse.data || [];
-        const selectedAddress = Array.isArray(addresses)
-          ? (addresses.find((address) => address.is_default) ?? addresses[0])
-          : null;
-        setDefaultAddress(selectedAddress);
-      }
+      const addressesResponse = await getAddresses();
+      const addresses =
+        addressesResponse.data?.addresses || addressesResponse.data || [];
+      const selectedAddress = Array.isArray(addresses)
+        ? (addresses.find((address) => address.is_default) ?? addresses[0])
+        : null;
+      setDefaultAddress(selectedAddress);
 
       setIsLoading(false);
     };

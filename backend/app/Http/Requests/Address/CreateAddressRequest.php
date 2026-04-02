@@ -28,7 +28,6 @@ class CreateAddressRequest extends FormRequest
                 'regex:/^(0|\+84)[0-9]{9}$/'
             ],
             'city' => 'required|string|max:100',
-            'district' => 'required|string|max:100',
             'ward' => 'required|string|max:100',
             'street' => 'required|string|max:255',
             'note' => 'nullable|string|max:500',

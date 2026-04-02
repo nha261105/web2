@@ -39,7 +39,6 @@ class AddressApiTest extends TestCase
             'receive_name'  => 'Nguyen Van A',
             'receive_phone' => '0901234567',
             'city'          => 'Ho Chi Minh',
-            'district'      => 'Quan 1',
             'ward'          => 'Phuong Ben Nghe',
             'street'        => '123 Nguyen Hue',
             'note'          => null,
@@ -53,7 +52,6 @@ class AddressApiTest extends TestCase
             'receive_name'  => 'Nguyen Van B',
             'receive_phone' => '0909876543',
             'city'          => 'Ha Noi',
-            'district'      => 'Dong Da',
             'ward'          => 'Lang Ha',
             'street'        => '456 Lang Ha',
             'is_default'    => false,
@@ -127,7 +125,7 @@ class AddressApiTest extends TestCase
                 'data' => [
                     'address' => [
                         'id', 'receive_name', 'receive_phone',
-                        'city', 'district', 'ward', 'street', 'is_default',
+                        'city', 'ward', 'street', 'is_default',
                     ],
                 ],
             ]);
@@ -171,7 +169,7 @@ class AddressApiTest extends TestCase
             ->assertJsonPath('success', false)
             ->assertJsonPath('code', 'VALIDATION_ERROR')
             ->assertJsonStructure([
-                'errors' => ['receive_name', 'receive_phone', 'city', 'district', 'ward', 'street'],
+                'errors' => ['receive_name', 'receive_phone', 'city', 'ward', 'street'],
             ]);
     }
 

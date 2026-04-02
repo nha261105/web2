@@ -1,6 +1,13 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
-  Plus, Pencil, Trash2, Star, Loader2, X, Save, MapPin,
+  Plus,
+  Pencil,
+  Trash2,
+  Star,
+  Loader2,
+  X,
+  Save,
+  MapPin,
 } from "lucide-react";
 import {
   getAddresses,
@@ -43,6 +50,16 @@ const EMPTY_FORM: AddressForm = {
 export default function AddressPage({ userId }: AddressPageProps) {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof AddressForm, string>>
+  >({});
+
+  const receiveNameRef = useRef<HTMLInputElement>(null);
+  const receivePhoneRef = useRef<HTMLInputElement>(null);
+  const cityRef = useRef<HTMLInputElement>(null);
+  const wardRef = useRef<HTMLInputElement>(null);
+  const streetRef = useRef<HTMLInputElement>(null);
+  const noteRef = useRef<HTMLInputElement>(null);
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -50,8 +67,8 @@ export default function AddressPage({ userId }: AddressPageProps) {
   const [form, setForm] = useState<AddressForm>(EMPTY_FORM);
 
   // ─── Load user id + addresses ───────────────────────────────────────────────
-  const loadAddresses = useCallback(async (uid: number) => {
-    const res = await getAddresses(uid);
+  const loadAddresses = useCallback(async () => {
+    const res = await getAddresses();
     if (res.success) {
       setAddresses(res.data.addresses ?? res.data ?? []);
     } else {
@@ -61,7 +78,7 @@ export default function AddressPage({ userId }: AddressPageProps) {
 
   useEffect(() => {
     async function init() {
-      await loadAddresses(userId);
+      await loadAddresses();
     }
     init();
   }, [userId, loadAddresses]);
@@ -100,6 +117,83 @@ export default function AddressPage({ userId }: AddressPageProps) {
     if (!userId) return;
     setSubmitting(true);
 
+    const validateForm = () => {
+      const namePattern = /^[\p{L}\s.'’-]{2,100}$/u;
+      const phonePattern = /^\d{9,11}$/;
+      const locationPattern = /^[\p{L}\d\s.,-]{2,100}$/u;
+      const streetPattern = /^[\p{L}\d\s.,-]{2,200}$/u;
+      const notePattern = /^.{0,255}$/;
+
+      if (!form.receive_name.trim()) {
+        setErrors({ receive_name: "Vui lòng nhập tên người nhận" });
+        receiveNameRef.current?.focus();
+        return false;
+      }
+      if (!namePattern.test(form.receive_name.trim())) {
+        setErrors({ receive_name: "Tên chỉ được chứa chữ và ký tự hợp lệ" });
+        receiveNameRef.current?.focus();
+        return false;
+      }
+
+      if (!form.receive_phone.trim()) {
+        setErrors({ receive_phone: "Vui lòng nhập số điện thoại" });
+        receivePhoneRef.current?.focus();
+        return false;
+      }
+      if (!phonePattern.test(form.receive_phone.trim())) {
+        setErrors({ receive_phone: "Số điện thoại phải là 9-11 chữ số" });
+        receivePhoneRef.current?.focus();
+        return false;
+      }
+
+      if (!form.city.trim()) {
+        setErrors({ city: "Vui lòng nhập tỉnh/thành phố" });
+        cityRef.current?.focus();
+        return false;
+      }
+      if (!locationPattern.test(form.city.trim())) {
+        setErrors({ city: "Tỉnh/thành phố không hợp lệ" });
+        cityRef.current?.focus();
+        return false;
+      }
+
+      if (!form.ward.trim()) {
+        setErrors({ ward: "Vui lòng nhập phường/xã" });
+        wardRef.current?.focus();
+        return false;
+      }
+      if (!locationPattern.test(form.ward.trim())) {
+        setErrors({ ward: "Phường/xã không hợp lệ" });
+        wardRef.current?.focus();
+        return false;
+      }
+
+      if (!form.street.trim()) {
+        setErrors({ street: "Vui lòng nhập địa chỉ cụ thể" });
+        streetRef.current?.focus();
+        return false;
+      }
+      if (!streetPattern.test(form.street.trim())) {
+        setErrors({ street: "Địa chỉ cụ thể không hợp lệ" });
+        streetRef.current?.focus();
+        return false;
+      }
+
+      if (form.note && !notePattern.test(form.note)) {
+        setErrors({ note: "Ghi chú không được quá 255 ký tự" });
+        noteRef.current?.focus();
+        return false;
+      }
+
+      setErrors({});
+      return true;
+    };
+
+    if (!validateForm()) {
+      setSubmitting(false);
+      return;
+    }
+
     const payload: CreateAddressPayload = {
       receive_name: form.receive_name,
       receive_phone: form.receive_phone,
@@ -107,18 +201,20 @@ export default function AddressPage({ userId }: AddressPageProps) {
       district: form.district,
       ward: form.ward,
       street: form.street,
-      note: form.note || undefined,
+      note: form.note ? form.note : "",
       is_default: form.is_default,
     };
 
     const res = editingId
-      ? await updateAddress(userId, editingId, payload)
-      : await createAddress(userId, payload);
+      ? await updateAddress(editingId, payload)
+      : await createAddress(payload);
 
     if (res.success) {
-      toast.success(editingId ? "Cập nhật địa chỉ thành công" : "Thêm địa chỉ thành công");
+      toast.success(
+        editingId ? "Cập nhật địa chỉ thành công" : "Thêm địa chỉ thành công",
+      );
       closeModal();
-      await loadAddresses(userId);
+      await loadAddresses();
     } else {
       toast.error(res.message || "Có lỗi xảy ra");
     }
@@ -130,10 +226,10 @@ export default function AddressPage({ userId }: AddressPageProps) {
     if (!userId) return;
     if (!confirm("Bạn có chắc muốn xóa địa chỉ này?")) return;
 
-    const res = await deleteAddress(userId, id);
+    const res = await deleteAddress(id);
     if (res.success) {
       toast.success("Đã xóa địa chỉ");
-      await loadAddresses(userId);
+      await loadAddresses();
     } else {
       toast.error("Xóa địa chỉ thất bại");
     }
@@ -142,10 +238,10 @@ export default function AddressPage({ userId }: AddressPageProps) {
   // ─── Set default ────────────────────────────────────────────────────────────
   const handleSetDefault = async (id: number) => {
     if (!userId) return;
-    const res = await setDefaultAddress(userId, id);
+    const res = await setDefaultAddress(id);
     if (res.success) {
       toast.success("Đã đặt làm địa chỉ mặc định");
-      await loadAddresses(userId);
+      await loadAddresses();
     } else {
       toast.error("Thao tác thất bại");
     }
@@ -214,7 +310,7 @@ export default function AddressPage({ userId }: AddressPageProps) {
                       )}
                     </div>
                     <p className="text-sm text-gray-600 leading-relaxed">
-                      {addr.street}, {addr.ward}, {addr.district}, {addr.city}
+                      {addr.street}, {addr.ward}, {addr.city}
                     </p>
                     {addr.note && (
                       <p className="text-xs text-gray-400 mt-1 italic">
@@ -282,92 +378,126 @@ export default function AddressPage({ userId }: AddressPageProps) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Tên người nhận */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
+                    htmlFor="idName"
+                  >
                     Tên người nhận <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id="idName"
+                    ref={receiveNameRef}
                     type="text"
-                    required
                     value={form.receive_name}
-                    onChange={(e) => setForm((p) => ({ ...p, receive_name: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, receive_name: e.target.value }))
+                    }
                     placeholder="Nguyễn Văn A"
-                    className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/20 outline-none"
+                    className={`w-full h-10 px-3 rounded-xl border text-sm focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/20 outline-none ${errors.receive_name ? "border-red-500" : "border-gray-200"}`}
                   />
+                  {errors.receive_name && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {errors.receive_name}
+                    </p>
+                  )}
                 </div>
 
                 {/* Số điện thoại */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
+                    htmlFor="idPhone"
+                  >
                     Số điện thoại <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id="idPhone"
+                    ref={receivePhoneRef}
                     type="text"
-                    required
                     value={form.receive_phone}
-                    onChange={(e) => setForm((p) => ({ ...p, receive_phone: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, receive_phone: e.target.value }))
+                    }
                     placeholder="0901234567"
-                    className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/20 outline-none"
+                    className={`w-full h-10 px-3 rounded-xl border text-sm focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/20 outline-none ${errors.receive_phone ? "border-red-500" : "border-gray-200"}`}
                   />
+                  {errors.receive_phone && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {errors.receive_phone}
+                    </p>
+                  )}
                 </div>
 
                 {/* Tỉnh/Thành phố */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
+                    htmlFor="idCity"
+                  >
                     Tỉnh / Thành phố <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id="idCity"
+                    ref={cityRef}
                     type="text"
-                    required
                     value={form.city}
-                    onChange={(e) => setForm((p) => ({ ...p, city: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, city: e.target.value }))
+                    }
                     placeholder="Hồ Chí Minh"
-                    className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/20 outline-none"
+                    className={`w-full h-10 px-3 rounded-xl border text-sm focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/20 outline-none ${errors.city ? "border-red-500" : "border-gray-200"}`}
                   />
-                </div>
-
-                {/* Quận/Huyện */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Quận / Huyện <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={form.district}
-                    onChange={(e) => setForm((p) => ({ ...p, district: e.target.value }))}
-                    placeholder="Quận 1"
-                    className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/20 outline-none"
-                  />
+                  {errors.city && (
+                    <p className="text-xs text-red-500 mt-1">{errors.city}</p>
+                  )}
                 </div>
 
                 {/* Phường/Xã */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
+                    htmlFor="idWard"
+                  >
                     Phường / Xã <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id="idWard"
+                    ref={wardRef}
                     type="text"
-                    required
                     value={form.ward}
-                    onChange={(e) => setForm((p) => ({ ...p, ward: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, ward: e.target.value }))
+                    }
                     placeholder="Phường Bến Nghé"
-                    className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/20 outline-none"
+                    className={`w-full h-10 px-3 rounded-xl border text-sm focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/20 outline-none ${errors.ward ? "border-red-500" : "border-gray-200"}`}
                   />
+                  {errors.ward && (
+                    <p className="text-xs text-red-500 mt-1">{errors.ward}</p>
+                  )}
                 </div>
 
                 {/* Địa chỉ cụ thể */}
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
+                    htmlFor="idAddress"
+                  >
                     Địa chỉ cụ thể <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id="idAddress"
+                    ref={streetRef}
                     type="text"
-                    required
                     value={form.street}
-                    onChange={(e) => setForm((p) => ({ ...p, street: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, street: e.target.value }))
+                    }
                     placeholder="123 Nguyễn Huệ"
-                    className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/20 outline-none"
+                    className={`w-full h-10 px-3 rounded-xl border text-sm focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/20 outline-none ${errors.street ? "border-red-500" : "border-gray-200"}`}
                   />
+                  {errors.street && (
+                    <p className="text-xs text-red-500 mt-1">{errors.street}</p>
+                  )}
                 </div>
 
                 {/* Ghi chú */}
@@ -376,12 +506,18 @@ export default function AddressPage({ userId }: AddressPageProps) {
                     Ghi chú
                   </label>
                   <input
+                    ref={noteRef}
                     type="text"
                     value={form.note}
-                    onChange={(e) => setForm((p) => ({ ...p, note: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, note: e.target.value }))
+                    }
                     placeholder="Giao hàng giờ hành chính..."
-                    className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/20 outline-none"
+                    className={`w-full h-10 px-3 rounded-xl border text-sm focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/20 outline-none ${errors.note ? "border-red-500" : "border-gray-200"}`}
                   />
+                  {errors.note && (
+                    <p className="text-xs text-red-500 mt-1">{errors.note}</p>
+                  )}
                 </div>
               </div>
 
@@ -390,10 +526,14 @@ export default function AddressPage({ userId }: AddressPageProps) {
                 <input
                   type="checkbox"
                   checked={form.is_default}
-                  onChange={(e) => setForm((p) => ({ ...p, is_default: e.target.checked }))}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, is_default: e.target.checked }))
+                  }
                   className="w-4 h-4 rounded border-gray-300 text-[#0052CC] focus:ring-[#0052CC]"
                 />
-                <span className="text-sm text-gray-700">Đặt làm địa chỉ mặc định</span>
+                <span className="text-sm text-gray-700">
+                  Đặt làm địa chỉ mặc định
+                </span>
               </label>
 
               {/* Buttons */}
@@ -415,7 +555,11 @@ export default function AddressPage({ userId }: AddressPageProps) {
                   ) : (
                     <Save className="w-4 h-4" />
                   )}
-                  {submitting ? "Đang lưu..." : editingId ? "Cập nhật" : "Thêm địa chỉ"}
+                  {submitting
+                    ? "Đang lưu..."
+                    : editingId
+                      ? "Cập nhật"
+                      : "Thêm địa chỉ"}
                 </button>
               </div>
             </form>
