@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getProducts } from "@/services/catalogService";
 import { signout } from "@/services/usersService";
@@ -19,7 +19,7 @@ type DeviceMenuColumn = {
   title: string;
   keywords: string[];
   fallbackItems: string[];
-  items: string[];
+  items: Array<{ id: string; title: string }>;
 };
 
 const DEFAULT_DEVICE_COLUMNS: DeviceMenuColumn[] = [
@@ -71,7 +71,7 @@ const normalizeText = (text: string) =>
     .replace(/[\u0300-\u036f]/g, "");
 
 const buildDeviceColumns = (
-  products: Array<{ title: string; category: string }>,
+  products: Array<{ id: string; title: string; category: string }>,
 ): DeviceMenuColumn[] => {
   return DEFAULT_DEVICE_COLUMNS.map((column) => {
     const matched = products
@@ -81,13 +81,17 @@ const buildDeviceColumns = (
           haystack.includes(normalizeText(keyword)),
         );
       })
-      .map((product) => product.title);
+      .map((product) => ({ id: product.id, title: product.title }));
 
-    const items = Array.from(new Set(matched)).slice(0, 8);
+    const items = Array.from(
+      new Map(matched.map((item) => [item.title, item])).values(),
+    ).slice(0, 8);
 
     return {
       ...column,
-      items: items.length ? items : column.fallbackItems,
+      items: items.length
+        ? items
+        : column.fallbackItems.map((title) => ({ id: "", title })),
     };
   });
 };
@@ -103,6 +107,10 @@ interface AuthUser {
 export default function Header() {
   const navigator = useNavigate();
   const [keyword, setKeyword] = useState("");
+  const [allProducts, setAllProducts] = useState<
+    Array<{ id: string; title: string; category: string }>
+  >([]);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   // Menu State
   const [isMegaOpen, setIsMegaOpen] = useState(false);
@@ -115,6 +123,7 @@ export default function Header() {
   // Refs
   const megaAreaRef = useRef<HTMLLIElement | null>(null);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
+  const searchBoxRef = useRef<HTMLDivElement | null>(null);
 
   // ─── AUTH STATE (từ feature của bạn) ───────────────────────────────────────
   const [authUser, setAuthUser] = useState<AuthUser | null>(() => {
@@ -131,8 +140,16 @@ export default function Header() {
     async function loadDeviceSections() {
       try {
         const productItems = await getProducts();
+        setAllProducts(
+          productItems.map((item) => ({
+            id: item.id,
+            title: item.title,
+            category: item.category,
+          })),
+        );
         setDeviceColumns(buildDeviceColumns(productItems));
       } catch {
+        setAllProducts([]);
         setDeviceColumns(buildDeviceColumns([]));
       }
     }
@@ -165,6 +182,25 @@ export default function Header() {
 
   const clearSearch = () => setKeyword("");
 
+  const handleSubmitSearch = () => {
+    const trimmed = keyword.trim();
+    const query = trimmed ? `?search=${encodeURIComponent(trimmed)}` : "";
+    navigator(`/products${query}`);
+    setIsSearchFocused(false);
+    setIsMobileSearchOpen(false);
+  };
+
+  const matchedSearchProducts = useMemo(() => {
+    const q = normalizeText(keyword.trim());
+    if (!q) return [] as Array<{ id: string; title: string; category: string }>;
+
+    return allProducts
+      .filter((item) =>
+        normalizeText(`${item.title} ${item.category}`).includes(q),
+      )
+      .slice(0, 5);
+  }, [allProducts, keyword]);
+
   useEffect(() => {
     if (!isMegaOpen) return;
     const handler = (e: MouseEvent) => {
@@ -190,6 +226,22 @@ export default function Header() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [isAccountOpen]);
+
+  useEffect(() => {
+    if (!isSearchFocused) return;
+
+    const handler = (e: MouseEvent) => {
+      if (
+        searchBoxRef.current &&
+        !searchBoxRef.current.contains(e.target as Node)
+      ) {
+        setIsSearchFocused(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [isSearchFocused]);
 
   const handleLogout = async () => {
     await signout();
@@ -236,11 +288,14 @@ export default function Header() {
         <div className="hidden md:flex flex-1 justify-center min-w-0 px-2">
           <form
             className="group w-full max-w-2xl"
-            onSubmit={(event) => event.preventDefault()}
+            onSubmit={(event) => {
+              event.preventDefault();
+              handleSubmitSearch();
+            }}
             role="search"
             aria-label="Tìm kiếm sản phẩm"
           >
-            <div className="relative w-full">
+            <div ref={searchBoxRef} className="relative w-full">
               <Search
                 size={20}
                 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
@@ -248,6 +303,7 @@ export default function Header() {
               <input
                 value={keyword}
                 onChange={(event) => setKeyword(event.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
                 placeholder="Tìm thiết bị cần thuê (laptop, máy ảnh, drone...)"
                 className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-12 text-[15px] text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
               />
@@ -259,6 +315,44 @@ export default function Header() {
                 >
                   <X size={14} />
                 </button>
+              )}
+              <button
+                type="submit"
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+              >
+                Tìm
+              </button>
+
+              {isSearchFocused && keyword.trim().length > 0 && (
+                <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
+                  {matchedSearchProducts.length > 0 ? (
+                    <ul className="divide-y divide-slate-100">
+                      {matchedSearchProducts.map((item) => (
+                        <li key={item.id}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator(`/products/${item.id}`);
+                              setIsSearchFocused(false);
+                            }}
+                            className="w-full px-4 py-3 text-left hover:bg-slate-50"
+                          >
+                            <p className="text-sm font-semibold text-slate-900">
+                              {item.title}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {item.category}
+                            </p>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="px-4 py-4 text-center text-sm text-slate-500">
+                      Không tìm thấy sản phẩm nào
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           </form>
@@ -459,6 +553,13 @@ export default function Header() {
                 </button>
               )}
             </div>
+            <button
+              type="button"
+              onClick={handleSubmitSearch}
+              className="mt-3 w-full rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            >
+              Tìm sản phẩm
+            </button>
           </div>
         </div>
       )}
@@ -514,12 +615,16 @@ export default function Header() {
                             </p>
                             <ul className="space-y-2 text-sm text-slate-600">
                               {column.items.map((item) => (
-                                <li key={item}>
+                                <li key={item.title}>
                                   <Link
-                                    to="/products"
+                                    to={
+                                      item.id
+                                        ? `/products/${item.id}`
+                                        : `/products?search=${encodeURIComponent(item.title)}`
+                                    }
                                     className="transition-colors hover:text-blue-600"
                                   >
-                                    {item}
+                                    {item.title}
                                   </Link>
                                 </li>
                               ))}
@@ -572,12 +677,16 @@ export default function Header() {
                 <div className="flex flex-wrap gap-2">
                   {column.items.map((product) => (
                     <Link
-                      key={product}
-                      to="/products"
+                      key={product.title}
+                      to={
+                        product.id
+                          ? `/products/${product.id}`
+                          : `/products?search=${encodeURIComponent(product.title)}`
+                      }
                       onClick={() => setIsMegaOpen(false)}
                       className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-sm ring-1 ring-slate-200/80 hover:ring-blue-200 hover:text-blue-600"
                     >
-                      {product}
+                      {product.title}
                     </Link>
                   ))}
                 </div>
