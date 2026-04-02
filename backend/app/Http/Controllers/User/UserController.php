@@ -53,7 +53,7 @@ class UserController extends Controller
     public function index(Request $request): JsonResponse
     {
         $perPage = $request->query('per_page', 15);
-        $users = $this->userService->getAllUsers((int) $perPage);
+        $users = $this->userService->listUsers((int) $perPage);
 
         return ApiResponse::success(
             UserResource::collection($users)->resolve(),

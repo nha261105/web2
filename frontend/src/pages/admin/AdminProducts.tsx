@@ -15,35 +15,67 @@ import {
   createAdminProduct,
   updateAdminProduct,
   deleteAdminProduct,
+  getProductFormOptions,
+  type ProductBrandOption,
+  type ProductCategoryOption,
+  type ProductPolicyOption,
   type Product,
   AdminApiError,
 } from "@/services/adminProductsService";
 
 type AddProductFormState = {
+  policies_id: string;
+  slug: string;
   name: string;
-  description?: string;
-  brand_id?: string;
-  category_id?: string;
+  description: string;
+  brand_id: string;
+  category_id: string;
   deposit_price: string;
   daily_price: string;
-  status: string;
+  status: "ACTIVE" | "INACTIVE";
+  image_source_urls: string;
 };
 
 const initialFormState: AddProductFormState = {
+  policies_id: "",
+  slug: "",
   name: "",
   description: "",
   brand_id: "",
   category_id: "",
   deposit_price: "",
   daily_price: "",
-  status: "AVAILABLE",
+  status: "ACTIVE",
+  image_source_urls: "",
 };
+
+function slugify(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function parseImageUrls(value: string): string[] {
+  return value
+    .split(/\r?\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
-  console.log(products)
+  const [categoryOptions, setCategoryOptions] = useState<
+    ProductCategoryOption[]
+  >([]);
+  const [brandOptions, setBrandOptions] = useState<ProductBrandOption[]>([]);
+  const [policyOptions, setPolicyOptions] = useState<ProductPolicyOption[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingOptions, setIsLoadingOptions] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -77,10 +109,43 @@ export default function AdminProducts() {
     loadProducts();
   }, [loadProducts]);
 
+  useEffect(() => {
+    async function loadFormOptions() {
+      try {
+        setIsLoadingOptions(true);
+        const options = await getProductFormOptions();
+        setCategoryOptions(options.categories);
+        setBrandOptions(options.brands);
+        setPolicyOptions(options.policies);
+      } catch (err) {
+        const message =
+          err instanceof AdminApiError
+            ? err.message
+            : "Failed to load category, brand and policy options";
+        setError(message);
+      } finally {
+        setIsLoadingOptions(false);
+      }
+    }
+
+    void loadFormOptions();
+  }, []);
+
   const handleAddProduct = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!form.name || !form.deposit_price || !form.daily_price || !form.status) {
+    const normalizedSlug = form.slug.trim() || slugify(form.name);
+    if (
+      !form.policies_id ||
+      !form.category_id ||
+      !form.brand_id ||
+      !form.name.trim() ||
+      !normalizedSlug ||
+      !form.description.trim() ||
+      !form.deposit_price ||
+      !form.daily_price ||
+      !form.status
+    ) {
       setError("Please fill in all required fields");
       return;
     }
@@ -88,13 +153,16 @@ export default function AdminProducts() {
     try {
       setIsSubmitting(true);
       await createAdminProduct({
-        name: form.name,
-        description: form.description || undefined,
-        brand_id: form.brand_id ? Number(form.brand_id) : undefined,
-        category_id: form.category_id ? Number(form.category_id) : undefined,
+        policies_id: Number(form.policies_id),
+        category_id: Number(form.category_id),
+        brand_id: Number(form.brand_id),
+        name: form.name.trim(),
+        slug: normalizedSlug,
+        description: form.description.trim(),
         deposit_price: String(form.deposit_price),
         daily_price: String(form.daily_price),
         status: form.status,
+        image_source_urls: parseImageUrls(form.image_source_urls),
       });
       setForm(initialFormState);
       setIsAddDialogOpen(false);
@@ -113,7 +181,12 @@ export default function AdminProducts() {
 
     if (!editingProductId) return;
     if (
+      !editForm.policies_id ||
+      !editForm.category_id ||
+      !editForm.brand_id ||
       !editForm.name ||
+      !editForm.slug.trim() ||
+      !editForm.description.trim() ||
       !editForm.deposit_price ||
       !editForm.daily_price ||
       !editForm.status
@@ -125,15 +198,16 @@ export default function AdminProducts() {
     try {
       setIsSubmitting(true);
       await updateAdminProduct(editingProductId, {
-        name: editForm.name,
-        description: editForm.description || undefined,
-        brand_id: editForm.brand_id ? Number(editForm.brand_id) : undefined,
-        category_id: editForm.category_id
-          ? Number(editForm.category_id)
-          : undefined,
+        policies_id: Number(editForm.policies_id),
+        category_id: Number(editForm.category_id),
+        brand_id: Number(editForm.brand_id),
+        name: editForm.name.trim(),
+        slug: editForm.slug.trim(),
+        description: editForm.description.trim(),
         deposit_price: String(editForm.deposit_price),
         daily_price: String(editForm.daily_price),
         status: editForm.status,
+        image_source_urls: parseImageUrls(editForm.image_source_urls),
       });
       setEditForm(initialFormState);
       setIsEditDialogOpen(false);
@@ -169,13 +243,16 @@ export default function AdminProducts() {
   const openEdit = (product: Product) => {
     setEditingProductId(product.id);
     setEditForm({
+      policies_id: String(product.policies_id || ""),
+      slug: product.slug || slugify(product.name),
       name: product.name,
-      description: product.description,
-      brand_id: product.brand?.id.toString() || "",
-      category_id: product.category?.id.toString() || "",
+      description: product.description || "",
+      brand_id: String(product.brand?.id || product.brand_id || ""),
+      category_id: String(product.category?.id || product.category_id || ""),
       deposit_price: String(product.deposit_price),
       daily_price: String(product.daily_price || ""),
-      status: String(product.status),
+      status: product.status === "INACTIVE" ? "INACTIVE" : "ACTIVE",
+      image_source_urls: (product.images ?? []).join("\n"),
     });
     setIsEditDialogOpen(true);
   };
@@ -275,9 +352,9 @@ export default function AdminProducts() {
                     >
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-3">
-                          {product.image && (
+                          {(product.image || product.images?.[0]) && (
                             <img
-                              src={product.image}
+                              src={product.image || product.images?.[0]}
                               alt={product.name}
                               className="w-10 h-10 rounded-lg object-cover"
                               onError={(e) => {
@@ -309,11 +386,9 @@ export default function AdminProducts() {
                       <td className="px-5 py-3">
                         <span
                           className={`text-sm font-medium ${
-                            product.status === "AVAILABLE"
+                            product.status === "ACTIVE"
                               ? "text-green-600"
-                              : product.status === "MAINTENANCE"
-                                ? "text-orange-600"
-                                : "text-red-600"
+                              : "text-red-600"
                           }`}
                         >
                           {product.status}
@@ -363,25 +438,116 @@ export default function AdminProducts() {
           </DialogHeader>
 
           <form onSubmit={handleAddProduct} className="space-y-4">
+            {isLoadingOptions && (
+              <p className="text-xs text-gray-500">
+                Loading categories, brands and policies...
+              </p>
+            )}
+
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-gray-600">
+                Policy *
+              </span>
+              <select
+                required
+                value={form.policies_id}
+                onChange={(e) =>
+                  setForm({ ...form, policies_id: e.target.value })
+                }
+                className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
+              >
+                <option value="">Select policy</option>
+                {policyOptions.map((policy) => (
+                  <option key={policy.id} value={policy.id}>
+                    {`#${policy.id} - max late ${policy.max_late_day} day(s), fee ${policy.late_day_fee}`}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-gray-600">
+                Category *
+              </span>
+              <select
+                required
+                value={form.category_id}
+                onChange={(e) =>
+                  setForm({ ...form, category_id: e.target.value })
+                }
+                className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
+              >
+                <option value="">Select category</option>
+                {categoryOptions.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-gray-600">Brand *</span>
+              <select
+                required
+                value={form.brand_id}
+                onChange={(e) => setForm({ ...form, brand_id: e.target.value })}
+                className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
+              >
+                <option value="">Select brand</option>
+                {brandOptions.map((brand) => (
+                  <option key={brand.id} value={brand.id}>
+                    {brand.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
             <label className="space-y-1">
               <span className="text-xs font-medium text-gray-600">Title *</span>
               <input
                 required
                 value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                onChange={(e) =>
+                  setForm((prev) => {
+                    const nextName = e.target.value;
+                    return {
+                      ...prev,
+                      name: nextName,
+                      slug: prev.slug ? prev.slug : slugify(nextName),
+                    };
+                  })
+                }
                 className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
                 placeholder="MacBook Air M3"
               />
             </label>
 
             <label className="space-y-1">
-              <span className="text-xs font-medium text-gray-600">Deposit Price *</span>
+              <span className="text-xs font-medium text-gray-600">Slug *</span>
+              <input
+                required
+                value={form.slug}
+                onChange={(e) =>
+                  setForm({ ...form, slug: slugify(e.target.value) })
+                }
+                className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
+                placeholder="macbook-air-m3"
+              />
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-gray-600">
+                Deposit Price *
+              </span>
               <input
                 required
                 type="number"
                 min={0}
                 value={form.deposit_price}
-                onChange={(e) => setForm({ ...form, deposit_price: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, deposit_price: e.target.value })
+                }
                 className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
                 placeholder="1000"
               />
@@ -405,11 +571,18 @@ export default function AdminProducts() {
             </label>
 
             <label className="space-y-1">
-              <span className="text-xs font-medium text-gray-600">Status *</span>
+              <span className="text-xs font-medium text-gray-600">
+                Status *
+              </span>
               <select
                 required
                 value={form.status}
-                onChange={(e) => setForm({ ...form, status: e.target.value })}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    status: e.target.value as "ACTIVE" | "INACTIVE",
+                  })
+                }
                 className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
               >
                 <option value="ACTIVE">Active</option>
@@ -419,15 +592,30 @@ export default function AdminProducts() {
 
             <label className="space-y-1">
               <span className="text-xs font-medium text-gray-600">
-                Description (optional)
+                Description *
               </span>
               <textarea
+                required
                 value={form.description || ""}
                 onChange={(e) =>
                   setForm({ ...form, description: e.target.value })
                 }
                 className="w-full h-20 px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC] resize-none"
                 placeholder="Product description..."
+              />
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-gray-600">
+                Image Source URLs (optional)
+              </span>
+              <textarea
+                value={form.image_source_urls}
+                onChange={(e) =>
+                  setForm({ ...form, image_source_urls: e.target.value })
+                }
+                className="w-full h-20 px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC] resize-none"
+                placeholder="https://example.com/1.jpg, https://example.com/2.jpg"
               />
             </label>
 
@@ -463,6 +651,73 @@ export default function AdminProducts() {
           </DialogHeader>
 
           <form onSubmit={handleEditProduct} className="space-y-4">
+            {isLoadingOptions && (
+              <p className="text-xs text-gray-500">
+                Loading categories, brands and policies...
+              </p>
+            )}
+
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-gray-600">
+                Policy *
+              </span>
+              <select
+                required
+                value={editForm.policies_id}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, policies_id: e.target.value })
+                }
+                className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
+              >
+                <option value="">Select policy</option>
+                {policyOptions.map((policy) => (
+                  <option key={policy.id} value={policy.id}>
+                    {`#${policy.id} - max late ${policy.max_late_day} day(s), fee ${policy.late_day_fee}`}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-gray-600">
+                Category *
+              </span>
+              <select
+                required
+                value={editForm.category_id}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, category_id: e.target.value })
+                }
+                className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
+              >
+                <option value="">Select category</option>
+                {categoryOptions.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-gray-600">Brand *</span>
+              <select
+                required
+                value={editForm.brand_id}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, brand_id: e.target.value })
+                }
+                className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
+              >
+                <option value="">Select brand</option>
+                {brandOptions.map((brand) => (
+                  <option key={brand.id} value={brand.id}>
+                    {brand.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
             <label className="space-y-1">
               <span className="text-xs font-medium text-gray-600">Title *</span>
               <input
@@ -477,7 +732,22 @@ export default function AdminProducts() {
             </label>
 
             <label className="space-y-1">
-              <span className="text-xs font-medium text-gray-600">Deposit Price *</span>
+              <span className="text-xs font-medium text-gray-600">Slug *</span>
+              <input
+                required
+                value={editForm.slug}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, slug: slugify(e.target.value) })
+                }
+                className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
+                placeholder="macbook-air-m3"
+              />
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-gray-600">
+                Deposit Price *
+              </span>
               <input
                 required
                 type="number"
@@ -509,12 +779,17 @@ export default function AdminProducts() {
             </label>
 
             <label className="space-y-1">
-              <span className="text-xs font-medium text-gray-600">Status *</span>
+              <span className="text-xs font-medium text-gray-600">
+                Status *
+              </span>
               <select
                 required
                 value={editForm.status}
                 onChange={(e) =>
-                  setEditForm({ ...editForm, status: e.target.value })
+                  setEditForm({
+                    ...editForm,
+                    status: e.target.value as "ACTIVE" | "INACTIVE",
+                  })
                 }
                 className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
               >
@@ -525,15 +800,33 @@ export default function AdminProducts() {
 
             <label className="space-y-1">
               <span className="text-xs font-medium text-gray-600">
-                Description (optional)
+                Description *
               </span>
               <textarea
+                required
                 value={editForm.description || ""}
                 onChange={(e) =>
                   setEditForm({ ...editForm, description: e.target.value })
                 }
                 className="w-full h-20 px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC] resize-none"
                 placeholder="Product description..."
+              />
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-gray-600">
+                Image Source URLs (optional)
+              </span>
+              <textarea
+                value={editForm.image_source_urls}
+                onChange={(e) =>
+                  setEditForm({
+                    ...editForm,
+                    image_source_urls: e.target.value,
+                  })
+                }
+                className="w-full h-20 px-3 py-2 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC] resize-none"
+                placeholder="https://example.com/1.jpg, https://example.com/2.jpg"
               />
             </label>
 
