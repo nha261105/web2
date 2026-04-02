@@ -80,7 +80,7 @@ CREATE TABLE brands (
 
 CREATE TABLE rental_policies (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    late_day_fee DECIMAL(10,2) NOT NULL,
+    late_day_fee DECIMAL(15,2) NOT NULL,
     max_late_day INT NOT NULL
 );
 
@@ -91,8 +91,8 @@ CREATE TABLE products (
     brand_id INT NOT NULL,
     name VARCHAR(255) NOT NULL,
     slug VARCHAR(255) NOT NULL UNIQUE,
-    daily_price DECIMAL(10,2) NOT NULL,
-    deposit_price DECIMAL(10,2) NOT NULL,
+    daily_price DECIMAL(15,2) NOT NULL,
+    deposit_price DECIMAL(15,2) NOT NULL,
     description TEXT NOT NULL,
     status ENUM('ACTIVE', 'INACTIVE') NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -109,7 +109,7 @@ CREATE TABLE product_img (
 CREATE TABLE combos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    daily_price DECIMAL(10,2) NOT NULL,
+    daily_price DECIMAL(15,2) NOT NULL,
     description TEXT NOT NULL
 );
 
@@ -131,7 +131,7 @@ CREATE TABLE import_orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     supplier_id INT NOT NULL,
     admin_id INT NOT NULL,
-    total_cost DECIMAL(10,2) NOT NULL,
+    total_cost DECIMAL(15,2) NOT NULL,
     import_date TIMESTAMP NOT NULL
 );
 
@@ -161,7 +161,7 @@ CREATE TABLE maintenance_logs (
     staff_id INT NOT NULL,
     maintenance_name VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
-    cost DECIMAL(10,2) NOT NULL,
+    cost DECIMAL(15,2) NOT NULL,
     start_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     end_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     status ENUM('INVENTORY', 'MAINTENANCED') NOT NULL
@@ -170,7 +170,7 @@ CREATE TABLE maintenance_logs (
 CREATE TABLE coupons (
     id INT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(100) NOT NULL UNIQUE,
-    discount_amount DECIMAL(10,2) NOT NULL,
+    discount_amount DECIMAL(15,2) NOT NULL,
     description TEXT,
     valid_from TIMESTAMP NULL,
     valid_until TIMESTAMP NULL
@@ -185,8 +185,8 @@ CREATE TABLE rentals (
     start_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     end_date TIMESTAMP NULL,
     actual_return_date TIMESTAMP NULL,
-    total_price DECIMAL(10,2) NOT NULL,
-    deposit_amount DECIMAL(10,2) NOT NULL,
+    total_price DECIMAL(15,2) NOT NULL,
+    deposit_amount DECIMAL(15,2) NOT NULL,
     status ENUM('CART', 'PENDING', 'APPROVED', 'DEPOSITED', 'PICKED_UP', 'COMPLETED', 'CANCELLED') NOT NULL,
     note TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -200,7 +200,7 @@ CREATE TABLE rental_details (
     combo_id INT,
     inventory_id INT,
     quantity INT NOT NULL,
-    price_at_rental DECIMAL(10,2) NOT NULL,
+    price_at_rental DECIMAL(15,2) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -211,7 +211,7 @@ CREATE TABLE rental_issues (
     rental_detail_id INT NOT NULL,
     type ENUM('LATE', 'DAMAGED', 'LOST') NOT NULL,
     description TEXT NOT NULL,
-    penalty_fee DECIMAL(10,2) NOT NULL,
+    penalty_fee DECIMAL(15,2) NOT NULL,
     status ENUM('PENDING', 'RESOLVED') NOT NULL
 );
 
@@ -221,7 +221,7 @@ CREATE TABLE transactions (
     user_id INT NOT NULL,
     issue_id INT,
     type ENUM('DEPOSIT', 'PAYMENT', 'REFUND', 'FINE') NOT NULL,
-    amount DECIMAL(10,2) NOT NULL,
+    amount DECIMAL(15,2) NOT NULL,
     payment_method VARCHAR(100) NOT NULL,
     status ENUM('SUCCESS', 'FAILED', 'PENDING') NOT NULL,
     transaction_ref VARCHAR(255),
