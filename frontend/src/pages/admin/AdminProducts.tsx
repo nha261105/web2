@@ -33,6 +33,7 @@ type AddProductFormState = {
   deposit_price: string;
   daily_price: string;
   status: "ACTIVE" | "INACTIVE";
+  stock: string;
   image_source_urls: string;
 };
 
@@ -45,6 +46,7 @@ const initialFormState: AddProductFormState = {
   category_id: "",
   deposit_price: "",
   daily_price: "",
+  stock: "0",
   status: "ACTIVE",
   image_source_urls: "",
 };
@@ -161,6 +163,7 @@ export default function AdminProducts() {
         description: form.description.trim(),
         deposit_price: String(form.deposit_price),
         daily_price: String(form.daily_price),
+        stock: Number(form.stock),
         status: form.status,
         image_source_urls: parseImageUrls(form.image_source_urls),
       });
@@ -206,6 +209,7 @@ export default function AdminProducts() {
         description: editForm.description.trim(),
         deposit_price: String(editForm.deposit_price),
         daily_price: String(editForm.daily_price),
+        stock: Number(editForm.stock),
         status: editForm.status,
         image_source_urls: parseImageUrls(editForm.image_source_urls),
       });
@@ -251,6 +255,7 @@ export default function AdminProducts() {
       category_id: String(product.category?.id || product.category_id || ""),
       deposit_price: String(product.deposit_price),
       daily_price: String(product.daily_price || ""),
+      stock: String(product.stock || "0"),
       status: product.status === "INACTIVE" ? "INACTIVE" : "ACTIVE",
       image_source_urls: (product.images ?? []).join("\n"),
     });
@@ -330,6 +335,7 @@ export default function AdminProducts() {
                     {[
                       "Product",
                       "Category",
+                      "Stock",
                       "Deposit",
                       "Daily Rate",
                       "Status",
@@ -376,6 +382,9 @@ export default function AdminProducts() {
                       </td>
                       <td className="px-5 py-3 text-sm text-gray-600">
                         {product.category?.name || "N/A"}
+                      </td>
+                      <td className="px-5 py-3 text-sm font-medium text-blue-600">
+                        {product.stock ?? 0}
                       </td>
                       <td className="px-5 py-3 text-sm font-medium text-gray-900">
                         ${product.deposit_price}
@@ -564,6 +573,23 @@ export default function AdminProducts() {
                 value={form.daily_price}
                 onChange={(e) =>
                   setForm({ ...form, daily_price: e.target.value })
+                }
+                className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
+                placeholder="50"
+              />
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-gray-600">
+                Stock *
+              </span>
+              <input
+                required
+                type="number"
+                min={0}
+                value={form.stock}
+                onChange={(e) =>
+                  setForm({ ...form, stock: e.target.value })
                 }
                 className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
                 placeholder="50"
@@ -772,6 +798,23 @@ export default function AdminProducts() {
                 value={editForm.daily_price}
                 onChange={(e) =>
                   setEditForm({ ...editForm, daily_price: e.target.value })
+                }
+                className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
+                placeholder="50"
+              />
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-xs font-medium text-gray-600">
+                Stock *
+              </span>
+              <input
+                required
+                type="number"
+                min={0}
+                value={editForm.stock}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, stock: e.target.value })
                 }
                 className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
                 placeholder="50"

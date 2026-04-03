@@ -19,6 +19,7 @@ export default function SideBar() {
   const listFunction = [
     { id: 1, label: "Dashboard", icons: <LayoutDashboard color="#ffffff" />, address: "/admin", exact: true },
     { id: 2, label: "Products", icons: <Box color="#ffffff" />, address: "/admin/products" },
+    { id: 8, label: "Combos", icons: <Tag color="#ffffff" />, address: "/admin/combos" },
     { id: 3, label: "Orders", icons: <ShoppingBag color="#ffffff" />, address: "/admin/orders" },
     { id: 4, label: "Categories", icons: <Tag color="#ffffff" />, address: "/admin/categories" },
     { id: 5, label: "Users", icons: <Users color="#ffffff" />, address: "/admin/users" },

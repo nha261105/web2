@@ -70,4 +70,26 @@ class RentalController extends Controller
             'Rental updated',
         );
     }
+
+    public function cancel(Request $request, int $id): JsonResponse
+    {
+        $authUser = $request->attributes->get('auth_user');
+        $rental = $this->service->findById($id);
+
+        if ($rental->user_id !== $authUser->id) {
+            return ApiResponse::forbidden('Bạn không có quyền huỷ đơn này.');
+        }
+
+        try {
+            $rental = $this->service->update($id, ['status' => 'CANCELLED']);
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::validation([
+                'status' => [$e->getMessage()],
+            ]);
+        }
+
+        return ApiResponse::success([
+            'rental' => new RentalResource($rental),
+        ], 'Đã hủy đơn thành công');
+    }
 }

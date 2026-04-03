@@ -24,6 +24,7 @@ export type Product = {
   deposit_price: string;
   daily_price: string;
   status: string;
+  stock?: number;
   image?: string;
   images?: Array<string>;
   created_at: string;
@@ -55,6 +56,7 @@ export type CreateProductPayload = {
   description: string;
   deposit_price: string;
   daily_price: string;
+  stock?: number;
   status: "ACTIVE" | "INACTIVE";
   image_source_urls?: string[];
 };
