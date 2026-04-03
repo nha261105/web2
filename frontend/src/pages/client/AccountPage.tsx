@@ -12,20 +12,20 @@ import AddressPage from "./Account/AddressPage";
 import { toast } from "react-hot-toast";
 import NotificationsPage from "./Account/NotificationPage";
 import { Bell } from "lucide-react";
+import { API_BASE_URL } from "@/config/api";
 
 interface AuthUser {
   id: number;
   full_name: string;
   email: string;
   phone: string;
+  avatar?: string;
 }
 
 export default function AccountPage() {
   const [searchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
   const navigate = useNavigate();
-
-  // ─── Auth state ───────────────────────────────────────────────────────────
   const [authUser, setAuthUser] = useState<AuthUser | null>(() => {
     try {
       const saved = localStorage.getItem("auth_user");
@@ -33,14 +33,25 @@ export default function AccountPage() {
     } catch { /* ignore */ }
     return null;
   });
+  useEffect(() => {
+    const handleAuthChange = () => {
+      try {
+        const saved = localStorage.getItem("auth_user");
+        if (saved && saved !== "undefined") {
+          setAuthUser(JSON.parse(saved));
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    window.addEventListener("auth_changed", handleAuthChange);
+    return () => window.removeEventListener("auth_changed", handleAuthChange);
+  }, []);
   const [isLoggedIn, setIsLoggedIn] = useState(!!authUser);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const navigator = useNavigate();
 
-
-
-  // ─── Preloaded rentals ────────────────────────────────────────────────────
   const [rentals, setRentals] = useState<Rental[]>([]);
   const [rentalsLoading, setRentalsLoading] = useState(true);
 
@@ -161,15 +172,25 @@ export default function AccountPage() {
             <aside className="w-56 shrink-0 hidden sm:block">
               <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
                 <div className="p-5 border-b border-gray-100 bg-gradient-to-br from-[#0052CC] to-[#0747A6]">
-                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-3">
-                    <User className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-3 overflow-hidden border border-white/30">
+                    {authUser.avatar ? (
+                      <img
+                        src={(authUser.avatar.startsWith("http") || authUser.avatar.startsWith("data:"))
+                          ? authUser.avatar
+                          : `${API_BASE_URL}/${authUser.avatar}`}
+                        alt="Avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-6 h-6 text-white" />
+                    )}
                   </div>
                   <p className="text-white font-semibold text-sm truncate">
                     {authUser.full_name}
                   </p>
-                  <p className="text-blue-200 text-xs truncate">
-                    {authUser.email}
-                  </p>
+                    <p className="text-blue-200 text-xs truncate">
+                      {authUser.email}
+                    </p>
                 </div>
 
                 <nav className="p-2">

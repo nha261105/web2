@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getProducts } from "@/services/catalogService";
 import { signout } from "@/services/usersService";
+import { API_BASE_URL } from "@/config/api";
 import { getNotifications, markAsRead, markAllRead } from "@/services/notificationService";
 import {
   Search,
@@ -106,6 +107,7 @@ interface AuthUser {
   email: string;
   phone: string;
   roles?: Array<{ id: number; name: string }>;
+  avatar?: string;
 }
 
 export default function Header() {
@@ -152,7 +154,7 @@ export default function Header() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [notifLoading, setNotifLoading] = useState(false);
-  
+
   const [cartCount, setCartCount] = useState(0);
 
   // ─── Load device sections ─────────────────────────────────────────
@@ -359,9 +361,16 @@ export default function Header() {
     setIsAccountOpen((p) => !p);
   };
 
-  const avatarUrl = authUser
-    ? `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser.full_name)}&background=2563eb&color=ffffff&size=128`
-    : "";
+  //load avt
+  const avatarUrl = useMemo(() => {
+    if (authUser?.avatar) {
+      if (authUser.avatar.startsWith("data:") || authUser.avatar.startsWith("http")) {
+        return authUser.avatar;
+      }
+      return `${API_BASE_URL}/${authUser.avatar}`;
+    }
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser?.full_name || "User")}&background=2563eb&color=ffffff`;
+  }, [authUser]);
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 text-slate-900 shadow-sm backdrop-blur supports-backdrop-filter:bg-white/85">
@@ -592,7 +601,9 @@ export default function Header() {
               {authUser ? (
                 <img
                   src={avatarUrl}
-                  alt={authUser.full_name}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser?.full_name || "U")}`;
+                  }}
                   className="h-8 w-8 rounded-full object-cover"
                 />
               ) : (
@@ -647,7 +658,7 @@ export default function Header() {
                         Cài đặt
                       </button>
                     </div>
-                    {/* Admin Panel - từ feature của bạn */}
+                    {/* Admin Panel  */}
                     {authUser.roles?.some((role) => role.name === "ADMIN") && (
                       <Link
                         to="/admin/dashboard"

@@ -71,7 +71,8 @@ Route::middleware(['auth.token'])->group(function () {
     Route::get('/users/me', [UserController::class, 'me']);
     Route::patch('/users/me', [UserController::class, 'updateMe']);
     Route::patch('/users/me/password', [UserController::class, 'changePassword']);
-
+    Route::delete('/users/me', [UserController::class, 'deleteMe']);
+    
     // notifications
     Route::prefix('notifications')->group(function () {
     Route::get('/',              [NotificationController::class, 'index']);

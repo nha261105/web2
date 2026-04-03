@@ -5,6 +5,7 @@ namespace App\Services\User;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Storage;
 
 class UserService
 {
@@ -90,6 +91,46 @@ class UserService
 
         $user->update($data);
         return $user->fresh();
+    }
+
+    public function updateUserMe(int $userId, array $data): User
+    {
+        $user = User::findOrFail($userId);
+
+        if (isset($data['avatar']) && str_contains($data['avatar'], 'base64,')) {
+            $disk = \Storage::disk('public');
+            
+            if (!$disk->exists('avatars')) {
+                $disk->makeDirectory('avatars', 0755, true);
+            }
+
+            $parts = explode(',', $data['avatar']);
+            $imageData = base64_decode($parts[1]);
+            $extension = str_contains($parts[0], 'png') ? 'png' : 'jpg';
+
+            // 1. Xóa ảnh cũ trong bảng user_info
+            if ($user->userInfo && $user->userInfo->user_img) {
+                $oldPath = str_replace('storage/', '', $user->userInfo->user_img);
+                $disk->delete($oldPath);
+            }
+
+            // 2. Lưu file
+            $fileName = 'avatar_' . $userId . '_' . time() . '.' . $extension;
+            $disk->put('avatars/' . $fileName, $imageData);
+            $fullPath = 'storage/avatars/' . $fileName;
+
+            $user->userInfo()->updateOrCreate(
+                ['user_id' => $userId],
+                ['user_img' => $fullPath]
+            );
+        }
+
+        $user->update([
+            'full_name' => $data['full_name'] ?? $user->full_name,
+            'phone'     => $data['phone'] ?? $user->phone,
+        ]);
+
+        return $user->load('userInfo');
     }
 
     public function deleteUser(int $id): bool

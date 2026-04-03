@@ -20,6 +20,12 @@ class User extends Authenticatable
     use SoftDeletes;
 
     protected $table = 'users';
+    protected $appends = ['avatar'];
+
+     public function getAvatarAttribute()
+    {
+        return $this->userInfo ? $this->userInfo->user_img : null;
+    }
 
     protected $fillable = [
         'email',
@@ -85,9 +91,6 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the password for the user.
-     * Overrides the default getAuthPassword method to use 'hash_password' column.
-     *
      * @return string
      */
     public function getAuthPassword()
@@ -102,6 +105,6 @@ class User extends Authenticatable
 
     public function userInfo(): HasOne
     {
-        return $this->hasOne(UserInfo::class);
+        return $this->hasOne(UserInfo::class, 'user_id', 'id');
     }
 }

@@ -31,6 +31,7 @@ class UpdateUserRequest extends FormRequest
             ],
             'password' => 'sometimes|string|min:8|max:255',
             'status' => 'sometimes|in:ACTIVE,INACTIVE',
+            'avatar' => 'sometimes|nullable|string',
         ];
     }
 

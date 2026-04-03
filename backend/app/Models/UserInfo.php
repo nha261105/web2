@@ -7,14 +7,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserInfo extends Model
 {
+    protected $table = 'user_info';
+    public $timestamps = false;
+
     protected $fillable = [
         'user_id',
-        'status',
-        'id_card_number',
-        'id_card_front',
-        'id_card_back',
-        'rejection_reason',
-        'verified_at'
+        'card_id',
+        'user_img',
+        'status'
     ];
 
     protected $casts = [
@@ -23,6 +23,6 @@ class UserInfo extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 }

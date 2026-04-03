@@ -87,6 +87,12 @@ class UserController extends Controller
     {
         $user = $request->attributes->get('auth_user');
 
+        if (!$user) {
+            return ApiResponse::error('Unauthorized', 'UNAUTHORIZED', 401);
+        }
+
+        $user->load(['userInfo', 'roles']);
+
         return ApiResponse::success(
             [
                 'user' => new UserResource($user),
@@ -102,9 +108,9 @@ class UserController extends Controller
     {
         try {
             $authUser = $request->attributes->get('auth_user');
-            $user = $this->userService->updateUser(
+                $user = $this->userService->updateUserMe(
                 $authUser->id,
-                $request->validated(),
+                $request->validated()
             );
 
             return ApiResponse::success(
@@ -118,6 +124,20 @@ class UserController extends Controller
         }
     }
 
+    /**
+     * DELETE /api/users/me
+     */
+    public function deleteMe(Request $request): JsonResponse
+    {
+        try {
+            $authUser = $request->attributes->get('auth_user');
+            $this->userService->deleteUser($authUser->id);
+
+            return ApiResponse::success([], 'Tài khoản của bạn đã được xóa thành công');
+        } catch (\Exception $e) {
+            return ApiResponse::error('Không thể xóa tài khoản lúc này', 'DELETE_FAILED', 400);
+        }
+    }
 
     /**
      * PATCH /api/users/me/password

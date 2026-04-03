@@ -15,6 +15,9 @@ class UserResource extends JsonResource
             'full_name' => $this->full_name,
             'phone' => $this->phone,
             'status' => $this->status,
+            'avatar' => $this->userInfo && $this->userInfo->user_img 
+            ? asset($this->userInfo->user_img) 
+            : null,
             'roles' => $this->whenLoaded('roles', function () {
                 return $this->roles->map(fn($role) => [
                     'id' => $role->id,
@@ -24,9 +27,7 @@ class UserResource extends JsonResource
             'kyc_status' => $this->whenLoaded('userInfo', function () {
                 return $this->userInfo->status ?? 'PENDING';
             }),
-            'id_card_number' => $this->whenLoaded('userInfo', function () {
-                return $this->userInfo->id_card_number ?? null;
-            }),
+            'id_card_number' => optional($this->userInfo)->card_id,
             'verified_at' => $this->whenLoaded('userInfo', function () {
                 return $this->userInfo->verified_at?->toISOString();
             }),
