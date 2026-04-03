@@ -1,6 +1,6 @@
 import axios from "axios";
 import { API_BASE_URL, API_ENDPOINTS } from "@/config/api";
-import type { Product } from "@/pages/client/data";
+import { PRODUCTS, type Product } from "@/pages/client/data";
 
 type ApiListResponse<T> = {
   success: boolean;
@@ -128,41 +128,69 @@ export function mapBackendProductToUi(product: BackendProduct): Product {
 }
 
 export async function getCategories(): Promise<CategoryOption[]> {
-  const response = await axios.get<ApiListResponse<BackendCategory>>(
-    `${API_BASE_URL}${API_ENDPOINTS.categories}`,
-  );
+  try {
+    const response = await axios.get<ApiListResponse<BackendCategory>>(
+      `${API_BASE_URL}${API_ENDPOINTS.categories}`,
+    );
 
-  return (
-    response.data.data?.items?.map((item) => ({
-      id: item.id,
-      name: item.name,
-      slug: item.slug,
-    })) ?? []
-  );
+    return (
+      response.data.data?.items?.map((item) => ({
+        id: item.id,
+        name: item.name,
+        slug: item.slug,
+      })) ?? []
+    );
+  } catch {
+    return Array.from(new Set(PRODUCTS.map((product) => product.category)))
+      .sort()
+      .map((name, index) => ({
+        id: index + 1,
+        name,
+        slug: name
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, ""),
+      }));
+  }
 }
 
 export async function getProducts(
   query: ProductQuery = {},
 ): Promise<Product[]> {
-  const response = await axios.get<ApiListResponse<BackendProduct>>(
-    `${API_BASE_URL}${API_ENDPOINTS.products}`,
-    { params: query },
-  );
+  try {
+    const response = await axios.get<ApiListResponse<BackendProduct>>(
+      `${API_BASE_URL}${API_ENDPOINTS.products}`,
+      { params: query },
+    );
 
-  return (response.data.data?.items ?? []).map(mapBackendProductToUi);
+    return (response.data.data?.items ?? []).map(mapBackendProductToUi);
+  } catch {
+    return PRODUCTS;
+  }
 }
 
 export async function getProductById(id: string): Promise<Product> {
-  const response = await axios.get<ApiOneResponse<BackendProduct, "product">>(
-    `${API_BASE_URL}${API_ENDPOINTS.products}/${id}`,
-  );
+  try {
+    const response = await axios.get<ApiOneResponse<BackendProduct, "product">>(
+      `${API_BASE_URL}${API_ENDPOINTS.products}/${id}`,
+    );
 
-  const product = response.data.data?.product;
-  if (!product) {
-    throw new Error("Product not found");
+    const product = response.data.data?.product;
+    if (!product) {
+      throw new Error("Product not found");
+    }
+
+    return mapBackendProductToUi(product);
+  } catch {
+    const fallback = PRODUCTS.find((product) => product.id === id);
+    if (!fallback) {
+      throw new Error("Product not found");
+    }
+
+    return fallback;
   }
-
-  return mapBackendProductToUi(product);
 }
 
 export async function createProduct(

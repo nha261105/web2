@@ -492,14 +492,19 @@ INSERT INTO products (id, policies_id, category_id, brand_id, name, slug, daily_
 -- product_img
 -- ==========================================
 INSERT INTO product_img (product_id, image_url) VALUES
-(1, 'https://cdn.rentgear.vn/products/sony-a7iii-1.jpg'),
-(1, 'https://cdn.rentgear.vn/products/sony-a7iii-2.jpg'),
-(2, 'https://cdn.rentgear.vn/products/canon-r6-1.jpg'),
-(3, 'https://cdn.rentgear.vn/products/sony-2470-1.jpg'),
-(4, 'https://cdn.rentgear.vn/products/dji-mavic3-1.jpg'),
-(4, 'https://cdn.rentgear.vn/products/dji-mavic3-2.jpg'),
-(5, 'https://cdn.rentgear.vn/products/rode-vmpp-1.jpg'),
-(6, 'https://cdn.rentgear.vn/products/godox-sl60-1.jpg');
+(1, 'https://woeymreiygtlspyzjkfe.supabase.co/storage/v1/object/public/images/products/migrated/photo-1516035069371-29a1b244cc32-69c8ef042c5c9.jpg'),
+(1, 'https://woeymreiygtlspyzjkfe.supabase.co/storage/v1/object/public/images/products/migrated/photo-1516724562728-afc824a36e84-69c8ef05eb797.jpg'),
+(2, 'https://woeymreiygtlspyzjkfe.supabase.co/storage/v1/object/public/images/products/migrated/photo-1502920917128-1aa500764cbd-69c8ef06d435c.jpg'),
+(2, 'https://woeymreiygtlspyzjkfe.supabase.co/storage/v1/object/public/images/products/migrated/900-69c8ef58c9bb5.jpg'),
+(3, 'https://woeymreiygtlspyzjkfe.supabase.co/storage/v1/object/public/images/products/migrated/photo-1617005082133-548c4dd27f35-69c8ef092a711.jpg'),
+(4, 'https://woeymreiygtlspyzjkfe.supabase.co/storage/v1/object/public/images/products/migrated/photo-1473968512647-3e447244af8f-69c8ef0b107b5.jpg'),
+(4, 'https://woeymreiygtlspyzjkfe.supabase.co/storage/v1/object/public/images/products/migrated/photo-1508614589041-895b88991e3e-69c8ef0c593b4.jpg'),
+(5, 'https://woeymreiygtlspyzjkfe.supabase.co/storage/v1/object/public/images/products/migrated/photo-1590602847861-f357a9332bbc-69c8ef0e40579.jpg'),
+(6, 'https://woeymreiygtlspyzjkfe.supabase.co/storage/v1/object/public/images/products/migrated/900-69c8ef5aed793.jpg'),
+(7, 'https://woeymreiygtlspyzjkfe.supabase.co/storage/v1/object/public/images/products/migrated/photo-1510127034890-ba27508e9f1c-69c8ef1048c5e.jpg'),
+(8, 'https://woeymreiygtlspyzjkfe.supabase.co/storage/v1/object/public/images/products/migrated/900-69c8ef5ce7d8b.jpg');
+
+
 
 -- ==========================================
 -- combos
