@@ -260,12 +260,11 @@ export default function AdminOrders() {
                           {new Date(order.end_date).toLocaleDateString("vi-VN")}
                         </td>
                         <td className="px-5 py-3 text-sm font-medium text-gray-900">
-                          $
-                          {(
+                          {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(
                             order.total_amount ??
                             order.total_price ??
                             0
-                          ).toLocaleString()}
+                          )}
                         </td>
                         <td className="px-5 py-3">
                           <span
@@ -341,12 +340,12 @@ export default function AdminOrders() {
                       .join(", ") || "N/A"}
                   </p>
                   <p className="text-gray-600">
-                    Amount: $
-                    {(
+                    Tổng tiền:{" "}
+                    {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(
                       selectedOrder.total_amount ??
                       selectedOrder.total_price ??
                       0
-                    ).toLocaleString()}
+                    )}
                   </p>
                   <p className="text-gray-600">
                     Start:{" "}

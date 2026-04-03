@@ -13,6 +13,7 @@ export const API_ENDPOINTS = {
   //User
   usersMe: "/api/users/me",
   updateMe: "/api/users/me",
+  changePassword: "/api/users/me/password",
   users: "/api/users",
 
   //Roles
@@ -27,6 +28,7 @@ export const API_ENDPOINTS = {
   // cart
   cart: "/api/cart",
   cartRentNow: "/api/cart/rent-now",
+  cartCheckout: "/api/cart/checkout",
   cartReturnDate: "/api/cart/return-date",
   cartItem: (itemId: number) => `/api/cart/items/${itemId}`,
 

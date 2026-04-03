@@ -271,7 +271,13 @@ export default function AdminDashboard() {
                   tickMargin={8}
                   tickFormatter={(value) => formatMonth(String(value))}
                 />
-                <RechartsYAxis hide />
+                <RechartsYAxis 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickMargin={8}
+                  width={60}
+                  tickFormatter={(value) => formatCompactCurrency(Number(value))} 
+                />
                 <ChartTooltip
                   cursor={false}
                   content={
@@ -326,7 +332,13 @@ export default function AdminDashboard() {
                   bottom: 8,
                 }}
               >
-                <RechartsXAxis type="number" dataKey="rentals" hide />
+                <RechartsXAxis 
+                  type="number" 
+                  dataKey="rentals" 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickMargin={8}
+                />
                 <RechartsYAxis
                   dataKey="category"
                   type="category"

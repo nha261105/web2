@@ -11,7 +11,7 @@ import { checkToken } from "@/services/userTokensService";
 import { ArrowRight, Check, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Fragment } from "react/jsx-runtime";
 
 
@@ -38,11 +38,15 @@ function extractRoles(payload: unknown): string[] {
 
 export default function SignInPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isRemember, setIsRemember] = useState(false);
 
   const getRedirectPathByRole = (roles: string[] | undefined) => {
+    // Ưu tiên redirect param nếu có (VD: từ ProtectedRoute)
+    const redirectParam = searchParams.get("redirect");
+    if (redirectParam) return redirectParam;
     if (roles?.includes("ADMIN")) return "/admin";
     return "/";
   };
@@ -121,7 +125,7 @@ export default function SignInPage() {
   const textLeftPanel = [
     "500+ professional tech products",
     "Flexible daily, weekly & monthly plans",
-    "Free delivery on orders over $200",
+    "Miễn phí vận chuyển đơn từ 500.000₫",
     "24/7 expert support",
   ];
 

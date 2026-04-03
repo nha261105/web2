@@ -10,7 +10,10 @@ class UserService
 {
     public function listUsers(int $perPage = 15): LengthAwarePaginator
     {
-        return User::with('roles')->paginate($perPage);
+        return User::with('roles')
+            ->withCount('rentals')
+            ->withSum('rentals', 'total_price')
+            ->paginate($perPage);
     }
 
     public function getActiveUsers(): Collection
@@ -61,7 +64,7 @@ class UserService
 
         return User::create([
             'email' => $data['email'],
-            'hash_password' => bcrypt($data['password']),
+            'hash_password' => $data['password'],
             'full_name' => $data['full_name'],
             'phone' => $data['phone'],
             'status' => $data['status'] ?? 'ACTIVE',
@@ -81,7 +84,7 @@ class UserService
         }
 
         if (isset($data['password'])) {
-            $data['hash_password'] = bcrypt($data['password']);
+            $data['hash_password'] = $data['password'];
             unset($data['password']);
         }
 

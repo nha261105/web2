@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
   Minus,
@@ -30,6 +30,7 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     async function loadProduct() {
@@ -70,6 +71,13 @@ export default function ProductDetailPage() {
       return;
     }
 
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Bạn cần đăng nhập để thêm vào giỏ hàng!");
+      navigate("/signin", { state: { from: location.pathname } });
+      return;
+    }
+
     setIsSubmitting(true);
     const response = await addToCart({
       product_id: Number(product.id),
@@ -87,6 +95,13 @@ export default function ProductDetailPage() {
 
   const handleRentNow = async () => {
     if (!product || isSubmitting) {
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Bạn cần đăng nhập trước khi Thuê ngay!");
+      navigate("/signin", { state: { from: location.pathname } });
       return;
     }
 
@@ -118,7 +133,7 @@ export default function ProductDetailPage() {
     return (
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <p className="text-2xl font-bold text-slate-900">
-          Dang tai san pham...
+          Đang tải sản phẩm...
         </p>
       </section>
     );
@@ -265,7 +280,7 @@ export default function ProductDetailPage() {
 
             <div>
               <p className="mb-2 text-lg font-semibold text-slate-900">
-                Custom days
+                Số ngày tùy chỉnh
               </p>
               <div className="inline-flex items-center overflow-hidden rounded-xl border border-slate-200">
                 <button

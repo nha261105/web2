@@ -19,6 +19,7 @@ class Product extends Model
         'daily_price',
         'deposit_price',
         'description',
+        'stock',
         'status',
     ];
 

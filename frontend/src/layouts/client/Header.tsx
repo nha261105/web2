@@ -14,6 +14,7 @@ import {
   LogOut,
   LayoutDashboard,
 } from "lucide-react";
+import { getMyCart } from "@/services/cartService";
 
 type DeviceMenuColumn = {
   title: string;
@@ -134,6 +135,8 @@ export default function Header() {
       return null;
     }
   });
+  
+  const [cartCount, setCartCount] = useState(0);
 
   // ─── Load device sections (từ dev) ─────────────────────────────────────────
   useEffect(() => {
@@ -175,6 +178,29 @@ export default function Header() {
       window.removeEventListener("auth_changed", handleStorageChange);
     };
   }, []);
+
+  // ─── Listen for cart changes ──────────────────────────────────────────
+  useEffect(() => {
+    const fetchCartCount = async () => {
+      if (!authUser) {
+        setCartCount(0);
+        return;
+      }
+      const response = await getMyCart();
+      if (response.success && response.data?.items) {
+        setCartCount(response.data.items.length);
+      } else {
+        setCartCount(0);
+      }
+    };
+
+    fetchCartCount();
+
+    const handleCartChange = () => fetchCartCount();
+    window.addEventListener("cart_changed", handleCartChange);
+
+    return () => window.removeEventListener("cart_changed", handleCartChange);
+  }, [authUser]);
 
   const handleBackToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -509,9 +535,11 @@ export default function Header() {
             onClick={() => navigator("/cart")}
           >
             <ShoppingCart size={24} />
-            <span className="absolute -right-1 -top-1 min-w-5 h-5 rounded-full bg-orange-500 text-white text-xs px-1 grid place-items-center font-semibold">
-              2
-            </span>
+            {cartCount > 0 && (
+              <span className="absolute -right-1 -top-1 min-w-5 h-5 rounded-full bg-orange-500 text-white text-xs px-1 grid place-items-center font-semibold">
+                {cartCount}
+              </span>
+            )}
           </button>
         </div>
       </div>

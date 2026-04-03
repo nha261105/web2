@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Eye, EyeOff, Save, Bell, Shield, Trash2 } from "lucide-react";
+import { changePassword } from "@/services/usersService";
+import toast from "react-hot-toast";
 
 export default function SettingsPage() {
   const [passwords, setPasswords] = useState({
@@ -8,6 +10,7 @@ export default function SettingsPage() {
     confirm: "",
   });
   const [showPass, setShowPass] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [notifications, setNotifications] = useState({
     orderUpdates: true,
     promotions: true,
@@ -21,22 +24,51 @@ export default function SettingsPage() {
     setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (passwords.next !== passwords.confirm) {
+      toast.error("Mật khẩu mới và xác nhận không khớp.");
+      return;
+    }
+
+    if (passwords.next.length < 8) {
+      toast.error("Mật khẩu mới phải có ít nhất 8 ký tự.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    const res = await changePassword({
+      current_password: passwords.current,
+      new_password: passwords.next,
+      confirm_password: passwords.confirm,
+    });
+    setIsSubmitting(false);
+
+    if (res.success) {
+      toast.success("Đổi mật khẩu thành công!");
+      setPasswords({ current: "", next: "", confirm: "" });
+    } else {
+      toast.error(res.message || "Đổi mật khẩu thất bại.");
+    }
+  };
+
   return (
     <div className="space-y-5">
       {/* Password */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
         <h2 className="text-base font-semibold text-gray-900 mb-1 flex items-center gap-2">
-          <Shield className="w-4 h-4 text-[#0052CC]" /> Change Password
+          <Shield className="w-4 h-4 text-[#0052CC]" /> Đổi mật khẩu
         </h2>
         <p className="text-xs text-gray-500 mb-5">
-          Choose a strong password to protect your account
+          Chọn mật khẩu mạnh để bảo vệ tài khoản của bạn
         </p>
 
-        <form onSubmit={() => {}} className="space-y-4 max-w-md">
+        <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
           {[
-            { field: "current" as const, label: "Current Password" },
-            { field: "next" as const, label: "New Password" },
-            { field: "confirm" as const, label: "Confirm New Password" },
+            { field: "current" as const, label: "Mật khẩu hiện tại" },
+            { field: "next" as const, label: "Mật khẩu mới" },
+            { field: "confirm" as const, label: "Xác nhận mật khẩu mới" },
           ].map((f) => (
             <div key={f.field}>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -71,9 +103,10 @@ export default function SettingsPage() {
           ))}
           <button
             type="submit"
-            className="h-10 px-6 bg-[#0052CC] text-white rounded-xl text-sm font-medium flex items-center gap-2 hover:bg-[#0747A6] transition-colors"
+            disabled={isSubmitting}
+            className="h-10 px-6 bg-[#0052CC] text-white rounded-xl text-sm font-medium flex items-center gap-2 hover:bg-[#0747A6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Save className="w-4 h-4" /> Update Password
+            <Save className="w-4 h-4" /> {isSubmitting ? "Đang lưu..." : "Cập nhật mật khẩu"}
           </button>
         </form>
       </div>
@@ -81,43 +114,43 @@ export default function SettingsPage() {
       {/* Notifications */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
         <h2 className="text-base font-semibold text-gray-900 mb-1 flex items-center gap-2">
-          <Bell className="w-4 h-4 text-[#0052CC]" /> Notification Preferences
+          <Bell className="w-4 h-4 text-[#0052CC]" /> Thiết lập thông báo
         </h2>
         <p className="text-xs text-gray-500 mb-5">
-          Choose what you want to be notified about
+          Chọn loại thông báo bạn muốn nhận
         </p>
 
         <div className="space-y-4">
           {[
             {
               key: "orderUpdates",
-              label: "Order Updates",
-              desc: "Status changes, delivery notifications",
+              label: "Cập nhật đơn hàng",
+              desc: "Thay đổi trạng thái, thông báo giao hàng",
             },
             {
               key: "promotions",
-              label: "Promotions & Deals",
-              desc: "Special offers and discount codes",
+              label: "Khuyến mãi & Ưu đãi",
+              desc: "Chương trình ưu đãi và mã giảm giá",
             },
             {
               key: "newsletter",
-              label: "Newsletter",
-              desc: "Weekly roundup of new tech arrivals",
+              label: "Bản tin",
+              desc: "Tổng hợp sản phẩm mới hàng tuần",
             },
             {
               key: "newArrivals",
-              label: "New Arrivals",
-              desc: "When new products become available",
+              label: "Sản phẩm mới",
+              desc: "Khi có sản phẩm mới được thêm vào",
             },
             {
               key: "priceDrops",
-              label: "Price Drops",
-              desc: "When wishlisted items go on sale",
+              label: "Giảm giá",
+              desc: "Khi sản phẩm yêu thích giảm giá",
             },
             {
               key: "sms",
-              label: "SMS Notifications",
-              desc: "Text messages for order updates",
+              label: "Thông báo SMS",
+              desc: "Tin nhắn văn bản cập nhật đơn hàng",
             },
           ].map((item) => (
             <div
@@ -156,24 +189,24 @@ export default function SettingsPage() {
           onClick={() => {}}
           className="mt-5 h-10 px-6 bg-[#0052CC] text-white rounded-xl text-sm font-medium flex items-center gap-2 hover:bg-[#0747A6] transition-colors"
         >
-          <Save className="w-4 h-4" /> Save Preferences
+          <Save className="w-4 h-4" /> Lưu cài đặt
         </button>
       </div>
 
       {/* Danger zone */}
       <div className="bg-white rounded-2xl border border-red-200 p-6">
         <h2 className="text-base font-semibold text-red-600 mb-1 flex items-center gap-2">
-          <Trash2 className="w-4 h-4" /> Danger Zone
+          <Trash2 className="w-4 h-4" /> Vùng nguy hiểm
         </h2>
         <p className="text-xs text-gray-500 mb-5">
-          These actions cannot be undone
+          Những hành động này không thể hoàn tác
         </p>
         <div className="flex flex-col sm:flex-row gap-3">
           <button className="h-10 px-5 bg-white border border-red-300 text-red-600 rounded-xl text-sm font-medium hover:bg-red-50 transition-colors">
-            Delete Account
+            Xóa tài khoản
           </button>
           <button className="h-10 px-5 bg-white border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors">
-            Export My Data
+            Xuất dữ liệu của tôi
           </button>
         </div>
       </div>

@@ -82,7 +82,7 @@ export async function addToCart(payload: AddToCartPayload) {
         headers: getAuthHeader(),
       },
     );
-
+    window.dispatchEvent(new Event("cart_changed"));
     return response.data as {
       success: boolean;
       message: string;
@@ -178,6 +178,34 @@ export async function updateCartItemQuantity(
     };
   }
 }
+
+export const submitCheckout = async (data: {
+  address_id?: number | null;
+  note?: string;
+}) => {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}${API_ENDPOINTS.cartCheckout}`,
+      data,
+      { headers: getAuthHeader() },
+    );
+    window.dispatchEvent(new Event("cart_changed"));
+    return response.data;
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      return (
+        error.response?.data || {
+          success: false,
+          message: "Không thể kết nối đến server",
+        }
+      );
+    }
+    return {
+      success: false,
+      message: "Đã xảy ra lỗi không xác định khi thanh toán",
+    };
+  }
+};
 
 export async function updateCartReturnDate(payload: { return_date: string }) {
   try {

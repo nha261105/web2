@@ -22,9 +22,9 @@ import {
 } from "@/services/cartService";
 
 const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("en-VI", {
+  new Intl.NumberFormat("vi-VN", {
     style: "currency",
-    currency: "USD",
+    currency: "VND",
   }).format(value);
 
 const getTodayDateString = () => {
@@ -32,6 +32,8 @@ const getTodayDateString = () => {
   const offset = now.getTimezoneOffset();
   return new Date(now.getTime() - offset * 60000).toISOString().slice(0, 10);
 };
+
+import { useCallback } from "react";
 
 const getRentalDaysFromDates = (startDate: string, endDate: string) => {
   const start = new Date(`${startDate}T00:00:00`);
@@ -49,33 +51,37 @@ export default function CartPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
-  useEffect(() => {
-    const loadCart = async () => {
-      setIsLoading(true);
-      setErrorMessage("");
+  const loadCart = useCallback(async (isInitial = false) => {
+    if (isInitial) setIsLoading(true);
+    setErrorMessage("");
 
-      const response = await getMyCart();
+    const response = await getMyCart();
 
-      if (response.success && response.data?.items) {
-        const items = response.data.items as CartItem[];
-        const currentDate = getTodayDateString();
-        const cartReturnDate = items[0]?.return_date ?? currentDate;
-        setCartItems(items);
-        setSelectedItemIds(items.map((item) => item.id));
-        setReturnDate(cartReturnDate);
-        setRentalDays(getRentalDaysFromDates(currentDate, cartReturnDate));
-      } else {
-        setCartItems([]);
-        setSelectedItemIds([]);
-        setRentalDays(1);
-        setErrorMessage(response.message || "Không tải được giỏ hàng.");
-      }
+    if (response.success && response.data?.items) {
+      const items = response.data.items as CartItem[];
+      const currentDate = getTodayDateString();
+      const cartReturnDate = items[0]?.return_date ?? currentDate;
+      setCartItems(items);
+      setSelectedItemIds((prevSelected) => {
+          if (isInitial) return items.map((item) => item.id);
+          const activeIds = items.map(i => i.id);
+          return prevSelected.filter(id => activeIds.includes(id));
+      });
+      setReturnDate(cartReturnDate);
+      setRentalDays(getRentalDaysFromDates(currentDate, cartReturnDate));
+    } else {
+      setCartItems([]);
+      setSelectedItemIds([]);
+      setRentalDays(1);
+      if (isInitial) setErrorMessage(response.message || "Không tải được giỏ hàng.");
+    }
 
-      setIsLoading(false);
-    };
-
-    loadCart();
+    if (isInitial) setIsLoading(false);
   }, []);
+
+  useEffect(() => {
+    loadCart(true);
+  }, [loadCart]);
 
   const selectedItemIdsSet = useMemo(
     () => new Set(selectedItemIds),
@@ -168,19 +174,22 @@ export default function CartPage() {
 
     if (!response.success) {
       setErrorMessage(response.message || "Không thể xóa sản phẩm khỏi giỏ.");
+    } else {
+      window.dispatchEvent(new Event("cart_changed"));
+      loadCart();
     }
   };
 
   return (
     <CartLayout>
       <MyNavigateLink
-        items={[{ text: "Home", link: "/" }, { text: "Shopping Cart" }]}
+        items={[{ text: "Trang chủ", link: "/" }, { text: "Giỏ hàng" }]}
       />
 
       <div className="w-full flex flex-row items-center gap-2">
-        <div className="text-xl text-black font-semibold">Shopping Cart</div>
+        <div className="text-xl text-black font-semibold">Giỏ hàng</div>
         <div className="text-lg text-gray-500 font-normal">
-          ({cartItems.length} items)
+          ({cartItems.length} sản phẩm)
         </div>
       </div>
 
@@ -324,17 +333,17 @@ export default function CartPage() {
             <div className="w-full flex flex-col border-gray-300 bg-white border p-5 rounded-lg gap-3">
               <div className="flex flex-row gap-2 items-center">
                 <Tag size={18} strokeWidth={2.5} className="text-blue-700" />
-                <div className="text-base font-semibold">Promo Code</div>
+                <div className="text-base font-semibold">Mã giảm giá</div>
               </div>
               <div className="w-full flex flex-row justify-between items-center gap-3">
                 <MyInputText
                   defaultValue=""
-                  placeholder="Enter promo code (try RENT10)"
+                  placeholder="Nhập mã giảm giá (thử RENT10)"
                 />
-                <MyButton text="Apply" classname="px-3" />
+                <MyButton text="Áp dụng" classname="px-3" />
               </div>
               <div className="text-sm text-gray-500">
-                Try: RENT10, FIRST15, SAVE20
+                Thử: WELCOME50K, SALE100K, VIP150K
               </div>
             </div>
           </div>
@@ -342,23 +351,23 @@ export default function CartPage() {
 
         <RightCartLayout>
           <div className="w-full flex flex-col border-gray-300 bg-white border p-5 rounded-lg gap-3">
-            <div className="text-lg font-semibold">Order Summary</div>
+            <div className="text-lg font-semibold">Tóm tắt đơn hàng</div>
             <div className="flex flex-col gap-1">
               <div className="flex flex-row justify-between items-center">
-                <div className="text-sm text-gray-500">Subtotal</div>
+                <div className="text-sm text-gray-500">Tạm tính</div>
                 <div className="text-sm font-semibold">
                   {formatCurrency(subtotal)}
                 </div>
               </div>
               <div className="flex flex-row justify-between items-center">
-                <div className="text-sm text-gray-500">Delivery</div>
-                <div className="text-sm text-green-600 font-semibold">Free</div>
+                <div className="text-sm text-gray-500">Giao hàng</div>
+                <div className="text-sm text-green-600 font-semibold">Miễn phí</div>
               </div>
             </div>
             <hr />
             <div className="flex flex-col gap-3">
               <div className="flex flex-row justify-between items-center">
-                <div className="text-lg font-medium">Total</div>
+                <div className="text-lg font-medium">Tổng cộng</div>
                 <div className="text-lg font-semibold">
                   {formatCurrency(subtotal)}
                 </div>
@@ -371,18 +380,18 @@ export default function CartPage() {
                 </span>
               </div>
               <MyButton
-                text="Proceed to Checkout"
+                text="Tiến hành thanh toán"
                 classname={`flex-1 py-2 ${selectedCount === 0 ? "opacity-50 pointer-events-none" : ""}`}
                 src={selectedCount === 0 ? undefined : "/checkout"}
                 icon={ArrowRight}
               />
-              <MyHref text="← Continue Shopping" src="/" />
+              <MyHref text="← Tiếp tục mua sắm" src="/" />
             </div>
             <hr />
             <div className="flex flex-row items-center gap-2">
               <ShieldCheck size={17} className="text-green-700" />
               <div className="text-xs text-gray-500">
-                Secure checkout — SSL encrypted
+                Thanh toán bảo mật — mã hóa SSL
               </div>
             </div>
           </div>

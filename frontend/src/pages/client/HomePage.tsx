@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { ProductsCard } from "./ProductContext/ProductCard";
@@ -157,6 +157,8 @@ export default function HomePage() {
   const [serviceVideoSrc, setServiceVideoSrc] = useState<string | null>(null);
   const serviceExperienceSectionRef = useRef<HTMLElement | null>(null);
   const serviceVideoRef = useRef<HTMLVideoElement | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -274,6 +276,13 @@ export default function HomePage() {
   const featuredProducts = visibleProducts.slice(0, 8);
 
   const handleAddToCart = async (product: Product) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Bạn cần đăng nhập để thêm vào giỏ hàng!");
+      navigate("/signin", { state: { from: location.pathname } });
+      return;
+    }
+
     const response = await addToCart({
       product_id: Number(product.id),
       quantity: 1,

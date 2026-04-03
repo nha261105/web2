@@ -8,8 +8,10 @@ type MyInputTextType = {
 };
 
 type MyInputForTextType = {
-  className: string;
-  defaultValue: string;
+  className?: string;
+  defaultValue?: string;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder: string;
   title: string;
   htmlFor: string;
@@ -51,13 +53,17 @@ function MyInputText({
 }
 
 function MyInputForText({
-  className,
-  defaultValue,
+  className = "",
+  defaultValue = "",
+  value,
+  onChange,
   placeholder,
   title,
   htmlFor,
 }: MyInputForTextType) {
-  const [value, setValue] = useState(defaultValue);
+  const [internalValue, setInternalValue] = useState(defaultValue);
+  const isControlled = value !== undefined;
+  
   return (
     <div className={`w-full flex flex-col gap-1 ${className}`}>
       <label htmlFor={`${htmlFor}`} className="text-sm font-semibold w-fit">
@@ -66,9 +72,12 @@ function MyInputForText({
       <div className="flex w-full items-center">
         <input
           type="text"
-          value={value}
+          value={isControlled ? value : internalValue}
           id={htmlFor}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => {
+            if (!isControlled) setInternalValue(e.target.value);
+            if (onChange) onChange(e);
+          }}
           placeholder={placeholder}
           className={`w-full rounded-lg outline py-2 px-3 text-sm 
                         outline-gray-400
