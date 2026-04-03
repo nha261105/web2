@@ -22,10 +22,7 @@ import {
 } from "@/services/cartService";
 
 const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-  }).format(value);
+  new Intl.NumberFormat("vi-VN").format(value) + " đ";
 
 const getTodayDateString = () => {
   const now = new Date();

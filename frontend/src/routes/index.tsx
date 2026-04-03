@@ -12,11 +12,13 @@ import CartPage from "@/pages/client/CartPage";
 import CheckoutPage from "@/pages/client/CheckoutPage";
 import ProductDetailPage from "@/pages/client/ProductDetailPage";
 import ProductsPage from "@/pages/client/ProductsPage";
+import CombosPage from "@/pages/client/CombosPage";
 import SignInPage from "@/pages/client/SignInSignOut/SigInPage";
 import SignUpPage from "@/pages/client/SignInSignOut/SignUpPage";
 import AdminOrders from "@/pages/admin/AdminOrders";
 import AdminProducts from "@/pages/admin/AdminProducts";
 import AdminCategories from "@/pages/admin/AdminCategories";
+import AdminCombos from "@/pages/admin/AdminCombos";
 import AdminUsers from "@/pages/admin/AdminUsers";
 import AdminReports from "@/pages/admin/AdminReports";
 import AdminSettings from "@/pages/admin/AdminSettings";
@@ -29,6 +31,7 @@ export const AppRoutes = () => {
       <Route element={<ClientLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/products" element={<ProductsPage />} />
+        <Route path="/combos" element={<CombosPage />} />
         <Route path="/products/:id" element={<ProductDetailPage />} />
 
         {/* Route yêu cầu đăng nhập */}
@@ -43,6 +46,7 @@ export const AppRoutes = () => {
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminDashboard />} />
         <Route path="products" element={<AdminProducts />} />
+        <Route path="combos" element={<AdminCombos />} />
         <Route path="orders" element={<AdminOrders />} />
         <Route path="categories" element={<AdminCategories />} />
         <Route path="users" element={<AdminUsers />} />

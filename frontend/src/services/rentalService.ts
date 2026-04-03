@@ -54,3 +54,22 @@ export async function getMyRentals(params?: RentalParams) {
     return { success: false, message: "Đã xảy ra lỗi không xác định" };
   }
 }
+
+export async function cancelMyRental(id: number) {
+  try {
+    const response = await axios.patch(`${API_BASE_URL}/api/rentals/${id}/cancel`, {}, {
+      headers: getAuthHeader(),
+    });
+    return response.data;
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      return (
+        error.response?.data || {
+          success: false,
+          message: "Lỗi kết nối server",
+        }
+      );
+    }
+    return { success: false, message: "Đã xảy ra lỗi không xác định" };
+  }
+}

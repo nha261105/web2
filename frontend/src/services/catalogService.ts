@@ -39,6 +39,7 @@ type BackendProduct = {
   deposit_price: string | number;
   description: string;
   status: "ACTIVE" | "INACTIVE";
+  stock?: number;
   images?: string[];
   category?: BackendCategory;
   brand?: BackendBrand;
@@ -118,7 +119,7 @@ export function mapBackendProductToUi(product: BackendProduct): Product {
     brand: product.brand?.name ?? "Unknown",
     rating: 0,
     reviews: 0,
-    available: 1,
+    available: product.stock ?? 0,
     specs: {
       Status: product.status,
       Deposit: formatPriceLabel(Number(product.deposit_price ?? 0)),

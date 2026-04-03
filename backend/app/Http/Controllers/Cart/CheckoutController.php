@@ -25,7 +25,7 @@ class CheckoutController extends Controller
         ]);
 
         // Find user's CART
-        $cart = Rental::with('details.product')
+        $cart = Rental::with(['details.product', 'details.combo.comboDetails.product'])
             ->where('user_id', $user->id)
             ->where('status', 'CART')
             ->first();
@@ -41,7 +41,7 @@ class CheckoutController extends Controller
             $cart->save();
         }
 
-        // Bug fix 4: Kiểm tra stock trước khi checkout
+        // Bug fix 4: Kiểm tra stock trước khi checkout (bao gồm Combo)
         foreach ($cart->details as $detail) {
             if ($detail->product) {
                 $stockAvailable = $detail->product->stock ?? 10;
@@ -51,6 +51,18 @@ class CheckoutController extends Controller
                             "Sản phẩm \"{$detail->product->name}\" chỉ còn {$stockAvailable} trong kho, bạn đang đặt {$detail->quantity}."
                         ],
                     ]);
+                }
+            } elseif ($detail->combo) {
+                foreach ($detail->combo->comboDetails as $comboDetail) {
+                    $stockAvailable = $comboDetail->product->stock ?? 10;
+                    $quantityNeeded = $detail->quantity * $comboDetail->quantity;
+                    if ($quantityNeeded > $stockAvailable) {
+                        return ApiResponse::validation([
+                            'stock' => [
+                                "Sản phẩm \"{$comboDetail->product->name}\" (trong combo {$detail->combo->name}) chỉ còn {$stockAvailable} trong kho, bạn cần {$quantityNeeded}."
+                            ],
+                        ]);
+                    }
                 }
             }
         }
@@ -69,6 +81,10 @@ class CheckoutController extends Controller
             
             if ($detail->product) {
                 $depositAmount += ($detail->product->deposit_price ?? 0) * $detail->quantity;
+            } elseif ($detail->combo) {
+                foreach ($detail->combo->comboDetails as $comboDetail) {
+                    $depositAmount += ($comboDetail->product->deposit_price ?? 0) * $detail->quantity * $comboDetail->quantity;
+                }
             }
         }
 
@@ -82,6 +98,29 @@ class CheckoutController extends Controller
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now(),
         ]);
+
+        // Trừ stock ngay lập tức
+        foreach ($cart->details as $detail) {
+            if ($detail->product) {
+                $detail->product->decrement('stock', $detail->quantity);
+                $detail->product->refresh();
+                if ($detail->product->stock < 1) {
+                    $detail->product->update(['status' => 'INACTIVE']);
+                }
+            } elseif ($detail->combo) {
+                foreach ($detail->combo->comboDetails as $comboDetail) {
+                    $product = $comboDetail->product;
+                    if ($product) {
+                        $qty = $detail->quantity * $comboDetail->quantity;
+                        $product->decrement('stock', $qty);
+                        $product->refresh();
+                        if ($product->stock < 1) {
+                            $product->update(['status' => 'INACTIVE']);
+                        }
+                    }
+                }
+            }
+        }
 
         return ApiResponse::success([
             'rental' => $cart,
