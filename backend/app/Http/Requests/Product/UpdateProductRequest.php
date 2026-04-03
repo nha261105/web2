@@ -24,11 +24,6 @@ class UpdateProductRequest extends FormRequest
         $productId = $this->route('product') ?? $this->route('id');
 
         return [
-            'policies_id' => [
-                'sometimes',
-                'integer',
-                'exists:rental_policies,id',
-            ],
             'category_id' => ['sometimes', 'integer', 'exists:categories,id'],
             'brand_id' => ['sometimes', 'integer', 'exists:brands,id'],
             'name' => ['sometimes', 'required', 'string', 'max:255'],

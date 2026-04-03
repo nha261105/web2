@@ -1,6 +1,5 @@
 import axios from "axios";
 import { API_BASE_URL } from "@/config/api";
-import type { Product } from "@/pages/client/data";
 
 export interface ComboDetail {
   id: number;
@@ -82,9 +81,13 @@ export async function createCombo(data: CreateComboPayload) {
 
 export async function updateCombo(id: number, data: UpdateComboPayload) {
   try {
-    const response = await axios.patch(`${API_BASE_URL}/api/combos/${id}`, data, {
-      headers: getAuthHeader(),
-    });
+    const response = await axios.patch(
+      `${API_BASE_URL}/api/combos/${id}`,
+      data,
+      {
+        headers: getAuthHeader(),
+      },
+    );
     return response.data;
   } catch (error: any) {
     return (

@@ -60,9 +60,7 @@ return new class extends Migration {
 
         Schema::create('permissions', function (Blueprint $table) {
             $table->id();
-            $table
-                ->enum('name', ['CREATE', 'DELETE', 'UPDATE', 'READ'])
-                ->unique();
+            $table->string('name', 100)->unique();
         });
 
         Schema::create('role_has_permission', function (Blueprint $table) {
@@ -70,6 +68,13 @@ return new class extends Migration {
             $table->foreignId('role_id')->constrained('roles');
             $table->foreignId('permission_id')->constrained('permissions');
             $table->unique(['role_id', 'permission_id']);
+        });
+
+        Schema::create('user_has_permission', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained('users');
+            $table->foreignId('permission_id')->constrained('permissions');
+            $table->unique(['user_id', 'permission_id']);
         });
 
         Schema::create('categories', function (Blueprint $table) {
@@ -191,7 +196,10 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('user_id')->constrained('users');
             $table->foreignId('coupon_id')->nullable()->constrained('coupons');
-            $table->foreignId('address_id')->nullable()->constrained('addresses');
+            $table
+                ->foreignId('address_id')
+                ->nullable()
+                ->constrained('addresses');
             $table->string('code', 100)->unique();
             $table->timestamp('start_date')->nullable();
             $table->timestamp('end_date')->nullable();
@@ -317,6 +325,7 @@ return new class extends Migration {
         Schema::dropIfExists('brands');
         Schema::dropIfExists('categories');
         Schema::dropIfExists('role_has_permission');
+        Schema::dropIfExists('user_has_permission');
         Schema::dropIfExists('permissions');
         Schema::dropIfExists('user_roles');
         Schema::dropIfExists('roles');

@@ -1,6 +1,14 @@
 import {
-  LayoutDashboard, Factory, Box, ShoppingBag,
-  Tag, Users, ChartColumn, Settings, LogOut,
+  LayoutDashboard,
+  Factory,
+  Box,
+  ShoppingBag,
+  Tag,
+  Users,
+  ChartColumn,
+  Settings,
+  LogOut,
+  BadgeAlert,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { signout } from "@/services/usersService";
@@ -12,20 +20,105 @@ export default function SideBar() {
   const authUser = (() => {
     try {
       const saved = localStorage.getItem("auth_user");
-      return (saved && saved !== "undefined") ? JSON.parse(saved) : null;
-    } catch { return null; }
+      return saved && saved !== "undefined" ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
   })();
 
+  const authPermissions = (() => {
+    try {
+      const saved = localStorage.getItem("auth_permissions");
+      const parsed = saved ? JSON.parse(saved) : [];
+      return Array.isArray(parsed) ? (parsed as string[]) : [];
+    } catch {
+      return [];
+    }
+  })();
+
+  const hasAnyPermission = (required?: string[]) => {
+    if (!required || required.length === 0) {
+      return true;
+    }
+
+    const roles = authUser?.roles || [];
+    const hasAdminRole = roles.some((r: any) => typeof r === "string" ? r === "ADMIN" : r.name === "ADMIN");
+
+    if (hasAdminRole) {
+      return true;
+    }
+
+    return required.some((perm) =>
+      authPermissions.some((owned) => owned === perm || owned.startsWith(perm)),
+    );
+  };
+
   const listFunction = [
-    { id: 1, label: "Dashboard", icons: <LayoutDashboard color="#ffffff" />, address: "/admin", exact: true },
-    { id: 2, label: "Products", icons: <Box color="#ffffff" />, address: "/admin/products" },
-    { id: 8, label: "Combos", icons: <Tag color="#ffffff" />, address: "/admin/combos" },
-    { id: 3, label: "Orders", icons: <ShoppingBag color="#ffffff" />, address: "/admin/orders" },
-    { id: 4, label: "Categories", icons: <Tag color="#ffffff" />, address: "/admin/categories" },
-    { id: 5, label: "Users", icons: <Users color="#ffffff" />, address: "/admin/users" },
-    { id: 6, label: "Reports", icons: <ChartColumn color="#ffffff" />, address: "/admin/reports" },
-    { id: 7, label: "Settings", icons: <Settings color="#ffffff" />, address: "/admin/settings" },
-  ];
+    {
+      id: 1,
+      label: "Dashboard",
+      icons: <LayoutDashboard color="#ffffff" />,
+      address: "/admin",
+      exact: true,
+      permissions: ["ADMIN_DASHBOARD_VIEW", "ADMIN_"],
+    },
+    {
+      id: 2,
+      label: "Sản phẩm",
+      icons: <Box color="#ffffff" />,
+      address: "/admin/products",
+      permissions: ["PRODUCT_"],
+    },
+    {
+      id: 8,
+      label: "Combo",
+      icons: <Tag color="#ffffff" />,
+      address: "/admin/combos",
+      permissions: ["COMBO_"],
+    },
+    {
+      id: 3,
+      label: "Đơn thuê",
+      icons: <ShoppingBag color="#ffffff" />,
+      address: "/admin/orders",
+      permissions: ["RENTAL_", "RETURN_ORDER_"],
+    },
+    {
+      id: 9,
+      label: "Khoản phạt",
+      icons: <BadgeAlert color="#ffffff" />,
+      address: "/admin/penalties",
+      permissions: ["RENTAL_ISSUE_"],
+    },
+    {
+      id: 4,
+      label: "Danh mục",
+      icons: <Tag color="#ffffff" />,
+      address: "/admin/categories",
+      permissions: ["CATEGORY_"],
+    },
+    {
+      id: 5,
+      label: "Người dùng",
+      icons: <Users color="#ffffff" />,
+      address: "/admin/users",
+      permissions: ["USER_"],
+    },
+    {
+      id: 6,
+      label: "Báo cáo",
+      icons: <ChartColumn color="#ffffff" />,
+      address: "/admin/reports",
+      permissions: ["ADMIN_"],
+    },
+    {
+      id: 7,
+      label: "Phân quyền",
+      icons: <Settings color="#ffffff" />,
+      address: "/admin/settings",
+      permissions: ["RBAC_"],
+    },
+  ].filter((item) => hasAnyPermission(item.permissions));
 
   const isActive = (address: string, exact?: boolean) => {
     if (exact) return location.pathname === address;
@@ -35,6 +128,7 @@ export default function SideBar() {
   const handleLogout = async () => {
     await signout();
     localStorage.removeItem("token");
+    localStorage.removeItem("auth_permissions");
     navigate("/signin", { replace: true });
   };
 
@@ -44,7 +138,9 @@ export default function SideBar() {
       <div className="flex gap-3 items-center justify-start border-b border-b-gray-700 p-5">
         <Factory size={30} color="#1251e5" strokeWidth={2} />
         <div className="flex flex-col items-start">
-          <span className="text-xl font-bold text-white hidden sm:block">RentalEM</span>
+          <span className="text-xl font-bold text-white hidden sm:block">
+            RentalEM
+          </span>
           <span className="text-sm text-gray-400 italic">admin panel</span>
         </div>
       </div>
@@ -56,10 +152,11 @@ export default function SideBar() {
             <Link
               key={item.address}
               to={item.address}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive(item.address, item.exact)
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                isActive(item.address, item.exact)
                   ? "bg-[#0052CC] text-white"
                   : "text-gray-400 hover:text-white hover:bg-gray-800"
-                }`}
+              }`}
             >
               {item.icons}
               {item.label}
@@ -74,7 +171,12 @@ export default function SideBar() {
           {/* Avatar initials */}
           <div className="w-9 h-9 rounded-xl bg-[#0052CC] flex items-center justify-center text-white text-xs font-bold shrink-0">
             {authUser?.full_name
-              ? authUser.full_name.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()
+              ? authUser.full_name
+                  .split(" ")
+                  .map((n: string) => n[0])
+                  .slice(0, 2)
+                  .join("")
+                  .toUpperCase()
               : "A"}
           </div>
           <div className="flex-1 min-w-0">

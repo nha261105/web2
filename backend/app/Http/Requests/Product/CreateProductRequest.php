@@ -22,11 +22,6 @@ class CreateProductRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'policies_id' => [
-                'required',
-                'integer',
-                'exists:rental_policies,id',
-            ],
             'category_id' => ['required', 'integer', 'exists:categories,id'],
             'brand_id' => ['required', 'integer', 'exists:brands,id'],
             'name' => ['required', 'string', 'max:255'],

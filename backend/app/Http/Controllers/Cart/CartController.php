@@ -34,9 +34,12 @@ class CartController extends Controller
             ->first();
 
         if (!$rental || $rental->details->isEmpty()) {
-            return ApiResponse::success([
-                'items' => [],
-            ], 'Cart loaded successfully');
+            return ApiResponse::success(
+                [
+                    'items' => [],
+                ],
+                'Cart loaded successfully',
+            );
         }
 
         $rentalDays = 1;
@@ -46,7 +49,10 @@ class CartController extends Controller
             $rentalDays = max(1, $start->diffInDays($end) + 1);
         }
 
-        $payload = $rental->details->map(function ($detail) use ($rentalDays, $rental) {
+        $payload = $rental->details->map(function ($detail) use (
+            $rentalDays,
+            $rental,
+        ) {
             $product = $detail->product;
             $combo = $detail->combo;
             $image = null;
@@ -90,9 +96,12 @@ class CartController extends Controller
             ];
         });
 
-        return ApiResponse::success([
-            'items' => $payload->toArray(),
-        ], 'Cart loaded successfully');
+        return ApiResponse::success(
+            [
+                'items' => $payload->toArray(),
+            ],
+            'Cart loaded successfully',
+        );
     }
 
     public function store(Request $request): JsonResponse
@@ -117,7 +126,9 @@ class CartController extends Controller
 
         if (!empty($payload['product_id']) && !empty($payload['combo_id'])) {
             return ApiResponse::validation([
-                'product_id' => ['product_id and combo_id cannot be submitted together'],
+                'product_id' => [
+                    'product_id and combo_id cannot be submitted together',
+                ],
             ]);
         }
 
@@ -139,11 +150,16 @@ class CartController extends Controller
             ->where('status', 'CART')
             ->first();
 
-        $rentalDays = $cart ? $this->calculateRentalDays($cart) : $payload['rental_days'];
+        $rentalDays = $cart
+            ? $this->calculateRentalDays($cart)
+            : $payload['rental_days'];
 
-        return ApiResponse::success([
-            'item' => $this->formatCartDetail($item, $rentalDays),
-        ], 'Item added to cart successfully');
+        return ApiResponse::success(
+            [
+                'item' => $this->formatCartDetail($item, $rentalDays),
+            ],
+            'Item added to cart successfully',
+        );
     }
 
     public function rentNow(Request $request): JsonResponse
@@ -168,7 +184,9 @@ class CartController extends Controller
 
         if (!empty($payload['product_id']) && !empty($payload['combo_id'])) {
             return ApiResponse::validation([
-                'product_id' => ['product_id and combo_id cannot be submitted together'],
+                'product_id' => [
+                    'product_id and combo_id cannot be submitted together',
+                ],
             ]);
         }
 
@@ -190,19 +208,26 @@ class CartController extends Controller
             ->where('status', 'CART')
             ->first();
 
-        $rentalDays = $cart ? $this->calculateRentalDays($cart) : $payload['rental_days'];
+        $rentalDays = $cart
+            ? $this->calculateRentalDays($cart)
+            : $payload['rental_days'];
 
-        return ApiResponse::success([
-            'checkout_url' => '/checkout',
-            'item' => $this->formatCartDetail($item, $rentalDays),
-        ], 'Item added to cart. Ready to checkout');
+        return ApiResponse::success(
+            [
+                'checkout_url' => '/checkout',
+                'item' => $this->formatCartDetail($item, $rentalDays),
+            ],
+            'Item added to cart. Ready to checkout',
+        );
     }
 
     // Hàm cập nhật sản phẩm
     public function updateItem(Request $request, int $itemId): JsonResponse
     {
         $user = $request->attributes->get('auth_user');
-        if (!$user) return ApiResponse::unauthorized();
+        if (!$user) {
+            return ApiResponse::unauthorized();
+        }
 
         $payload = $request->validate([
             'quantity' => ['required', 'integer', 'min:1'],
@@ -211,21 +236,27 @@ class CartController extends Controller
         $cart = Rental::where('user_id', $user->id)
             ->where('status', 'CART')
             ->first();
-        if (!$cart) return ApiResponse::notFound('Cart not found');
+        if (!$cart) {
+            return ApiResponse::notFound('Cart not found');
+        }
 
         $detail = RentalDetail::where('id', $itemId)
             ->where('rental_id', $cart->id)
             ->first();
-        if (!$detail) return ApiResponse::notFound('Cart item not found');
+        if (!$detail) {
+            return ApiResponse::notFound('Cart item not found');
+        }
 
         // Check stock
         if ($detail->product_id) {
             $product = $detail->product;
             if ($product) {
-                $stockAvailable = $product->stock ?? 10;
+                $stockAvailable = $this->getAvailableStock($product);
                 if ($payload['quantity'] > $stockAvailable) {
                     return ApiResponse::validation([
-                        'quantity' => ["Số lượng vượt quá tồn kho hiện tại (Tồn: {$stockAvailable})"],
+                        'quantity' => [
+                            "Số lượng vượt quá tồn kho hiện tại (Tồn: {$stockAvailable})",
+                        ],
                     ]);
                 }
             }
@@ -243,23 +274,29 @@ class CartController extends Controller
     {
         // Log::info("DEBUG");
         $user = $request->attributes->get('auth_user');
-        if (!$user) return ApiResponse::unauthorized();
-        
+        if (!$user) {
+            return ApiResponse::unauthorized();
+        }
+
         $payload = $request->validate([
             'return_date' => ['required', 'date'],
-            ]);
-            
+        ]);
+
         $cart = Rental::where('user_id', $user->id)
             ->where('status', 'CART')
             ->first();
-        if (!$cart) return ApiResponse::notFound('Cart not found');
-            
+        if (!$cart) {
+            return ApiResponse::notFound('Cart not found');
+        }
+
         $startDate = Carbon::now()->startOfDay();
         $returnDate = Carbon::parse($payload['return_date']);
-                    
+
         if ($returnDate->lt($startDate)) {
             return ApiResponse::validation([
-                'return_date' => ['Return date must be same or after start date'],
+                'return_date' => [
+                    'Return date must be same or after start date',
+                ],
             ]);
         }
 
@@ -269,32 +306,41 @@ class CartController extends Controller
 
         $this->updateCartTotals($cart);
 
-        return ApiResponse::success([
-            'return_date' => $cart->end_date->format('Y-m-d'),
-            'rental_days' => $this->calculateRentalDays($cart),
-        ], 'Cart return date updated successfully');
+        return ApiResponse::success(
+            [
+                'return_date' => $cart->end_date->format('Y-m-d'),
+                'rental_days' => $this->calculateRentalDays($cart),
+            ],
+            'Cart return date updated successfully',
+        );
     }
 
     /**
      * Hàm xóa item khỏi giỏ hàng
-     * */  
+     * */
     public function destroyItem(Request $request, int $itemId): JsonResponse
     {
         // Lấy thông tin user
         $user = $request->attributes->get('auth_user');
-        if (!$user) return ApiResponse::unauthorized();
+        if (!$user) {
+            return ApiResponse::unauthorized();
+        }
 
         // Lấy danh sách sản phẩm trong giỏ hàng
         $cart = Rental::where('user_id', $user->id)
             ->where('status', 'CART')
             ->first();
-        if (!$cart) return ApiResponse::notFound('Cart not found');
+        if (!$cart) {
+            return ApiResponse::notFound('Cart not found');
+        }
 
         // Lấy thông tin sản phẩm trong giỏ hàng
         $detail = RentalDetail::where('id', $itemId)
             ->where('rental_id', $cart->id)
             ->first();
-        if (!$detail) return ApiResponse::notFound('Cart item not found');
+        if (!$detail) {
+            return ApiResponse::notFound('Cart item not found');
+        }
 
         // Xóa item đó và cập nhật lại tổng tiền
         $detail->delete();
@@ -304,8 +350,10 @@ class CartController extends Controller
         return ApiResponse::success([], 'Cart item removed successfully');
     }
 
-    private function createOrUpdateCartItem($user, array $payload): ?RentalDetail
-    {
+    private function createOrUpdateCartItem(
+        $user,
+        array $payload,
+    ): ?RentalDetail {
         $productId = $payload['product_id'] ?? null;
         $comboId = $payload['combo_id'] ?? null;
         $quantity = $payload['quantity'];
@@ -347,9 +395,11 @@ class CartController extends Controller
             $detail = $query->first();
 
             $totalRequested = ($detail ? $detail->quantity : 0) + $quantity;
-            $stockAvailable = $product->stock ?? 10;
+            $stockAvailable = $this->getAvailableStock($product);
             if ($totalRequested > $stockAvailable) {
-                throw new \Exception("Vượt quá số lượng tồn kho (Tồn: {$stockAvailable})");
+                throw new \Exception(
+                    "Vượt quá số lượng tồn kho (Tồn: {$stockAvailable})",
+                );
             }
         }
 
@@ -372,8 +422,9 @@ class CartController extends Controller
         } else {
             $currentDays = $this->calculateRentalDays($cart);
             if ($rentalDays > $currentDays) {
-                $cart->end_date = Carbon::parse($cart->start_date)
-                    ->addDays(max(1, $rentalDays - 1));
+                $cart->end_date = Carbon::parse($cart->start_date)->addDays(
+                    max(1, $rentalDays - 1),
+                );
                 $cart->save();
             }
         }
@@ -411,8 +462,11 @@ class CartController extends Controller
     private function updateCartTotals(Rental $cart): void
     {
         $rentalDays = $this->calculateRentalDays($cart);
-        $total = $cart->details->reduce(function ($sum, $detail) use ($rentalDays) {
-            return $sum + ($detail->price_at_rental * $detail->quantity * $rentalDays);
+        $total = $cart->details->reduce(function ($sum, $detail) use (
+            $rentalDays,
+        ) {
+            return $sum +
+                $detail->price_at_rental * $detail->quantity * $rentalDays;
         }, 0);
 
         $cart->total_price = $total;
@@ -430,8 +484,10 @@ class CartController extends Controller
         return 1;
     }
 
-    private function formatCartDetail(RentalDetail $detail, int $rentalDays): array
-    {
+    private function formatCartDetail(
+        RentalDetail $detail,
+        int $rentalDays,
+    ): array {
         $product = $detail->product;
         $combo = $detail->combo;
 
@@ -442,7 +498,10 @@ class CartController extends Controller
             'rental_days' => $rentalDays,
             'return_date' => $detail->rental?->end_date?->format('Y-m-d'),
             'unit_price' => (float) $detail->price_at_rental,
-            'total_price' => (float) ($detail->price_at_rental * $detail->quantity * $rentalDays),
+            'total_price' =>
+                (float) ($detail->price_at_rental *
+                    $detail->quantity *
+                    $rentalDays),
             'product' => $product
                 ? [
                     'id' => $product->id,
@@ -468,11 +527,23 @@ class CartController extends Controller
 
     private function resolveCartAddressId($user): ?int
     {
-        $defaultAddress = $user->addresses()->where('is_default', true)->first();
+        $defaultAddress = $user
+            ->addresses()
+            ->where('is_default', true)
+            ->first();
         if ($defaultAddress) {
             return $defaultAddress->id;
         }
 
         return $user->addresses()->orderBy('id')->value('id');
+    }
+
+    private function getAvailableStock(Product $product): int
+    {
+        return (int) $product
+            ->inventories()
+            ->where('status', 'AVAILABLE')
+            ->whereNull('deleted_at')
+            ->count();
     }
 }

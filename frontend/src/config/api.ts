@@ -18,6 +18,8 @@ export const API_ENDPOINTS = {
 
   //Roles
   roles: "/api/roles",
+  permissions: "/api/permissions",
+  rolePermissions: (roleId: number) => `/api/roles/${roleId}/permissions`,
 
   // Catalog
   products: "/api/products",
@@ -35,6 +37,12 @@ export const API_ENDPOINTS = {
   // Address
   address: "/api/me/address",
   addressById: (idAddress: number) => `/api/me/address/${idAddress}`,
+
+  // Rental
+  rentals: "/api/rentals",
+  returnOrders: "/api/return-orders",
+  rentalIssues: "/api/rental-issues",
+  myRentalIssues: "/api/my/rental-issues",
 
   // Admin
   adminDashboard: "/api/admin/dashboard",

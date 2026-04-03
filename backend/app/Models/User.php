@@ -13,7 +13,6 @@ use App\Models\Address;
 use App\Models\UserInfo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-
 class User extends Authenticatable
 {
     use HasFactory;
@@ -55,6 +54,16 @@ class User extends Authenticatable
         );
     }
 
+    public function permissions(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Permission::class,
+            'user_has_permission',
+            'user_id',
+            'permission_id',
+        );
+    }
+
     public function hasRole(string $roleName): bool
     {
         return $this->roles->pluck('name')->contains($roleName);
@@ -62,11 +71,18 @@ class User extends Authenticatable
 
     public function hasPermission(string $permissionName): bool
     {
-        return $this->roles()
-            ->whereHas('permissions', function ($query) use ($permissionName) {
-                $query->where('name', $permissionName);
-            })
-            ->exists();
+        // Use eager loaded relations to prevent N+1 queries.
+        if ($this->permissions->pluck('name')->contains($permissionName)) {
+            return true;
+        }
+
+        foreach ($this->roles as $role) {
+            if ($role->permissions->pluck('name')->contains($permissionName)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function scopeActive(Builder $query): Builder

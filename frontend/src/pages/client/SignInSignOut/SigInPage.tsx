@@ -6,14 +6,13 @@ import {
   MyInputForTextIcon,
   MyInputForTextPass,
 } from "@/components/ui/input/my-input-text";
-import { getMe, signin } from "@/services/usersService";
+import { getAuthMe, signin } from "@/services/usersService";
 import { checkToken } from "@/services/userTokensService";
 import { ArrowRight, Check, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Fragment } from "react/jsx-runtime";
-
 
 function extractRoles(payload: unknown): string[] {
   const data = payload as
@@ -36,6 +35,50 @@ function extractRoles(payload: unknown): string[] {
   return [];
 }
 
+function extractPermissions(payload: unknown): string[] {
+  const data = payload as
+    | {
+        permissions?: string[];
+        user?: { permissions?: string[] };
+      }
+    | undefined;
+
+  if (Array.isArray(data?.permissions)) {
+    return data.permissions;
+  }
+
+  if (Array.isArray(data?.user?.permissions)) {
+    return data.user.permissions;
+  }
+
+  return [];
+}
+
+const ADMIN_ENTRY_PREFIXES = [
+  "ADMIN_",
+  "RBAC_",
+  "USER_",
+  "PRODUCT_",
+  "CATEGORY_",
+  "BRAND_",
+  "COMBO_",
+  "COUPON_",
+  "RENTAL_",
+  "RETURN_ORDER_",
+  "TRANSACTION_",
+  "RENTAL_POLICY_",
+  "RENTAL_ISSUE_",
+];
+
+function hasAdminAccess(roles: string[] | undefined, permissions: string[]) {
+  return Boolean(
+    roles?.includes("ADMIN") ||
+    permissions.some((permission) =>
+      ADMIN_ENTRY_PREFIXES.some((prefix) => permission.startsWith(prefix)),
+    ),
+  );
+}
+
 export default function SignInPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -43,11 +86,18 @@ export default function SignInPage() {
   const [password, setPassword] = useState("");
   const [isRemember, setIsRemember] = useState(false);
 
-  const getRedirectPathByRole = (roles: string[] | undefined) => {
-    // Ưu tiên redirect param nếu có (VD: từ ProtectedRoute)
+  const getRedirectPath = (
+    roles: string[] | undefined,
+    permissions: string[],
+  ) => {
+    const canAccessAdmin = hasAdminAccess(roles, permissions);
+
+    // Ưu tiên vào admin nếu tài khoản có quyền admin, bỏ qua redirect param.
+    if (canAccessAdmin) return "/admin";
+
+    // Nếu không có quyền admin thì mới dùng redirect param.
     const redirectParam = searchParams.get("redirect");
     if (redirectParam) return redirectParam;
-    if (roles?.includes("ADMIN")) return "/admin";
     return "/";
   };
 
@@ -58,13 +108,14 @@ export default function SignInPage() {
         return;
       }
 
-      const me = await getMe();
+      const me = await getAuthMe();
       if (!me?.success) {
         return;
       }
 
       const roles = extractRoles(me?.data);
-      navigate(getRedirectPathByRole(roles), { replace: true });
+      const permissions = extractPermissions(me?.data);
+      navigate(getRedirectPath(roles, permissions), { replace: true });
     }
     void validateToken();
   }, [navigate]);
@@ -77,9 +128,11 @@ export default function SignInPage() {
         user?: {
           status?: string;
           roles?: Array<{ id: number; name: string }>;
+          permissions?: string[];
         };
         token?: { access_token?: string } | string;
         roles?: string[];
+        permissions?: string[];
       };
       const userData = payload.user;
 
@@ -108,9 +161,14 @@ export default function SignInPage() {
 
       localStorage.setItem("token", token);
       localStorage.setItem("auth_user", JSON.stringify(userData));
+      localStorage.setItem(
+        "auth_permissions",
+        JSON.stringify(payload.permissions ?? userData.permissions ?? []),
+      );
 
       const roles = extractRoles(payload);
-      const redirectPath = getRedirectPathByRole(roles);
+      const permissions = extractPermissions(payload);
+      const redirectPath = getRedirectPath(roles, permissions);
       navigate(redirectPath, { replace: true });
     } else {
       // Xử lý lỗi từ backend

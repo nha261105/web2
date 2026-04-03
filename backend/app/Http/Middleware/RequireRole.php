@@ -20,6 +20,11 @@ class RequireRole
             return ApiResponse::unauthorized();
         }
 
+        // ADMIN can access routes protected by other role gates.
+        if ($user->hasRole('ADMIN')) {
+            return $next($request);
+        }
+
         foreach ($roles as $role) {
             if ($user->hasRole($role)) {
                 return $next($request);

@@ -6,12 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+
 class Product extends Model
 {
     use SoftDeletes;
     protected $table = 'products';
     protected $fillable = [
-        'policies_id',
         'category_id',
         'brand_id',
         'name',
@@ -42,12 +42,14 @@ class Product extends Model
     {
         return $this->hasMany(ProductImage::class, 'product_id');
     }
-    public function policy(): BelongsTo
-    {
-        return $this->belongsTo(RentalPolicy::class, 'policies_id');
-    }
+
     public function comboDetail(): HasMany
     {
         return $this->hasMany(ComboDetail::class);
+    }
+
+    public function inventories(): HasMany
+    {
+        return $this->hasMany(Inventory::class, 'product_id');
     }
 }

@@ -3,7 +3,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import SideBar from "./SideBar";
 import TopBar from "./TopBar";
 import { checkToken } from "@/services/userTokensService";
-import { getMe } from "@/services/usersService";
+import { getAuthMe } from "@/services/usersService";
 
 function extractRoles(payload: unknown): string[] {
   const data = payload as
@@ -24,6 +24,42 @@ function extractRoles(payload: unknown): string[] {
   }
 
   return [];
+}
+
+function extractPermissions(payload: unknown): string[] {
+  const data = payload as { permissions?: string[] } | undefined;
+  if (!Array.isArray(data?.permissions)) {
+    return [];
+  }
+
+  return data.permissions.filter(
+    (name): name is string => typeof name === "string" && name.length > 0,
+  );
+}
+
+const ADMIN_ENTRY_PREFIXES = [
+  "ADMIN_",
+  "RBAC_",
+  "USER_",
+  "PRODUCT_",
+  "CATEGORY_",
+  "BRAND_",
+  "COMBO_",
+  "COUPON_",
+  "RENTAL_",
+  "RETURN_ORDER_",
+  "TRANSACTION_",
+  "RENTAL_POLICY_",
+  "RENTAL_ISSUE_",
+];
+
+function hasAdminAccess(roles: string[], permissions: string[]) {
+  return (
+    roles.includes("ADMIN") ||
+    permissions.some((permission) =>
+      ADMIN_ENTRY_PREFIXES.some((prefix) => permission.startsWith(prefix)),
+    )
+  );
 }
 
 export default function AdminLayout() {
@@ -47,12 +83,16 @@ export default function AdminLayout() {
         return;
       }
 
-      const meResult = await getMe();
+      const meResult = await getAuthMe();
       const roles = extractRoles(meResult?.data);
-      if (!meResult?.success || !roles?.includes("ADMIN")) {
+      const permissions = extractPermissions(meResult?.data);
+
+      if (!meResult?.success || !hasAdminAccess(roles, permissions)) {
         navigate("/", { replace: true });
         return;
       }
+
+      localStorage.setItem("auth_permissions", JSON.stringify(permissions));
 
       setIsCheckingAuth(false);
     };

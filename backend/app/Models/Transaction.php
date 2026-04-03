@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Transaction extends Model
 {
@@ -21,4 +22,14 @@ class Transaction extends Model
     ];
 
     public $timestamps = false;
+
+    public function issue(): BelongsTo
+    {
+        return $this->belongsTo(RentalIssue::class, 'issue_id');
+    }
+
+    public function rental(): BelongsTo
+    {
+        return $this->belongsTo(Rental::class, 'rental_id');
+    }
 }

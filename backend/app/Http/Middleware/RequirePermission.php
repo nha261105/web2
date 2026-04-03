@@ -20,6 +20,11 @@ class RequirePermission
             return ApiResponse::unauthorized();
         }
 
+        // ADMIN is a super-role and can execute any permission-guarded action.
+        if ($user->hasRole('ADMIN')) {
+            return $next($request);
+        }
+
         foreach ($permissions as $permission) {
             if ($user->hasPermission($permission)) {
                 return $next($request);

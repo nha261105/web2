@@ -16,7 +16,6 @@ class ProductResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'policies_id' => $this->policies_id,
             'category_id' => $this->category_id,
             'brand_id' => $this->brand_id,
             'name' => $this->name,
@@ -25,7 +24,12 @@ class ProductResource extends JsonResource
             'deposit_price' => $this->deposit_price,
             'description' => $this->description,
             'status' => $this->status,
-            'stock' => $this->stock,
+            'stock' =>
+                (int) ($this->stock ??
+                    $this->inventories()
+                        ->where('status', 'AVAILABLE')
+                        ->whereNull('deleted_at')
+                        ->count()),
             'category' => new CategoryResource($this->whenLoaded('category')),
             'brand' => new BrandResource($this->whenLoaded('brand')),
             'images' => $this->whenLoaded(
@@ -35,7 +39,12 @@ class ProductResource extends JsonResource
 
                     return $this->images
                         ->pluck('image_url')
-                        ->map(fn($url) => $storage->toAccessibleUrl((string) $url, 86400))
+                        ->map(
+                            fn($url) => $storage->toAccessibleUrl(
+                                (string) $url,
+                                86400,
+                            ),
+                        )
                         ->values();
                 },
                 [],

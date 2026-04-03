@@ -12,9 +12,42 @@ use Illuminate\Http\Request;
 
 class RbacController extends Controller
 {
+    private function normalizePermissionIds(array $permissionIds): array
+    {
+        $permissions = Permission::query()
+            ->whereIn('id', $permissionIds)
+            ->get(['id', 'name']);
+
+        $normalized = $permissions->pluck('id')->all();
+
+        foreach ($permissions as $permission) {
+            $parts = explode('_', $permission->name);
+            if (count($parts) < 2) {
+                continue;
+            }
+
+            $readPermissionName = $parts[0] . '_READ';
+            $readPermissionId = Permission::query()
+                ->where('name', $readPermissionName)
+                ->value('id');
+
+            if (
+                $readPermissionId &&
+                !in_array($readPermissionId, $normalized, true)
+            ) {
+                $normalized[] = (int) $readPermissionId;
+            }
+        }
+
+        return array_values(array_unique(array_map('intval', $normalized)));
+    }
+
     public function roles(): JsonResponse
     {
-        $roles = Role::query()->orderBy('id')->get();
+        $roles = Role::query()
+            ->with('permissions:id,name')
+            ->orderBy('id')
+            ->get();
         return ApiResponse::success($roles->toArray());
     }
 
@@ -27,7 +60,18 @@ class RbacController extends Controller
     public function userRoles(int $id): JsonResponse
     {
         $user = User::with('roles')->findOrFail($id);
-        return ApiResponse::success($user->roles->toArray());
+        return ApiResponse::success([
+            'roles' => $user->roles->toArray(),
+        ]);
+    }
+
+    public function userPermissions(int $id): JsonResponse
+    {
+        $user = User::with('permissions')->findOrFail($id);
+
+        return ApiResponse::success([
+            'permissions' => $user->permissions->toArray(),
+        ]);
     }
 
     public function assignRoleToUser(Request $request, int $id): JsonResponse
@@ -58,8 +102,32 @@ class RbacController extends Controller
         ]);
 
         $role = Role::findOrFail($id);
-        $role->permissions()->sync($validated['permission_ids']);
+        $role
+            ->permissions()
+            ->sync($this->normalizePermissionIds($validated['permission_ids']));
 
         return ApiResponse::success([], 'Permissions updated successfully');
+    }
+
+    public function syncUserPermissions(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'permission_ids' => 'present|array',
+            'permission_ids.*' => 'integer|exists:permissions,id',
+        ]);
+
+        $user = User::findOrFail($id);
+        $user
+            ->permissions()
+            ->sync(
+                $this->normalizePermissionIds(
+                    $validated['permission_ids'] ?? [],
+                ),
+            );
+
+        return ApiResponse::success(
+            [],
+            'User permissions updated successfully',
+        );
     }
 }

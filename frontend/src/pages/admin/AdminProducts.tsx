@@ -18,13 +18,11 @@ import {
   getProductFormOptions,
   type ProductBrandOption,
   type ProductCategoryOption,
-  type ProductPolicyOption,
   type Product,
   AdminApiError,
 } from "@/services/adminProductsService";
 
 type AddProductFormState = {
-  policies_id: string;
   slug: string;
   name: string;
   description: string;
@@ -38,7 +36,6 @@ type AddProductFormState = {
 };
 
 const initialFormState: AddProductFormState = {
-  policies_id: "",
   slug: "",
   name: "",
   description: "",
@@ -68,13 +65,21 @@ function parseImageUrls(value: string): string[] {
     .filter(Boolean);
 }
 
+function formatCurrencyVnd(value: string | number | null | undefined): string {
+  const amount = Number(value ?? 0);
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0,
+  }).format(Number.isFinite(amount) ? amount : 0);
+}
+
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categoryOptions, setCategoryOptions] = useState<
     ProductCategoryOption[]
   >([]);
   const [brandOptions, setBrandOptions] = useState<ProductBrandOption[]>([]);
-  const [policyOptions, setPolicyOptions] = useState<ProductPolicyOption[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingOptions, setIsLoadingOptions] = useState(true);
@@ -100,7 +105,9 @@ export default function AdminProducts() {
       setTotal(result.total);
     } catch (err) {
       const message =
-        err instanceof AdminApiError ? err.message : "Failed to load products";
+        err instanceof AdminApiError
+          ? err.message
+          : "Không thể tải danh sách sản phẩm";
       setError(message);
     } finally {
       setIsLoading(false);
@@ -118,12 +125,11 @@ export default function AdminProducts() {
         const options = await getProductFormOptions();
         setCategoryOptions(options.categories);
         setBrandOptions(options.brands);
-        setPolicyOptions(options.policies);
       } catch (err) {
         const message =
           err instanceof AdminApiError
             ? err.message
-            : "Failed to load category, brand and policy options";
+            : "Không thể tải danh mục, thương hiệu và chính sách thuê";
         setError(message);
       } finally {
         setIsLoadingOptions(false);
@@ -138,7 +144,6 @@ export default function AdminProducts() {
 
     const normalizedSlug = form.slug.trim() || slugify(form.name);
     if (
-      !form.policies_id ||
       !form.category_id ||
       !form.brand_id ||
       !form.name.trim() ||
@@ -148,14 +153,13 @@ export default function AdminProducts() {
       !form.daily_price ||
       !form.status
     ) {
-      setError("Please fill in all required fields");
+      setError("Vui lòng nhập đầy đủ các trường bắt buộc");
       return;
     }
 
     try {
       setIsSubmitting(true);
       await createAdminProduct({
-        policies_id: Number(form.policies_id),
         category_id: Number(form.category_id),
         brand_id: Number(form.brand_id),
         name: form.name.trim(),
@@ -172,7 +176,7 @@ export default function AdminProducts() {
       await loadProducts();
     } catch (err) {
       const message =
-        err instanceof AdminApiError ? err.message : "Failed to create product";
+        err instanceof AdminApiError ? err.message : "Tạo sản phẩm thất bại";
       setError(message);
     } finally {
       setIsSubmitting(false);
@@ -184,7 +188,6 @@ export default function AdminProducts() {
 
     if (!editingProductId) return;
     if (
-      !editForm.policies_id ||
       !editForm.category_id ||
       !editForm.brand_id ||
       !editForm.name ||
@@ -194,14 +197,13 @@ export default function AdminProducts() {
       !editForm.daily_price ||
       !editForm.status
     ) {
-      setError("Please fill in all required fields");
+      setError("Vui lòng nhập đầy đủ các trường bắt buộc");
       return;
     }
 
     try {
       setIsSubmitting(true);
       await updateAdminProduct(editingProductId, {
-        policies_id: Number(editForm.policies_id),
         category_id: Number(editForm.category_id),
         brand_id: Number(editForm.brand_id),
         name: editForm.name.trim(),
@@ -219,7 +221,9 @@ export default function AdminProducts() {
       await loadProducts();
     } catch (err) {
       const message =
-        err instanceof AdminApiError ? err.message : "Failed to update product";
+        err instanceof AdminApiError
+          ? err.message
+          : "Cập nhật sản phẩm thất bại";
       setError(message);
     } finally {
       setIsSubmitting(false);
@@ -237,7 +241,7 @@ export default function AdminProducts() {
       await loadProducts();
     } catch (err) {
       const message =
-        err instanceof AdminApiError ? err.message : "Failed to delete product";
+        err instanceof AdminApiError ? err.message : "Xóa sản phẩm thất bại";
       setError(message);
     } finally {
       setIsSubmitting(false);
@@ -247,7 +251,6 @@ export default function AdminProducts() {
   const openEdit = (product: Product) => {
     setEditingProductId(product.id);
     setEditForm({
-      policies_id: String(product.policies_id || ""),
       slug: product.slug || slugify(product.name),
       name: product.name,
       description: product.description || "",
@@ -279,14 +282,14 @@ export default function AdminProducts() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Products</h1>
-          <p className="text-sm text-gray-500">{total} total products</p>
+          <h1 className="text-xl font-bold text-gray-900">Sản phẩm</h1>
+          <p className="text-sm text-gray-500">{total} sản phẩm</p>
         </div>
         <button
           onClick={() => setIsAddDialogOpen(true)}
           className="flex items-center gap-2 h-10 px-5 bg-[#0052CC] text-white rounded-xl text-sm font-medium hover:bg-[#0747A6] transition-colors"
         >
-          <Plus className="w-4 h-4" /> Add Product
+          <Plus className="w-4 h-4" /> Thêm sản phẩm
         </button>
       </div>
 
@@ -300,7 +303,7 @@ export default function AdminProducts() {
               onClick={() => setError(null)}
               className="text-xs text-red-600 hover:text-red-800 mt-1"
             >
-              Dismiss
+              Đóng
             </button>
           </div>
         </div>
@@ -314,7 +317,7 @@ export default function AdminProducts() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search products..."
+            placeholder="Tìm sản phẩm..."
             className="w-full h-9 pl-9 pr-4 rounded-lg border border-gray-200 text-sm focus:border-[#0052CC] outline-none"
           />
         </div>
@@ -325,25 +328,27 @@ export default function AdminProducts() {
         <div className="overflow-x-auto">
           {isLoading ? (
             <div className="text-center py-12">
-              <p className="text-gray-400 text-sm">Loading products...</p>
+              <p className="text-gray-400 text-sm">
+                Đang tải danh sách sản phẩm...
+              </p>
             </div>
           ) : (
             <>
-              <table className="w-full">
+              <table className="w-full table-fixed">
                 <thead className="bg-gray-50">
                   <tr>
                     {[
-                      "Product",
-                      "Category",
-                      "Stock",
-                      "Deposit",
-                      "Daily Rate",
-                      "Status",
-                      "Actions",
+                      "Sản phẩm",
+                      "Danh mục",
+                      "Tồn kho",
+                      "Tiền cọc",
+                      "Giá thuê/ngày",
+                      "Trạng thái",
+                      "Thao tác",
                     ].map((h) => (
                       <th
                         key={h}
-                        className="text-left px-5 py-3 text-xs font-medium text-gray-500"
+                        className="text-left px-5 py-3 text-xs font-medium text-gray-500 w-[14%]"
                       >
                         {h}
                       </th>
@@ -371,26 +376,26 @@ export default function AdminProducts() {
                             />
                           )}
                           <div>
-                            <p className="text-sm font-medium text-gray-900 line-clamp-1 max-w-50">
-                              {product.name || "Unnamed product"}
+                            <p className="text-sm font-medium text-gray-900 line-clamp-1 max-w-[150px] truncate">
+                              {product.name || "Sản phẩm chưa đặt tên"}
                             </p>
                             <p className="text-xs text-gray-500">
-                              {product.brand?.name || "N/A"}
+                              {product.brand?.name || "Không rõ"}
                             </p>
                           </div>
                         </div>
                       </td>
                       <td className="px-5 py-3 text-sm text-gray-600">
-                        {product.category?.name || "N/A"}
+                        {product.category?.name || "Không rõ"}
                       </td>
                       <td className="px-5 py-3 text-sm font-medium text-blue-600">
                         {product.stock ?? 0}
                       </td>
                       <td className="px-5 py-3 text-sm font-medium text-gray-900">
-                        ${product.deposit_price}
+                        {formatCurrencyVnd(product.deposit_price)}
                       </td>
                       <td className="px-5 py-3 text-sm font-medium text-gray-900">
-                        ${product.daily_price || "N/A"}
+                        {formatCurrencyVnd(product.daily_price)}
                       </td>
                       <td className="px-5 py-3">
                         <span
@@ -400,7 +405,9 @@ export default function AdminProducts() {
                               : "text-red-600"
                           }`}
                         >
-                          {product.status}
+                          {product.status === "ACTIVE"
+                            ? "Đang hoạt động"
+                            : "Ngưng hoạt động"}
                         </span>
                       </td>
                       <td className="px-5 py-3">
@@ -428,7 +435,9 @@ export default function AdminProducts() {
               </table>
               {filtered.length === 0 && (
                 <div className="text-center py-12">
-                  <p className="text-gray-400 text-sm">No products found</p>
+                  <p className="text-gray-400 text-sm">
+                    Không tìm thấy sản phẩm
+                  </p>
                 </div>
               )}
             </>
@@ -453,26 +462,7 @@ export default function AdminProducts() {
               </p>
             )}
 
-            <label className="space-y-1">
-              <span className="text-xs font-medium text-gray-600">
-                Policy *
-              </span>
-              <select
-                required
-                value={form.policies_id}
-                onChange={(e) =>
-                  setForm({ ...form, policies_id: e.target.value })
-                }
-                className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
-              >
-                <option value="">Select policy</option>
-                {policyOptions.map((policy) => (
-                  <option key={policy.id} value={policy.id}>
-                    {`#${policy.id} - max late ${policy.max_late_day} day(s), fee ${policy.late_day_fee}`}
-                  </option>
-                ))}
-              </select>
-            </label>
+
 
             <label className="space-y-1">
               <span className="text-xs font-medium text-gray-600">
@@ -580,17 +570,13 @@ export default function AdminProducts() {
             </label>
 
             <label className="space-y-1">
-              <span className="text-xs font-medium text-gray-600">
-                Stock *
-              </span>
+              <span className="text-xs font-medium text-gray-600">Stock *</span>
               <input
                 required
                 type="number"
                 min={0}
                 value={form.stock}
-                onChange={(e) =>
-                  setForm({ ...form, stock: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, stock: e.target.value })}
                 className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
                 placeholder="50"
               />
@@ -683,26 +669,7 @@ export default function AdminProducts() {
               </p>
             )}
 
-            <label className="space-y-1">
-              <span className="text-xs font-medium text-gray-600">
-                Policy *
-              </span>
-              <select
-                required
-                value={editForm.policies_id}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, policies_id: e.target.value })
-                }
-                className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm outline-none focus:border-[#0052CC]"
-              >
-                <option value="">Select policy</option>
-                {policyOptions.map((policy) => (
-                  <option key={policy.id} value={policy.id}>
-                    {`#${policy.id} - max late ${policy.max_late_day} day(s), fee ${policy.late_day_fee}`}
-                  </option>
-                ))}
-              </select>
-            </label>
+
 
             <label className="space-y-1">
               <span className="text-xs font-medium text-gray-600">
@@ -805,9 +772,7 @@ export default function AdminProducts() {
             </label>
 
             <label className="space-y-1">
-              <span className="text-xs font-medium text-gray-600">
-                Stock *
-              </span>
+              <span className="text-xs font-medium text-gray-600">Stock *</span>
               <input
                 required
                 type="number"
