@@ -24,6 +24,35 @@ class RentalResource extends JsonResource
             'note' => $this->note,
             'user' => $this->whenLoaded('user'),
             'products' => $this->whenLoaded('products'),
+            'details' => $this->whenLoaded('details', function () {
+                return $this->details
+                    ->map(function ($detail) {
+                        return [
+                            'id' => $detail->id,
+                            'product_id' => $detail->product_id,
+                            'combo_id' => $detail->combo_id,
+                            'inventory_id' => $detail->inventory_id,
+                            'quantity' => $detail->quantity,
+                            'price_at_rental' =>
+                                (float) $detail->price_at_rental,
+                            'product' => $detail->product
+                                ? [
+                                    'id' => $detail->product->id,
+                                    'name' => $detail->product->name,
+                                    'deposit_price' =>
+                                        (float) $detail->product->deposit_price,
+                                ]
+                                : null,
+                            'combo' => $detail->combo
+                                ? [
+                                    'id' => $detail->combo->id,
+                                    'name' => $detail->combo->name,
+                                ]
+                                : null,
+                        ];
+                    })
+                    ->values();
+            }),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

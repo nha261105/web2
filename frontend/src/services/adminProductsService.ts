@@ -13,7 +13,6 @@ export class AdminApiError extends Error {
 
 export type Product = {
   id: number;
-  policies_id?: number;
   category_id?: number;
   brand_id?: number;
   name: string;
@@ -41,14 +40,9 @@ export type ProductBrandOption = {
   name: string;
 };
 
-export type ProductPolicyOption = {
-  id: number;
-  late_day_fee: string | number;
-  max_late_day: number;
-};
+
 
 export type CreateProductPayload = {
-  policies_id: number;
   category_id: number;
   brand_id: number;
   name: string;
@@ -218,25 +212,20 @@ export async function deleteAdminProduct(productId: number): Promise<void> {
 export async function getProductFormOptions(): Promise<{
   categories: ProductCategoryOption[];
   brands: ProductBrandOption[];
-  policies: ProductPolicyOption[];
 }> {
   try {
-    const [categoriesRes, brandsRes, policiesRes] = await Promise.all([
+    const [categoriesRes, brandsRes] = await Promise.all([
       axios.get<ListApiResponse<ProductCategoryOption>>(
         `${API_BASE_URL}/api/categories`,
       ),
       axios.get<ListApiResponse<ProductBrandOption>>(`${API_BASE_URL}/api/brands`),
-      axios.get<ListApiResponse<ProductPolicyOption>>(
-        `${API_BASE_URL}/api/rental-policies`,
-      ),
     ]);
 
     const categories =
       categoriesRes.data.data?.items ?? categoriesRes.data.data?.categories ?? [];
     const brands = brandsRes.data.data?.items ?? [];
-    const policies = policiesRes.data.data?.items ?? [];
 
-    return { categories, brands, policies };
+    return { categories, brands };
   } catch (err) {
     if (axios.isAxiosError(err)) {
       const status = err.response?.status;

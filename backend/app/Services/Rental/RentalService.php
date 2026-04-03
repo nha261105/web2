@@ -4,6 +4,7 @@ namespace App\Services\Rental;
 
 use App\Models\Rental;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 class RentalService
 {
@@ -11,20 +12,24 @@ class RentalService
      * Các chuyển trạng thái hợp lệ theo flow.md
      */
     private const ALLOWED_TRANSITIONS = [
-        'PENDING'          => ['APPROVED', 'CANCELLED'],
-        'APPROVED'         => ['DEPOSITED', 'READY_FOR_PICKUP', 'PICKED_UP', 'CANCELLED'],
-        'DEPOSITED'        => ['READY_FOR_PICKUP', 'PICKED_UP', 'CANCELLED'],
-        'READY_FOR_PICKUP' => ['PICKED_UP', 'CANCELLED'],
-        'PICKED_UP'        => ['COMPLETED'],
-        'COMPLETED'        => [],
-        'CANCELLED'        => [],
+        'PENDING' => ['APPROVED', 'CANCELLED'],
+        'APPROVED' => ['DEPOSITED', 'PICKED_UP', 'CANCELLED'],
+        'DEPOSITED' => ['PICKED_UP', 'CANCELLED'],
+        'PICKED_UP' => ['COMPLETED'],
+        'COMPLETED' => [],
+        'CANCELLED' => [],
     ];
 
     public function paginate(array $filters, $user): LengthAwarePaginator
     {
         $isAdmin = $user && $user->roles()->where('name', 'ADMIN')->exists();
 
-        $query = Rental::with(['user', 'products']);
+        $query = Rental::with([
+            'user',
+            'products',
+            'details.product',
+            'details.combo',
+        ]);
 
         // Cả admin và user đều không thấy đơn CART
         $query->where('status', '!=', 'CART');
@@ -38,8 +43,9 @@ class RentalService
             $query->where('status', $filters['status']);
         }
 
-        return $query->orderBy('created_at', 'desc')
-                     ->paginate((int) ($filters['per_page'] ?? 15));
+        return $query
+            ->orderBy('created_at', 'desc')
+            ->paginate((int) ($filters['per_page'] ?? 15));
     }
 
     public function create(array $data): Rental
@@ -49,56 +55,86 @@ class RentalService
 
     public function findById(int $id): Rental
     {
-        return Rental::query()->findOrFail($id);
+        return Rental::query()
+            ->with(['user', 'products', 'details.product', 'details.combo'])
+            ->findOrFail($id);
     }
 
     public function update(int $id, array $data): Rental
     {
-        $rental = $this->findById($id);
-        $oldStatus = $rental->status;
-        $newStatus = $data['status'] ?? $oldStatus;
+        return DB::transaction(function () use ($id, $data) {
+            $rental = $this->findById($id);
+            $oldStatus = $rental->status;
+            $newStatus = $data['status'] ?? $oldStatus;
 
-        // Validate status transition
-        if ($newStatus !== $oldStatus) {
-            $allowed = self::ALLOWED_TRANSITIONS[$oldStatus] ?? [];
-            if (!in_array($newStatus, $allowed)) {
-                throw new \InvalidArgumentException(
-                    "Không thể chuyển trạng thái từ {$oldStatus} sang {$newStatus}. "
-                    . "Chỉ được phép: " . (empty($allowed) ? 'không có' : implode(', ', $allowed))
-                );
+            // Validate status transition
+            if ($newStatus !== $oldStatus) {
+                $allowed = self::ALLOWED_TRANSITIONS[$oldStatus] ?? [];
+                if (!in_array($newStatus, $allowed)) {
+                    throw new \InvalidArgumentException(
+                        "Không thể chuyển trạng thái từ {$oldStatus} sang {$newStatus}. " .
+                            'Chỉ được phép: ' .
+                            (empty($allowed)
+                                ? 'không có'
+                                : implode(', ', $allowed)),
+                    );
+                }
             }
-        }
 
-        $rental->fill($data)->save();
+            $rental->fill($data)->save();
 
-        // Lấy lại rental với relationship cần thiết cho combo
-        $rental = Rental::with(['details.product', 'details.combo.comboDetails.product'])->findOrFail($id);
+            // Lấy lại rental với relationship cần thiết cho combo
+            $rental = Rental::with([
+                'details.product',
+                'details.combo.comboDetails.product',
+            ])->findOrFail($id);
 
-        // Khi APPROVED: không trừ stock nữa vì đã trừ lúc Checkout (PENDING).
+            // Khi APPROVED: không trừ stock nữa vì đã trừ lúc Checkout (PENDING).
 
-        // Khi CANCELLED: hoàn lại stock nếu đã pending/approve trước đó
-        if ($rental->status === 'CANCELLED' && in_array($oldStatus, ['PENDING', 'APPROVED', 'DEPOSITED', 'READY_FOR_PICKUP'])) {
-            foreach ($rental->details as $detail) {
-                if ($detail->product) {
-                    $detail->product->increment('stock', $detail->quantity);
-                    $detail->product->refresh(); // Refresh model sau increment
-                    if ($detail->product->stock > 0 && $detail->product->status === 'INACTIVE') {
-                        $detail->product->update(['status' => 'ACTIVE']);
-                    }
-                } elseif ($detail->combo) {
-                    foreach ($detail->combo->comboDetails as $comboDetail) {
-                        $product = $comboDetail->product;
-                        $qty = $detail->quantity * $comboDetail->quantity;
-                        $product->increment('stock', $qty);
-                        $product->refresh();
-                        if ($product->stock > 0 && $product->status === 'INACTIVE') {
-                            $product->update(['status' => 'ACTIVE']);
+            // Khi CANCELLED: hoàn lại stock nếu đã pending/approve trước đó
+            if (
+                $rental->status === 'CANCELLED' &&
+                in_array($oldStatus, ['PENDING', 'APPROVED', 'DEPOSITED'], true)
+            ) {
+                foreach ($rental->details as $detail) {
+                    if ($detail->product) {
+                        $this->releaseInventory(
+                            $detail->product->id,
+                            $detail->quantity,
+                        );
+                    } elseif ($detail->combo) {
+                        foreach ($detail->combo->comboDetails as $comboDetail) {
+                            $product = $comboDetail->product;
+                            if ($product) {
+                                $qty = $detail->quantity * $comboDetail->quantity;
+                                $this->releaseInventory($product->id, $qty);
+                            }
                         }
                     }
                 }
             }
+
+            return $rental;
+        });
+    }
+
+    private function releaseInventory(int $productId, int $quantity): void
+    {
+        $inventoryIds = DB::table('inventory')
+            ->where('product_id', $productId)
+            ->where('status', 'RENTING')
+            ->whereNull('deleted_at')
+            ->orderByDesc('id')
+            ->limit($quantity)
+            ->pluck('id')
+            ->toArray();
+
+        if (empty($inventoryIds)) {
+            return;
         }
 
-        return $rental;
+        DB::table('inventory')
+            ->whereIn('id', $inventoryIds)
+            ->update(['status' => 'AVAILABLE']);
     }
 }

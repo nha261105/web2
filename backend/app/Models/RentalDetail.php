@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class RentalDetail extends Model
 {
@@ -36,5 +37,10 @@ class RentalDetail extends Model
     public function combo(): BelongsTo
     {
         return $this->belongsTo(Combo::class, 'combo_id');
+    }
+
+    public function returnDetails(): HasMany
+    {
+        return $this->hasMany(ReturnDetail::class, 'rental_detail_id');
     }
 }

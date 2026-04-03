@@ -22,6 +22,7 @@ import AdminCombos from "@/pages/admin/AdminCombos";
 import AdminUsers from "@/pages/admin/AdminUsers";
 import AdminReports from "@/pages/admin/AdminReports";
 import AdminSettings from "@/pages/admin/AdminSettings";
+import AdminPenalties from "@/pages/admin/AdminPenalties";
 import AccountPage from "@/pages/client/AccountPage";
 
 export const AppRoutes = () => {
@@ -50,6 +51,7 @@ export const AppRoutes = () => {
         <Route path="orders" element={<AdminOrders />} />
         <Route path="categories" element={<AdminCategories />} />
         <Route path="users" element={<AdminUsers />} />
+        <Route path="penalties" element={<AdminPenalties />} />
         <Route path="reports" element={<AdminReports />} />
         <Route path="settings" element={<AdminSettings />} />
       </Route>

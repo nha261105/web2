@@ -16,6 +16,7 @@ export type RentalOrder = {
   rental_id?: number;
   user_id: number;
   user?: { id: number; name?: string; full_name?: string; email: string };
+  details?: RentalOrderDetail[];
   products?: Array<{
     id: number;
     title?: string;
@@ -39,6 +40,47 @@ export type RentalOrder = {
   updated_at: string;
 };
 
+export type RentalOrderDetail = {
+  id: number;
+  rental_id?: number;
+  product_id?: number | null;
+  combo_id?: number | null;
+  quantity: number;
+  price_at_rental: number;
+  product?: {
+    id: number;
+    name: string;
+    deposit_price: number;
+  } | null;
+  combo?: {
+    id: number;
+    name: string;
+  } | null;
+};
+
+export type ReturnInspectionItem = {
+  rental_detail_id: number;
+  violation_type: "GOOD" | "DAMAGED" | "LOST";
+  damage_percent?: number;
+  note?: string;
+};
+
+export type CompleteReturnResult = {
+  return_order: {
+    id: number;
+    rental_id: number;
+    return_date: string;
+  };
+  summary: {
+    late_days: number;
+    force_lost_by_late?: boolean;
+    late_fee_total: number;
+    condition_fee_total: number;
+    total_fine: number;
+    issue_ids: number[];
+  };
+};
+
 export type CreateRentalPayload = {
   user_id: number;
   product_ids: number[];
@@ -57,6 +99,19 @@ type RentalsApiResponse = {
   data?: {
     items?: RentalOrder[];
     rental?: RentalOrder;
+    return_order?: {
+      id: number;
+      rental_id: number;
+      return_date: string;
+    };
+    summary?: {
+      late_days: number;
+      force_lost_by_late?: boolean;
+      late_fee_total: number;
+      condition_fee_total: number;
+      total_fine: number;
+      issue_ids: number[];
+    };
     meta?: {
       total: number;
       per_page: number;
@@ -199,5 +254,55 @@ export async function getAdminOrder(rentalId: number): Promise<RentalOrder> {
       throw new AdminApiError(message, status);
     }
     throw new AdminApiError("Failed to get order");
+  }
+}
+
+export async function completeReturnOrder(
+  rentalId: number,
+  items: ReturnInspectionItem[],
+  returnDate: string,
+): Promise<CompleteReturnResult> {
+  try {
+    const response = await axios.post<RentalsApiResponse>(
+      `${API_BASE_URL}/api/return-orders`,
+      {
+        rental_id: rentalId,
+        return_date: returnDate,
+        items,
+      },
+      {
+        headers: getAuthHeader(),
+      },
+    );
+
+    const returnOrder = response.data.data?.return_order;
+    const summary = response.data.data?.summary;
+    if (!returnOrder || !summary) {
+      throw new AdminApiError("Complete return returned no data");
+    }
+
+    return {
+      return_order: returnOrder,
+      summary,
+    };
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      const status = err.response?.status;
+      const data = err.response?.data as
+        | { message?: string; errors?: Record<string, string[] | string> }
+        | undefined;
+      const validationErrors = data?.errors
+        ? Object.values(data.errors)
+            .flatMap((entry) => (Array.isArray(entry) ? entry : [entry]))
+            .join("; ")
+        : "";
+      const message =
+        validationErrors ||
+        data?.message ||
+        err.message ||
+        "Failed to complete return";
+      throw new AdminApiError(message, status);
+    }
+    throw new AdminApiError("Failed to complete return");
   }
 }

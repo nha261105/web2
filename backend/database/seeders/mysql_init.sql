@@ -57,12 +57,18 @@ CREATE TABLE user_roles (
 
 CREATE TABLE permissions (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name ENUM('CREATE', 'DELETE', 'UPDATE', 'READ') NOT NULL
+    name VARCHAR(100) NOT NULL UNIQUE
 );
 
 CREATE TABLE role_has_permission (
     id INT AUTO_INCREMENT PRIMARY KEY,
     role_id INT NOT NULL,
+    permission_id INT NOT NULL
+);
+
+CREATE TABLE user_has_permission (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
     permission_id INT NOT NULL
 );
 
@@ -275,6 +281,8 @@ ALTER TABLE user_roles ADD CONSTRAINT fk_uroles_role FOREIGN KEY (role_id) REFER
 
 ALTER TABLE role_has_permission ADD CONSTRAINT fk_rhp_role FOREIGN KEY (role_id) REFERENCES roles(id);
 ALTER TABLE role_has_permission ADD CONSTRAINT fk_rhp_perm FOREIGN KEY (permission_id) REFERENCES permissions(id);
+ALTER TABLE user_has_permission ADD CONSTRAINT fk_uhp_user FOREIGN KEY (user_id) REFERENCES users(id);
+ALTER TABLE user_has_permission ADD CONSTRAINT fk_uhp_perm FOREIGN KEY (permission_id) REFERENCES permissions(id);
 
 ALTER TABLE products ADD CONSTRAINT fk_prod_policy FOREIGN KEY (policies_id) REFERENCES rental_policies(id);
 ALTER TABLE products ADD CONSTRAINT fk_prod_cat FOREIGN KEY (category_id) REFERENCES categories(id);
@@ -357,6 +365,7 @@ TRUNCATE TABLE addresses;
 TRUNCATE TABLE user_info;
 TRUNCATE TABLE user_tokens;
 TRUNCATE TABLE user_roles;
+TRUNCATE TABLE user_has_permission;
 TRUNCATE TABLE role_has_permission;
 TRUNCATE TABLE permissions;
 TRUNCATE TABLE roles;
@@ -377,15 +386,59 @@ INSERT INTO permissions (id, name) VALUES
 (1, 'CREATE'),
 (2, 'READ'),
 (3, 'UPDATE'),
-(4, 'DELETE');
+(4, 'DELETE'),
+(5, 'ADMIN_DASHBOARD_VIEW'),
+(6, 'RBAC_READ'),
+(7, 'RBAC_UPDATE'),
+(8, 'USER_READ'),
+(9, 'USER_UPDATE'),
+(10, 'USER_DELETE'),
+(11, 'PRODUCT_READ'),
+(12, 'PRODUCT_CREATE'),
+(13, 'PRODUCT_UPDATE'),
+(14, 'PRODUCT_DELETE'),
+(15, 'CATEGORY_READ'),
+(16, 'CATEGORY_CREATE'),
+(17, 'CATEGORY_UPDATE'),
+(18, 'CATEGORY_DELETE'),
+(19, 'BRAND_READ'),
+(20, 'BRAND_CREATE'),
+(21, 'BRAND_UPDATE'),
+(22, 'BRAND_DELETE'),
+(23, 'COMBO_READ'),
+(24, 'COMBO_CREATE'),
+(25, 'COMBO_UPDATE'),
+(26, 'COMBO_DELETE'),
+(27, 'COUPON_READ'),
+(28, 'COUPON_CREATE'),
+(29, 'COUPON_UPDATE'),
+(30, 'COUPON_DELETE'),
+(31, 'RENTAL_READ'),
+(32, 'RENTAL_CREATE'),
+(33, 'RENTAL_UPDATE'),
+(34, 'RETURN_ORDER_CREATE'),
+(35, 'RETURN_ORDER_UPDATE'),
+(36, 'RENTAL_ISSUE_READ'),
+(37, 'RENTAL_ISSUE_CREATE'),
+(38, 'RENTAL_ISSUE_UPDATE'),
+(39, 'TRANSACTION_CREATE'),
+(40, 'TRANSACTION_UPDATE'),
+(41, 'RENTAL_POLICY_READ'),
+(42, 'RENTAL_POLICY_CREATE'),
+(43, 'RENTAL_POLICY_UPDATE'),
+(44, 'RENTAL_POLICY_DELETE');
 
 -- ==========================================
 -- role_has_permission
--- ADMIN: full quyền | STAFF: CREATE,READ,UPDATE | CUSTOMER: READ
+-- ADMIN: full quyền module | STAFF: quyền vận hành | CUSTOMER: READ
 -- ==========================================
 INSERT INTO role_has_permission (role_id, permission_id) VALUES
-(1, 1),(1, 2),(1, 3),(1, 4),
-(2, 1),(2, 2),(2, 3),
+(1, 1),(1, 2),(1, 3),(1, 4),(1, 5),(1, 6),(1, 7),(1, 8),(1, 9),(1, 10),
+(1, 11),(1, 12),(1, 13),(1, 14),(1, 15),(1, 16),(1, 17),(1, 18),(1, 19),(1, 20),
+(1, 21),(1, 22),(1, 23),(1, 24),(1, 25),(1, 26),(1, 27),(1, 28),(1, 29),(1, 30),
+(1, 31),(1, 32),(1, 33),(1, 34),(1, 35),(1, 36),(1, 37),(1, 38),(1, 39),(1, 40),
+(1, 41),(1, 42),(1, 43),(1, 44),
+(2, 23),(2, 24),(2, 25),(2, 26),
 (3, 2);
 
 -- ==========================================

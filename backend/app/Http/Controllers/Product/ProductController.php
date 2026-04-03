@@ -21,11 +21,20 @@ class ProductController extends Controller
         $categoryId = $request->query('category_id');
 
         // For admin, return paginated results
-        $query = \App\Models\Product::with(['category', 'brand', 'images']);
+        $query = \App\Models\Product::with([
+            'category',
+            'brand',
+            'images',
+        ])->withCount([
+            'inventories as stock' => fn($q) => $q
+                ->where('status', 'AVAILABLE')
+                ->whereNull('deleted_at'),
+        ]);
 
         if ($search) {
-            $query->where('name', 'like', "%$search%")
-                  ->orWhere('description', 'like', "%$search%");
+            $query
+                ->where('name', 'like', "%$search%")
+                ->orWhere('description', 'like', "%$search%");
         }
 
         if ($categoryId) {

@@ -15,8 +15,10 @@ use App\Http\Resources\UserResource;
 
 class AuthController extends Controller
 {
-    private function verifyPassword(string $plainPassword, string $hashedPassword): array
-    {
+    private function verifyPassword(
+        string $plainPassword,
+        string $hashedPassword,
+    ): array {
         try {
             return [Hash::check($plainPassword, $hashedPassword), false];
         } catch (\RuntimeException) {
@@ -41,7 +43,7 @@ class AuthController extends Controller
             $password = $validated['password'];
             $isRemember = (bool) ($validated['isRemember'] ?? false);
 
-            $user = User::with('roles.permissions')
+            $user = User::with('roles.permissions', 'permissions')
                 ->where('email', $email)
                 ->first();
 
@@ -53,7 +55,10 @@ class AuthController extends Controller
                 );
             }
 
-            [$isPasswordValid, $shouldUpgradeHash] = $this->verifyPassword($password, $user->hash_password);
+            [$isPasswordValid, $shouldUpgradeHash] = $this->verifyPassword(
+                $password,
+                $user->hash_password,
+            );
 
             if (!$isPasswordValid) {
                 return ApiResponse::error(
@@ -69,7 +74,9 @@ class AuthController extends Controller
             }
 
             if ($user->status !== 'ACTIVE') {
-                return ApiResponse::forbidden('Your account has been locked. Please contact support.');
+                return ApiResponse::forbidden(
+                    'Your account has been locked. Please contact support.',
+                );
             }
 
             $tokenRecord = UserTokens::create([
@@ -83,6 +90,7 @@ class AuthController extends Controller
 
             $permissions = $user->roles
                 ->flatMap(fn($role) => $role->permissions->pluck('name'))
+                ->merge($user->permissions->pluck('name'))
                 ->unique()
                 ->values();
 
@@ -114,7 +122,7 @@ class AuthController extends Controller
             return ApiResponse::unauthorized();
         }
 
-        $user->load('roles.permissions');
+        $user->load('roles.permissions', 'permissions');
 
         // Giữ nguyên response từ dev (không dùng resource)
         return ApiResponse::success([
@@ -122,6 +130,7 @@ class AuthController extends Controller
             'roles' => $user->roles->pluck('name')->values(),
             'permissions' => $user->roles
                 ->flatMap(fn($role) => $role->permissions->pluck('name'))
+                ->merge($user->permissions->pluck('name'))
                 ->unique()
                 ->values(),
         ]);

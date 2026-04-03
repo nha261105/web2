@@ -3,36 +3,61 @@
 namespace App\Http\Controllers\Rental;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Rental\CreateReturnOrderRequest;
 use App\Http\Requests\Rental\UpdateReturnOrderRequest;
 use App\Http\Resources\Rental\ReturnOrderResource;
-use App\Services\Rental\ReturnOrderService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use InvalidArgumentException;
 
 class ReturnOrderController extends Controller
 {
-    public function __construct(private \App\Services\Rental\ReturnOrderFallbackService $service) {}
+    public function __construct(
+        private \App\Services\Rental\ReturnOrderFallbackService $service,
+    ) {}
 
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'rental_id' => 'required|integer|exists:rentals,id',
-            'items' => 'required|array',
-            'items.*.rental_detail_id' => 'required|integer|exists:rental_details,id',
-            'items.*.condition' => 'required|in:GOOD,DAMAGED,LOST',
-            'items.*.note' => 'nullable|string',
-            'items.*.penalty_fee' => 'nullable|numeric|min:0',
+            'rental_id' => ['required', 'integer', 'exists:rentals,id'],
+            'return_date' => ['required', 'date'],
+            'items' => ['nullable', 'array'],
+            'items.*.rental_detail_id' => [
+                'required',
+                'integer',
+                'exists:rental_details,id',
+            ],
+            'items.*.violation_type' => ['sometimes', 'in:GOOD,DAMAGED,LOST'],
+            'items.*.condition' => ['sometimes', 'in:GOOD,DAMAGED,LOST'],
+            'items.*.damage_percent' => [
+                'sometimes',
+                'numeric',
+                'min:0',
+                'max:100',
+            ],
+            'items.*.note' => ['nullable', 'string'],
         ]);
 
-        $returnOrder = $this->service->processReturn($validated['rental_id'], $validated['items']);
+        try {
+            $result = $this->service->processReturn(
+                (int) $validated['rental_id'],
+                $validated['items'] ?? [],
+                (string) $validated['return_date'],
+            );
+        } catch (InvalidArgumentException $e) {
+            return ApiResponse::validation([
+                'rental_id' => [$e->getMessage()],
+            ]);
+        }
 
         return ApiResponse::success(
             [
-                'return_order' => $returnOrder,
+                'return_order' => new ReturnOrderResource(
+                    $result['return_order'],
+                ),
+                'summary' => $result['summary'],
             ],
-            'Return order processed successfully',
+            'Return order completed successfully',
             201,
         );
     }

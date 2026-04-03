@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   Search,
   UserPlus,
@@ -31,10 +31,13 @@ import {
   assignRole,
   createUser,
   deleteUser,
+  getAllPermissions,
   getAllRoles,
   getAllUsers,
+  getUserPermissions,
   getUserRoles,
   removeRole,
+  syncUserPermissions,
   updateUserStatus,
 } from "@/services/usersService";
 
@@ -61,6 +64,39 @@ interface PaginationMeta {
   last_page: number;
 }
 
+interface Permission {
+  id: number;
+  name: string;
+}
+
+function normalizePermissionSelection(
+  permissionIds: number[],
+  permissionList: Permission[],
+) {
+  const selected = new Set(permissionIds);
+  const byId = new Map(
+    permissionList.map((permission) => [permission.id, permission]),
+  );
+  const byName = new Map(
+    permissionList.map((permission) => [permission.name, permission]),
+  );
+
+  permissionIds.forEach((permissionId) => {
+    const permission = byId.get(permissionId);
+    if (!permission) return;
+
+    const [moduleName] = permission.name.split("_");
+    if (!moduleName) return;
+
+    const readPermission = byName.get(`${moduleName}_READ`);
+    if (readPermission) {
+      selected.add(readPermission.id);
+    }
+  });
+
+  return Array.from(selected);
+}
+
 const CACHE_KEY = "admin_users_cache";
 const CACHE_TTL = 60_000;
 
@@ -75,9 +111,9 @@ function getInitials(name: string) {
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("en-US", {
+  return new Date(dateStr).toLocaleDateString("vi-VN", {
     year: "numeric",
-    month: "short",
+    month: "2-digit",
     day: "numeric",
   });
 }
@@ -127,6 +163,15 @@ export default function AdminUsers() {
   const [availableRoles, setAvailableRoles] = useState<
     { id: number; name: string }[]
   >([]);
+  const [availablePermissions, setAvailablePermissions] = useState<
+    Permission[]
+  >([]);
+
+  const [permissionTarget, setPermissionTarget] = useState<User | null>(null);
+  const [permissionLoading, setPermissionLoading] = useState(false);
+  const [permissionSaving, setPermissionSaving] = useState(false);
+  const [userPermissionIds, setUserPermissionIds] = useState<number[]>([]);
+  const [permissionError, setPermissionError] = useState("");
 
   const [addModal, setAddModal] = useState(false);
   const [addForm, setAddForm] = useState({
@@ -198,9 +243,25 @@ export default function AdminUsers() {
   }, [fetchUsers, currentPage]);
   useEffect(() => {
     async function loadRoles() {
-      const res = await getAllRoles();
-      if (res.success) {
-        setAvailableRoles(res.data.roles ?? []);
+      const [rolesRes, permissionsRes] = await Promise.all([
+        getAllRoles(),
+        getAllPermissions(),
+      ]);
+
+      if (rolesRes.success) {
+        setAvailableRoles(
+          Array.isArray(rolesRes.data)
+            ? rolesRes.data
+            : (rolesRes.data.roles ?? []),
+        );
+      }
+
+      if (permissionsRes.success) {
+        setAvailablePermissions(
+          Array.isArray(permissionsRes.data)
+            ? permissionsRes.data
+            : (permissionsRes.data.permissions ?? []),
+        );
       }
     }
     loadRoles();
@@ -269,6 +330,61 @@ export default function AdminUsers() {
     }
   };
 
+  const openPermissionModal = async (user: User) => {
+    setPermissionTarget(user);
+    setPermissionLoading(true);
+    setPermissionError("");
+    setOpenMenuId(null);
+
+    const res = await getUserPermissions(user.id);
+    if (res.success) {
+      const currentPermissions = Array.isArray(res.data)
+        ? res.data
+        : (res.data.permissions ?? []);
+      setUserPermissionIds(
+        normalizePermissionSelection(
+          currentPermissions
+            .map((permission: Permission) => permission.id)
+            .filter((id: number) => Number.isFinite(id)),
+          availablePermissions,
+        ),
+      );
+    } else {
+      setPermissionError(res.message || "Không tải được quyền của người dùng.");
+      setUserPermissionIds([]);
+    }
+
+    setPermissionLoading(false);
+  };
+
+  const toggleUserPermission = (permissionId: number) => {
+    setUserPermissionIds((prev) =>
+      prev.includes(permissionId)
+        ? prev.filter((id) => id !== permissionId)
+        : [...prev, permissionId],
+    );
+  };
+
+  const handleSaveUserPermissions = async () => {
+    if (!permissionTarget) return;
+
+    setPermissionSaving(true);
+    setPermissionError("");
+
+    const res = await syncUserPermissions(
+      permissionTarget.id,
+      normalizePermissionSelection(userPermissionIds, availablePermissions),
+    );
+    if (!res.success) {
+      setPermissionError(res.message || "Cập nhật quyền thất bại.");
+      setPermissionSaving(false);
+      return;
+    }
+
+    setPermissionSaving(false);
+    setPermissionTarget(null);
+  };
+
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setAddError("");
@@ -302,15 +418,30 @@ export default function AdminUsers() {
   const activeCount = users.filter((u) => u.status === "ACTIVE").length;
   const inactiveCount = users.filter((u) => u.status === "INACTIVE").length;
 
+  const groupedPermissions = useMemo(() => {
+    return availablePermissions.reduce<Record<string, Permission[]>>(
+      (acc, permission) => {
+        const [prefix] = permission.name.split("_");
+        const group = prefix || "OTHER";
+        if (!acc[group]) {
+          acc[group] = [];
+        }
+        acc[group].push(permission);
+        return acc;
+      },
+      {},
+    );
+  }, [availablePermissions]);
+
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Users</h1>
+          <h1 className="text-xl font-bold text-gray-900">Người dùng</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {meta.total} total users
+            Tổng {meta.total} người dùng
           </p>
         </div>
         <Button
@@ -318,7 +449,7 @@ export default function AdminUsers() {
           className="bg-[#0052CC] hover:bg-[#0747A6] text-white gap-2 h-9"
         >
           <UserPlus size={16} />
-          Add User
+          Thêm người dùng
         </Button>
       </div>
 
@@ -326,25 +457,25 @@ export default function AdminUsers() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           {
-            label: "Total Users",
+            label: "Tổng người dùng",
             value: meta.total,
             icon: Users,
             color: "text-[#0052CC] bg-blue-50",
           },
           {
-            label: "Active",
+            label: "Đang hoạt động",
             value: activeCount,
             icon: UserCheck,
             color: "text-green-600 bg-green-50",
           },
           {
-            label: "Suspended",
+            label: "Bị khóa",
             value: inactiveCount,
             icon: UserX,
             color: "text-red-500 bg-red-50",
           },
           {
-            label: "Admins",
+            label: "Quản trị viên",
             value:
               users.filter((u) => u.roles?.some((r) => r.name === "ADMIN"))
                 .length || "—",
@@ -368,7 +499,7 @@ export default function AdminUsers() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search users..."
+            placeholder="Tìm người dùng..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full h-9 pl-9 pr-9 rounded-lg border border-gray-200 text-sm focus:border-[#0052CC] outline-none transition-all"
@@ -390,12 +521,14 @@ export default function AdminUsers() {
         <Table className="min-w-200">
           <TableHeader className="bg-gray-50">
             <TableRow>
-              <TableHead className="px-5 w-[25%]">User</TableHead>
-              <TableHead className="w-[15%]">Orders</TableHead>
-              <TableHead className="w-[15%]">Total Spent</TableHead>
-              <TableHead className="w-[15%]">Joined</TableHead>
-              <TableHead className="w-[15%]">Status</TableHead>
-              <TableHead className="text-right px-5 w-[15%]">Actions</TableHead>
+              <TableHead className="px-5 w-[25%]">Người dùng</TableHead>
+              <TableHead className="w-[15%]">Đơn thuê</TableHead>
+              <TableHead className="w-[15%]">Chi tiêu</TableHead>
+              <TableHead className="w-[15%]">Ngày tham gia</TableHead>
+              <TableHead className="w-[15%]">Trạng thái</TableHead>
+              <TableHead className="text-right px-5 w-[15%]">
+                Thao tác
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -403,7 +536,9 @@ export default function AdminUsers() {
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-20">
                   <Loader2 className="animate-spin mx-auto text-[#0052CC] w-6 h-6" />
-                  <p className="mt-2 text-sm text-gray-400">Loading users...</p>
+                  <p className="mt-2 text-sm text-gray-400">
+                    Đang tải người dùng...
+                  </p>
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
@@ -412,8 +547,8 @@ export default function AdminUsers() {
                   <Users className="w-10 h-10 text-gray-200 mx-auto mb-3" />
                   <p className="text-sm text-gray-400">
                     {searchTerm
-                      ? "No users match your search"
-                      : "No users found"}
+                      ? "Không có người dùng phù hợp"
+                      : "Không có người dùng"}
                   </p>
                 </TableCell>
               </TableRow>
@@ -495,7 +630,7 @@ export default function AdminUsers() {
                             className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                           >
                             <Eye className="w-4 h-4 text-gray-400" />
-                            View Profile
+                            Xem hồ sơ
                           </button>
                           {/* Send Email — disabled */}
                           <button
@@ -504,7 +639,7 @@ export default function AdminUsers() {
                             className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-300 cursor-not-allowed"
                           >
                             <Mail className="w-4 h-4" />
-                            Send Email
+                            Gửi email
                           </button>
                           {/* Change Role */}
                           <button
@@ -513,7 +648,15 @@ export default function AdminUsers() {
                             className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                           >
                             <Shield className="w-4 h-4 text-gray-400" />
-                            Change Role
+                            Đổi vai trò
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openPermissionModal(user)}
+                            className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          >
+                            <ShieldCheck className="w-4 h-4 text-gray-400" />
+                            Tùy chỉnh quyền
                           </button>
                           {/* Toggle status */}
                           <button
@@ -529,11 +672,11 @@ export default function AdminUsers() {
                           >
                             {user.status === "ACTIVE" ? (
                               <>
-                                <ShieldOff className="w-4 h-4" /> Suspend
+                                <ShieldOff className="w-4 h-4" /> Khóa tài khoản
                               </>
                             ) : (
                               <>
-                                <ShieldCheck className="w-4 h-4" /> Activate
+                                <ShieldCheck className="w-4 h-4" /> Kích hoạt
                               </>
                             )}
                           </button>
@@ -548,7 +691,7 @@ export default function AdminUsers() {
                             className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />
-                            Delete
+                            Xóa
                           </button>
                         </div>
                       )}
@@ -564,7 +707,8 @@ export default function AdminUsers() {
         {!loading && meta.last_page > 1 && (
           <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
             <p className="text-xs text-gray-500">
-              Page {meta.current_page} of {meta.last_page} — {meta.total} users
+              Trang {meta.current_page}/{meta.last_page} - {meta.total} người
+              dùng
             </p>
             <div className="flex gap-1">
               <button
@@ -594,7 +738,7 @@ export default function AdminUsers() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <h3 className="text-base font-semibold text-gray-900">
-                Add New User
+                Thêm người dùng mới
               </h3>
               <button
                 type="button"
@@ -664,7 +808,7 @@ export default function AdminUsers() {
                   }}
                   className="flex-1 h-10 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50"
                 >
-                  Cancel
+                  Hủy
                 </button>
                 <button
                   type="submit"
@@ -672,7 +816,7 @@ export default function AdminUsers() {
                   className="flex-1 h-10 rounded-xl bg-[#0052CC] text-white text-sm font-medium hover:bg-[#0747A6] flex items-center justify-center gap-2 disabled:opacity-60"
                 >
                   {adding && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {adding ? "Creating..." : "Create User"}
+                  {adding ? "Đang tạo..." : "Tạo người dùng"}
                 </button>
               </div>
             </form>
@@ -686,7 +830,7 @@ export default function AdminUsers() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-base font-semibold text-gray-900">
-                User Profile
+                Hồ sơ người dùng
               </h3>
               <button
                 type="button"
@@ -709,23 +853,26 @@ export default function AdminUsers() {
             </div>
             <div className="space-y-2 text-sm">
               {[
-                { label: "Phone", value: viewTarget.phone || "—" },
-                { label: "Status", value: viewTarget.status },
+                { label: "Số điện thoại", value: viewTarget.phone || "—" },
+                { label: "Trạng thái", value: viewTarget.status },
                 {
-                  label: "KYC Status",
+                  label: "Trạng thái KYC",
                   value: viewTarget.kyc_status || "PENDING",
                 },
                 {
-                  label: "Role",
+                  label: "Vai trò",
                   value: viewTarget.roles?.[0]?.name || "CUSTOMER",
                 },
-                { label: "Joined", value: formatDate(viewTarget.created_at) },
                 {
-                  label: "Orders",
-                  value: `${viewTarget.rentals_count ?? 0} orders`,
+                  label: "Ngày tham gia",
+                  value: formatDate(viewTarget.created_at),
                 },
                 {
-                  label: "Spent",
+                  label: "Đơn thuê",
+                  value: `${viewTarget.rentals_count ?? 0} đơn`,
+                },
+                {
+                  label: "Chi tiêu",
                   value: `${Number(viewTarget.total_spent ?? 0).toLocaleString("vi-VN")}₫`,
                 },
               ].map((row) => (
@@ -743,7 +890,7 @@ export default function AdminUsers() {
               onClick={() => setViewTarget(null)}
               className="mt-5 w-full h-10 rounded-xl bg-gray-100 text-sm font-medium text-gray-700 hover:bg-gray-200 transition-colors"
             >
-              Close
+              Đóng
             </button>
           </div>
         </div>
@@ -756,17 +903,17 @@ export default function AdminUsers() {
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h3 className="text-base font-semibold text-gray-900">
-                  Change Role
+                  Đổi vai trò
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
                   {roleTarget.full_name}
                 </p>
                 <p className="text-xs text-blue-600 mt-1">
-                  Current:{" "}
+                  Hiện tại:{" "}
                   <span className="font-semibold">
                     {userRoles.length > 0
                       ? userRoles[0].name
-                      : "No role assigned"}
+                      : "Chưa có vai trò"}
                   </span>
                 </p>
               </div>
@@ -808,7 +955,7 @@ export default function AdminUsers() {
                       </div>
                       {hasRole ? (
                         <span className="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">
-                          Current
+                          Hiện tại
                         </span>
                       ) : (
                         <button
@@ -817,7 +964,7 @@ export default function AdminUsers() {
                           disabled={roleLoading}
                           className="text-xs px-3 py-1 rounded-lg font-medium bg-[#0052CC] text-white hover:bg-[#0747A6] disabled:opacity-50"
                         >
-                          Assign
+                          Gán
                         </button>
                       )}
                     </div>
@@ -832,8 +979,111 @@ export default function AdminUsers() {
               className="mt-5 w-full h-10 rounded-xl bg-gray-100 text-sm font-medium text-gray-700 hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
             >
               <Save className="w-4 h-4" />
-              Close
+              Đóng
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Modal: Custom Permissions ─────────────────────────────────────── */}
+      {permissionTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-base font-semibold text-gray-900">
+                  Tùy chỉnh quyền người dùng
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  {permissionTarget.full_name} - Chọn quyền bổ sung theo user.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPermissionTarget(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {permissionError && (
+              <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
+                {permissionError}
+              </div>
+            )}
+
+            {permissionLoading ? (
+              <div className="py-10 flex items-center justify-center text-gray-500 gap-2">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Đang tải quyền...
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {Object.entries(groupedPermissions)
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([group, groupPermissions]) => (
+                    <div
+                      key={group}
+                      className="border border-gray-100 rounded-lg p-3"
+                    >
+                      <p className="text-xs font-semibold text-gray-600 mb-2">
+                        {group}
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {groupPermissions.map((permission) => {
+                          const checked = userPermissionIds.includes(
+                            permission.id,
+                          );
+                          return (
+                            <label
+                              key={permission.id}
+                              className={`flex items-center gap-2 rounded-md px-2.5 py-2 border cursor-pointer transition-colors ${
+                                checked
+                                  ? "border-blue-200 bg-blue-50"
+                                  : "border-gray-200 hover:border-gray-300"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() =>
+                                  toggleUserPermission(permission.id)
+                                }
+                                className="h-4 w-4"
+                              />
+                              <span className="text-xs text-gray-700 font-medium">
+                                {permission.name}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 mt-5">
+              <button
+                type="button"
+                onClick={() => setPermissionTarget(null)}
+                className="h-10 px-4 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveUserPermissions}
+                disabled={permissionSaving || permissionLoading}
+                className="h-10 px-4 rounded-xl bg-[#0052CC] text-white text-sm font-medium hover:bg-[#0747A6] flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                {permissionSaving && (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                )}
+                Lưu quyền tùy chỉnh
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -848,19 +1098,19 @@ export default function AdminUsers() {
               </div>
               <div>
                 <h3 className="text-base font-semibold text-gray-900">
-                  Delete User
+                  Xóa người dùng
                 </h3>
                 <p className="text-xs text-gray-500">
-                  This action cannot be undone
+                  Hành động này không thể hoàn tác
                 </p>
               </div>
             </div>
             <p className="text-sm text-gray-600 mb-5">
-              Are you sure you want to delete{" "}
+              Bạn có chắc muốn xóa{" "}
               <span className="font-semibold text-gray-900">
                 {deleteTarget.full_name}
               </span>
-              ? All associated data will be permanently removed.
+              ? Dữ liệu liên quan sẽ bị xóa vĩnh viễn.
             </p>
             <div className="flex gap-3">
               <button
@@ -869,7 +1119,7 @@ export default function AdminUsers() {
                 disabled={deleting}
                 className="flex-1 h-10 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
               >
-                Cancel
+                Hủy
               </button>
               <button
                 type="button"
@@ -878,7 +1128,7 @@ export default function AdminUsers() {
                 className="flex-1 h-10 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {deleting && <Loader2 className="w-4 h-4 animate-spin" />}
-                {deleting ? "Deleting..." : "Delete"}
+                {deleting ? "Đang xóa..." : "Xóa"}
               </button>
             </div>
           </div>

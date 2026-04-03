@@ -9,7 +9,11 @@ function getAuthHeader() {
 function mapAxiosError(err: unknown) {
   if (axios.isAxiosError(err)) {
     const responseData = err.response?.data as
-      | { message?: string; code?: string; errors?: Record<string, string[] | string> }
+      | {
+          message?: string;
+          code?: string;
+          errors?: Record<string, string[] | string>;
+        }
       | undefined;
 
     const validationErrors = responseData?.errors
@@ -41,12 +45,15 @@ export async function signup(
   phone: string,
 ) {
   try {
-    const response = await axios.post(`${API_BASE_URL}${API_ENDPOINTS.signUp}`, {
-      email,
-      password,
-      full_name: fullName,
-      phone,
-    });
+    const response = await axios.post(
+      `${API_BASE_URL}${API_ENDPOINTS.signUp}`,
+      {
+        email,
+        password,
+        full_name: fullName,
+        phone,
+      },
+    );
 
     return response.data;
   } catch (err: unknown) {
@@ -110,6 +117,17 @@ export async function getMe() {
   }
 }
 
+export async function getAuthMe() {
+  try {
+    const response = await axios.get(`${API_BASE_URL}${API_ENDPOINTS.me}`, {
+      headers: getAuthHeader(),
+    });
+    return response.data;
+  } catch (err: unknown) {
+    return mapAxiosError(err);
+  }
+}
+
 export async function updateMe(data: {
   name?: string;
   phone?: string;
@@ -147,10 +165,10 @@ export async function changePassword(data: {
 // ─── Admin — User CRUD ────────────────────────────────────────────────────────
 export async function getAllUsers(page = 1, perPage = 15) {
   try {
-    const response = await axios.get(
-      `${API_BASE_URL}${API_ENDPOINTS.users}`,
-      { params: { page, per_page: perPage }, headers: getAuthHeader() }
-    );
+    const response = await axios.get(`${API_BASE_URL}${API_ENDPOINTS.users}`, {
+      params: { page, per_page: perPage },
+      headers: getAuthHeader(),
+    });
     return response.data;
   } catch (err: unknown) {
     return mapAxiosError(err);
@@ -175,12 +193,15 @@ export async function createUser(data: {
   }
 }
 
-export async function updateUserStatus(userId: number, status: "ACTIVE" | "INACTIVE") {
+export async function updateUserStatus(
+  userId: number,
+  status: "ACTIVE" | "INACTIVE",
+) {
   try {
     const response = await axios.patch(
       `${API_BASE_URL}${API_ENDPOINTS.users}/${userId}/status`,
       { status },
-      { headers: getAuthHeader() }
+      { headers: getAuthHeader() },
     );
     return response.data;
   } catch (err: unknown) {
@@ -192,7 +213,7 @@ export async function deleteUser(userId: number) {
   try {
     const response = await axios.delete(
       `${API_BASE_URL}${API_ENDPOINTS.users}/${userId}`,
-      { headers: getAuthHeader() }
+      { headers: getAuthHeader() },
     );
     return response.data;
   } catch (err: unknown) {
@@ -205,7 +226,7 @@ export async function getUserRoles(userId: number) {
   try {
     const response = await axios.get(
       `${API_BASE_URL}${API_ENDPOINTS.users}/${userId}/roles`,
-      { headers: getAuthHeader() }
+      { headers: getAuthHeader() },
     );
     return response.data;
   } catch (err: unknown) {
@@ -218,7 +239,7 @@ export async function assignRole(userId: number, roleId: number) {
     const response = await axios.post(
       `${API_BASE_URL}${API_ENDPOINTS.users}/${userId}/roles`,
       { role_id: roleId },
-      { headers: getAuthHeader() }
+      { headers: getAuthHeader() },
     );
     return response.data;
   } catch (err: unknown) {
@@ -230,7 +251,7 @@ export async function removeRole(userId: number, roleId: number) {
   try {
     const response = await axios.delete(
       `${API_BASE_URL}${API_ENDPOINTS.users}/${userId}/roles/${roleId}`,
-      { headers: getAuthHeader() }
+      { headers: getAuthHeader() },
     );
     return response.data;
   } catch (err: unknown) {
@@ -240,9 +261,66 @@ export async function removeRole(userId: number, roleId: number) {
 
 export async function getAllRoles() {
   try {
+    const response = await axios.get(`${API_BASE_URL}${API_ENDPOINTS.roles}`, {
+      headers: getAuthHeader(),
+    });
+    return response.data;
+  } catch (err: unknown) {
+    return mapAxiosError(err);
+  }
+}
+
+export async function getAllPermissions() {
+  try {
     const response = await axios.get(
-      `${API_BASE_URL}/api/roles`,
-      { headers: getAuthHeader() }
+      `${API_BASE_URL}${API_ENDPOINTS.permissions}`,
+      {
+        headers: getAuthHeader(),
+      },
+    );
+    return response.data;
+  } catch (err: unknown) {
+    return mapAxiosError(err);
+  }
+}
+
+export async function getUserPermissions(userId: number) {
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}${API_ENDPOINTS.users}/${userId}/permissions`,
+      { headers: getAuthHeader() },
+    );
+    return response.data;
+  } catch (err: unknown) {
+    return mapAxiosError(err);
+  }
+}
+
+export async function syncUserPermissions(
+  userId: number,
+  permissionIds: number[],
+) {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}${API_ENDPOINTS.users}/${userId}/permissions`,
+      { permission_ids: permissionIds },
+      { headers: getAuthHeader() },
+    );
+    return response.data;
+  } catch (err: unknown) {
+    return mapAxiosError(err);
+  }
+}
+
+export async function syncRolePermissions(
+  roleId: number,
+  permissionIds: number[],
+) {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}${API_ENDPOINTS.rolePermissions(roleId)}`,
+      { permission_ids: permissionIds },
+      { headers: getAuthHeader() },
     );
     return response.data;
   } catch (err: unknown) {

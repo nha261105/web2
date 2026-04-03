@@ -9,6 +9,7 @@ import ProfilePage from "./Account/ProfilePage";
 import SettingsPage from "./Account/SettingsPage";
 import OrdersPage from "./Account/OrdersPage";
 import AddressPage from "./Account/AddressPage";
+import PenaltiesPage from "./Account/PenaltiesPage";
 import { toast } from "react-hot-toast";
 
 interface AuthUser {
@@ -28,7 +29,9 @@ export default function AccountPage() {
     try {
       const saved = localStorage.getItem("auth_user");
       if (saved && saved !== "undefined") return JSON.parse(saved);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     return null;
   });
   const [isLoggedIn, setIsLoggedIn] = useState(!!authUser);
@@ -48,15 +51,12 @@ export default function AccountPage() {
         return;
       }
 
-      const [meRes, rentalsRes] = await Promise.all([
-        getMe(),
-        getMyRentals(),
-      ]);
+      const [meRes, rentalsRes] = await Promise.all([getMe(), getMyRentals()]);
 
       if (meRes.success) {
         const user = meRes.data.user;
 
-        if (user.status !== 'ACTIVE') {
+        if (user.status !== "ACTIVE") {
           toast.error("Tài khoản của bạn đã bị khóa. Vui lòng đăng nhập lại.");
           await signout();
           localStorage.removeItem("token");
@@ -88,28 +88,44 @@ export default function AccountPage() {
   // ─── Tab logic ────────────────────────────────────────────────────────────
   const getAccountPageFromTab = (tab: string | null) => {
     switch (tab) {
-      case "orders": return "Lịch sử đơn";
-      case "settings": return "Cài đặt";
-      case "addresses": return "Địa chỉ";
-      default: return "Hồ sơ";
+      case "orders":
+        return "Lịch sử đơn";
+      case "penalties":
+        return "Khoản phạt";
+      case "settings":
+        return "Cài đặt";
+      case "addresses":
+        return "Địa chỉ";
+      default:
+        return "Hồ sơ";
     }
   };
 
   const getTabFromLabel = (label: string) => {
     switch (label) {
-      case "Lịch sử đơn": return "orders";
-      case "Cài đặt": return "settings";
-      case "Địa chỉ": return "addresses";
-      default: return "profile";
+      case "Lịch sử đơn":
+        return "orders";
+      case "Khoản phạt":
+        return "penalties";
+      case "Cài đặt":
+        return "settings";
+      case "Địa chỉ":
+        return "addresses";
+      default:
+        return "profile";
     }
   };
 
-  const accountPage = useMemo(() => getAccountPageFromTab(tabParam), [tabParam]);
+  const accountPage = useMemo(
+    () => getAccountPageFromTab(tabParam),
+    [tabParam],
+  );
 
   const NAV_ITEMS = [
     { label: "Hồ sơ", icon: User },
     { label: "Địa chỉ", icon: MapPin },
     { label: "Lịch sử đơn", icon: Package },
+    { label: "Khoản phạt", icon: Package },
     { label: "Cài đặt", icon: Settings },
   ];
 
@@ -154,7 +170,7 @@ export default function AccountPage() {
           <div className="flex flex-row w-full gap-3">
             <aside className="w-56 shrink-0 hidden sm:block">
               <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                <div className="p-5 border-b border-gray-100 bg-gradient-to-br from-[#0052CC] to-[#0747A6]">
+                <div className="p-5 border-b border-gray-100 bg-linear-to-br from-[#0052CC] to-[#0747A6]">
                   <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-3">
                     <User className="w-6 h-6 text-white" />
                   </div>
@@ -170,10 +186,11 @@ export default function AccountPage() {
                   {NAV_ITEMS.map((item) => (
                     <button
                       key={item.label}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer w-full ${item.label === accountPage
-                        ? "bg-blue-50 text-[#0052CC]"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                        }`}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer w-full ${
+                        item.label === accountPage
+                          ? "bg-blue-50 text-[#0052CC]"
+                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      }`}
                       onClick={() =>
                         navigate(`/account?tab=${getTabFromLabel(item.label)}`)
                       }
@@ -201,10 +218,11 @@ export default function AccountPage() {
                     onClick={() =>
                       navigate(`/account?tab=${getTabFromLabel(item.label)}`)
                     }
-                    className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-xs font-medium transition-colors whitespace-nowrap px-2 ${item.label === accountPage
-                      ? "bg-[#0052CC] text-white"
-                      : "text-gray-500"
-                      }`}
+                    className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-xs font-medium transition-colors whitespace-nowrap px-2 ${
+                      item.label === accountPage
+                        ? "bg-[#0052CC] text-white"
+                        : "text-gray-500"
+                    }`}
                   >
                     <item.icon className="w-3.5 h-3.5" />
                     {item.label}
@@ -220,11 +238,19 @@ export default function AccountPage() {
                 <AddressPage userId={authUser.id} />
               </div>
 
-              <div className={accountPage === "Lịch sử đơn" ? "block" : "hidden"}>
+              <div
+                className={accountPage === "Lịch sử đơn" ? "block" : "hidden"}
+              >
                 <OrdersPage
                   initialRentals={rentals}
                   initialLoading={rentalsLoading}
                 />
+              </div>
+
+              <div
+                className={accountPage === "Khoản phạt" ? "block" : "hidden"}
+              >
+                <PenaltiesPage />
               </div>
 
               <div className={accountPage === "Cài đặt" ? "block" : "hidden"}>
