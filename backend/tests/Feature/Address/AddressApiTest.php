@@ -58,8 +58,7 @@ class AddressApiTest extends TestCase
         ], $override);
     }
 
-    // ─── GET /api/users/{userId}/addresses ───────────────────────────────────
-
+    // ─── GET /api/users/me/addresses ─────────────────────────────────────────
     public function test_user_can_list_own_addresses(): void
     {
         [$user, $token] = $this->createUserWithToken();
@@ -67,57 +66,28 @@ class AddressApiTest extends TestCase
         $this->createAddress($user->id);
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $token)
-            ->getJson("/api/users/{$user->id}/addresses");
+            ->getJson('/api/users/me/addresses');
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
             ->assertJsonCount(2, 'data.addresses');
     }
 
-    public function test_list_addresses_fails_for_other_user_403(): void
-    {
-        [$user, $token] = $this->createUserWithToken();
-        [$other]        = $this->createUserWithToken();
-
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
-            ->getJson("/api/users/{$other->id}/addresses");
-
-        $response->assertStatus(403)
-            ->assertJsonPath('success', false)
-            ->assertJsonPath('code', 'FORBIDDEN');
-    }
-
-    public function test_admin_can_list_any_user_addresses(): void
-    {
-        [$admin, $token] = $this->createUserWithToken('ADMIN');
-        [$other]         = $this->createUserWithToken();
-        $this->createAddress($other->id);
-
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
-            ->getJson("/api/users/{$other->id}/addresses");
-
-        $response->assertStatus(200)
-            ->assertJsonPath('success', true);
-    }
-
     public function test_list_addresses_fails_without_token_401(): void
     {
-        [$user] = $this->createUserWithToken();
-
-        $response = $this->getJson("/api/users/{$user->id}/addresses");
+        $response = $this->getJson('/api/users/me/addresses');
 
         $response->assertStatus(401)
             ->assertJsonPath('code', 'UNAUTHORIZED');
     }
 
-    // ─── POST /api/users/{userId}/addresses ──────────────────────────────────
-
+    // ─── POST /api/users/me/addresses ────────────────────────────────────────
     public function test_user_can_create_address(): void
     {
         [$user, $token] = $this->createUserWithToken();
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $token)
-            ->postJson("/api/users/{$user->id}/addresses", $this->validPayload());
+            ->postJson('/api/users/me/addresses', $this->validPayload());
 
         $response->assertStatus(201)
             ->assertJsonPath('success', true)
@@ -134,19 +104,15 @@ class AddressApiTest extends TestCase
     public function test_create_address_sets_default_correctly(): void
     {
         [$user, $token] = $this->createUserWithToken();
-
-        // Tạo địa chỉ mặc định đầu tiên
         $this->createAddress($user->id, true);
 
-        // Tạo địa chỉ mới với is_default = true
         $response = $this->withHeader('Authorization', 'Bearer ' . $token)
-            ->postJson("/api/users/{$user->id}/addresses", $this->validPayload([
+            ->postJson('/api/users/me/addresses', $this->validPayload([
                 'is_default' => true,
             ]));
 
         $response->assertStatus(201);
 
-        // Địa chỉ cũ phải bị unset default
         $this->assertDatabaseMissing('addresses', [
             'user_id'    => $user->id,
             'street'     => '123 Nguyen Hue',
@@ -159,7 +125,7 @@ class AddressApiTest extends TestCase
         [$user, $token] = $this->createUserWithToken();
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $token)
-            ->postJson("/api/users/{$user->id}/addresses", [
+            ->postJson('/api/users/me/addresses', [
                 'receive_name'  => '',
                 'receive_phone' => '090abc',
                 'city'          => '',
@@ -173,37 +139,22 @@ class AddressApiTest extends TestCase
             ]);
     }
 
-    public function test_create_address_fails_for_other_user_403(): void
-    {
-        [$user, $token] = $this->createUserWithToken();
-        [$other]        = $this->createUserWithToken();
-
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
-            ->postJson("/api/users/{$other->id}/addresses", $this->validPayload());
-
-        $response->assertStatus(403)
-            ->assertJsonPath('code', 'FORBIDDEN');
-    }
-
     public function test_create_address_fails_without_token_401(): void
     {
-        [$user] = $this->createUserWithToken();
-
-        $response = $this->postJson("/api/users/{$user->id}/addresses", $this->validPayload());
+        $response = $this->postJson('/api/users/me/addresses', $this->validPayload());
 
         $response->assertStatus(401)
             ->assertJsonPath('code', 'UNAUTHORIZED');
     }
 
-    // ─── PATCH /api/users/{userId}/addresses/{id} ────────────────────────────
-
+    // ─── PATCH /api/users/me/addresses/{id} ──────────────────────────────────
     public function test_user_can_update_own_address(): void
     {
         [$user, $token] = $this->createUserWithToken();
         $address        = $this->createAddress($user->id);
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $token)
-            ->patchJson("/api/users/{$user->id}/addresses/{$address->id}", [
+            ->patchJson("/api/users/me/addresses/{$address->id}", [
                 'city' => 'Da Nang',
             ]);
 
@@ -218,7 +169,7 @@ class AddressApiTest extends TestCase
         $address        = $this->createAddress($user->id);
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $token)
-            ->patchJson("/api/users/{$user->id}/addresses/{$address->id}", [
+            ->patchJson("/api/users/me/addresses/{$address->id}", [
                 'receive_phone' => '090abc123',
             ]);
 
@@ -227,19 +178,19 @@ class AddressApiTest extends TestCase
             ->assertJsonPath('code', 'VALIDATION_ERROR');
     }
 
-    public function test_update_address_fails_for_other_user_403(): void
+    public function test_update_address_of_other_user_returns_404(): void
     {
         [$user, $token] = $this->createUserWithToken();
         [$other]        = $this->createUserWithToken();
         $address        = $this->createAddress($other->id);
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $token)
-            ->patchJson("/api/users/{$other->id}/addresses/{$address->id}", [
+            ->patchJson("/api/users/me/addresses/{$address->id}", [
                 'city' => 'Da Nang',
             ]);
 
-        $response->assertStatus(403)
-            ->assertJsonPath('code', 'FORBIDDEN');
+        $response->assertStatus(404)
+            ->assertJsonPath('code', 'NOT_FOUND');
     }
 
     public function test_update_address_fails_without_token_401(): void
@@ -247,7 +198,7 @@ class AddressApiTest extends TestCase
         [$user]  = $this->createUserWithToken();
         $address = $this->createAddress($user->id);
 
-        $response = $this->patchJson("/api/users/{$user->id}/addresses/{$address->id}", [
+        $response = $this->patchJson("/api/users/me/addresses/{$address->id}", [
             'city' => 'Da Nang',
         ]);
 
@@ -255,7 +206,7 @@ class AddressApiTest extends TestCase
             ->assertJsonPath('code', 'UNAUTHORIZED');
     }
 
-    // ─── DELETE /api/users/{userId}/addresses/{id} ───────────────────────────
+    // ─── DELETE /api/users/me/addresses/{id} ─────────────────────────────────
 
     public function test_user_can_delete_own_address(): void
     {
@@ -263,7 +214,7 @@ class AddressApiTest extends TestCase
         $address        = $this->createAddress($user->id);
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $token)
-            ->deleteJson("/api/users/{$user->id}/addresses/{$address->id}");
+            ->deleteJson("/api/users/me/addresses/{$address->id}");
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true);
@@ -279,36 +230,35 @@ class AddressApiTest extends TestCase
         $next    = $this->createAddress($user->id, false);
 
         $this->withHeader('Authorization', 'Bearer ' . $token)
-            ->deleteJson("/api/users/{$user->id}/addresses/{$default->id}");
+            ->deleteJson("/api/users/me/addresses/{$default->id}");
 
-        // địa chỉ tiếp theo phải được promote lên default
         $this->assertDatabaseHas('addresses', [
             'id'         => $next->id,
             'is_default' => true,
         ]);
     }
 
-    public function test_delete_address_fails_not_found(): void
+    public function test_delete_address_fails_not_found_404(): void
     {
         [$user, $token] = $this->createUserWithToken();
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $token)
-            ->deleteJson("/api/users/{$user->id}/addresses/99999");
+            ->deleteJson('/api/users/me/addresses/99999');
 
-        $response->assertStatus(404);
+        $response->assertStatus(404)
+            ->assertJsonPath('code', 'NOT_FOUND');
     }
 
-    public function test_delete_address_fails_for_other_user_403(): void
+    public function test_delete_address_of_other_user_returns_404(): void
     {
         [$user, $token] = $this->createUserWithToken();
         [$other]        = $this->createUserWithToken();
         $address        = $this->createAddress($other->id);
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $token)
-            ->deleteJson("/api/users/{$other->id}/addresses/{$address->id}");
-
-        $response->assertStatus(403)
-            ->assertJsonPath('code', 'FORBIDDEN');
+            ->deleteJson("/api/users/me/addresses/{$address->id}");
+        $response->assertStatus(404)
+            ->assertJsonPath('code', 'NOT_FOUND');
     }
 
     public function test_delete_address_fails_without_token_401(): void
@@ -316,9 +266,22 @@ class AddressApiTest extends TestCase
         [$user]  = $this->createUserWithToken();
         $address = $this->createAddress($user->id);
 
-        $response = $this->deleteJson("/api/users/{$user->id}/addresses/{$address->id}");
+        $response = $this->deleteJson("/api/users/me/addresses/{$address->id}");
 
         $response->assertStatus(401)
             ->assertJsonPath('code', 'UNAUTHORIZED');
+    }
+
+    // ─── Backward compat: Admin vẫn dùng /api/users/{userId}/addresses ───────
+    public function test_admin_can_list_any_user_addresses_via_userId_route(): void
+    {
+        [$admin, $token] = $this->createUserWithToken('ADMIN');
+        [$other]         = $this->createUserWithToken();
+        $this->createAddress($other->id);
+
+        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->getJson("/api/users/{$other->id}/addresses");
+        $response->assertStatus(200)
+            ->assertJsonPath('success', true);
     }
 }

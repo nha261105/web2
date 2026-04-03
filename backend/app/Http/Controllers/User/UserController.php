@@ -11,14 +11,19 @@ use Illuminate\Http\Request;
 use App\Http\Requests\User\UpdateUserRequest;
 use App\Support\ApiResponse;
 use App\Http\Requests\User\UpdateUserStatusRequest;
+use App\Services\Notification\NotificationService;
 
 class UserController extends Controller
 {
     protected UserService $userService;
+    protected NotificationService $notificationService;
 
-    public function __construct(UserService $userService)
-    {
+    public function __construct(
+        UserService $userService,
+        NotificationService $notificationService
+    ) {
         $this->userService = $userService;
+        $this->notificationService = $notificationService;
     }
 
     /**
@@ -29,6 +34,13 @@ class UserController extends Controller
     {
         try {
             $user = $this->userService->createUser($request->validated());
+
+            $this->notificationService->create(
+                $user->id,
+                'Đăng ký thành công',
+                "Chào mừng {$user->full_name}! Tài khoản của bạn đã được tạo thành công.",
+                'SYSTEM'
+            );
 
             return ApiResponse::success(
                 [
@@ -75,6 +87,12 @@ class UserController extends Controller
     {
         $user = $request->attributes->get('auth_user');
 
+        if (!$user) {
+            return ApiResponse::error('Unauthorized', 'UNAUTHORIZED', 401);
+        }
+
+        $user->load(['userInfo', 'roles']);
+
         return ApiResponse::success(
             [
                 'user' => new UserResource($user),
@@ -90,9 +108,9 @@ class UserController extends Controller
     {
         try {
             $authUser = $request->attributes->get('auth_user');
-            $user = $this->userService->updateUser(
+                $user = $this->userService->updateUserMe(
                 $authUser->id,
-                $request->validated(),
+                $request->validated()
             );
 
             return ApiResponse::success(
@@ -103,6 +121,21 @@ class UserController extends Controller
             );
         } catch (\Exception $e) {
             return ApiResponse::error($e->getMessage(), 'UPDATE_FAILED', 400);
+        }
+    }
+
+    /**
+     * DELETE /api/users/me
+     */
+    public function deleteMe(Request $request): JsonResponse
+    {
+        try {
+            $authUser = $request->attributes->get('auth_user');
+            $this->userService->deleteUser($authUser->id);
+
+            return ApiResponse::success([], 'Tài khoản của bạn đã được xóa thành công');
+        } catch (\Exception $e) {
+            return ApiResponse::error('Không thể xóa tài khoản lúc này', 'DELETE_FAILED', 400);
         }
     }
 
@@ -172,7 +205,7 @@ class UserController extends Controller
         $user = $this->userService->getUserById($id);
 
         if (!$user) {
-            return ApiResponse::notFound('User not found');
+            return ApiResponse::error('User not found', 'NOT_FOUND', 404);
         }
 
         $user->load(['roles', 'userInfo']);

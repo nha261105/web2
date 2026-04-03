@@ -4,6 +4,8 @@ namespace App\Http\Resources\Rental;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Http\Resources\AddressResource;
+use App\Http\Resources\Rental\RentalDetailResource;
 
 class RentalResource extends JsonResource
 {
@@ -26,6 +28,8 @@ class RentalResource extends JsonResource
             'products' => $this->whenLoaded('products'),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'items' => RentalDetailResource::collection($this->whenLoaded('details')),
+            'address' => new AddressResource($this->whenLoaded('address')),
         ];
     }
 }

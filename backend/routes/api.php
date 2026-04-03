@@ -18,6 +18,7 @@ use App\Http\Controllers\Combos\ComboController;
 use App\Http\Controllers\Coupon\CouponController;
 use App\Http\Controllers\Address\AddressController;
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Notification\NotificationController;
 
 /**
  * User Routes
@@ -70,6 +71,15 @@ Route::middleware(['auth.token'])->group(function () {
     Route::get('/users/me', [UserController::class, 'me']);
     Route::patch('/users/me', [UserController::class, 'updateMe']);
     Route::patch('/users/me/password', [UserController::class, 'changePassword']);
+    Route::delete('/users/me', [UserController::class, 'deleteMe']);
+    
+    // notifications
+    Route::prefix('notifications')->group(function () {
+    Route::get('/',              [NotificationController::class, 'index']);
+    Route::patch('/read-all',    [NotificationController::class, 'markAllAsRead']);
+    Route::patch('/{id}/read',   [NotificationController::class, 'markAsRead']);
+    });
+    Route::patch('/users/me/password', [UserController::class, 'changePassword']);
 
     Route::prefix('users/me/addresses')->group(function () {
         Route::get('/', [AddressController::class, 'indexMe']);
@@ -94,6 +104,7 @@ Route::middleware(['auth.token'])->group(function () {
     });
 
     // rental user
+    Route::post('/rentals/{id}/rent-again', [RentalController::class, 'rentAgain']);
     Route::get('/rentals', [RentalController::class, 'index']);
     Route::patch('/rentals/{id}/cancel', [RentalController::class, 'cancel']);
     Route::get('/cart', [CartController::class, 'index']);
@@ -103,6 +114,7 @@ Route::middleware(['auth.token'])->group(function () {
     Route::patch('/cart/return-date', [CartController::class, 'updateReturnDate']);
     Route::patch('/cart/items/{id}', [CartController::class, 'updateItem']);
     Route::delete('/cart/items/{id}', [CartController::class, 'destroyItem']);
+    Route::get('/rentals/{id}', [RentalController::class, 'show']);
 
     Route::middleware(['role:ADMIN'])->group(function () {
         Route::get('/admin/dashboard', [AdminDashboardController::class, 'index']);
@@ -123,7 +135,7 @@ Route::middleware(['auth.token'])->group(function () {
 
         // Rental CRUD
         Route::post('/rentals', [RentalController::class, 'store']);
-        Route::get('/rentals/{id}', [RentalController::class, 'show']);
+        // Route::get('/rentals/{id}', [RentalController::class, 'show']);
         Route::patch('/rentals/{id}', [RentalController::class, 'update']);
 
         // Return order

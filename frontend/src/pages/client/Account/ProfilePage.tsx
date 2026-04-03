@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Camera, Save, User, Loader2 } from "lucide-react";
-import {  updateMe } from "@/services/usersService";
+import { updateMe } from "@/services/usersService";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -8,6 +8,7 @@ interface ProfileForm {
   name: string;
   email: string;
   phone: string;
+  avatar: string;
 }
 
 interface ProfilePageProps {
@@ -15,28 +16,58 @@ interface ProfilePageProps {
     full_name: string;
     email: string;
     phone: string;
+    avatar?: string;
   };
 }
 
 export default function ProfilePage({ user }: ProfilePageProps) {
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<ProfileForm>({
     name: user.full_name ?? "",
     email: user.email ?? "",
     phone: user.phone ?? "",
+    avatar: user.avatar ?? "",
   });
 
-  // ─── Submit cập nhật ──────────────────────────────────────────────────────
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(user.avatar ?? null);
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error("Kích thước ảnh phải nhỏ hơn 2MB");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setAvatarPreview(base64String);
+        setForm((p) => ({ ...p, avatar: base64String }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleTriggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
+  // ─── Submit ─────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     const res = await updateMe({
       name: form.name,
       phone: form.phone,
+      avatar: form.avatar,
     });
     if (res.success) {
       toast.success("Cập nhật thông tin thành công!");
+      const currentUser = JSON.parse(localStorage.getItem("auth_user") || "{}");
+      localStorage.setItem("auth_user", JSON.stringify({ ...currentUser, full_name: form.name, phone: form.phone, avatar: form.avatar }));
+      window.dispatchEvent(new Event("auth_changed"));
     } else {
       toast.error(res.message || "Cập nhật thất bại");
     }
@@ -52,11 +83,26 @@ export default function ProfilePage({ user }: ProfilePageProps) {
         </h2>
         <div className="flex items-center gap-5">
           <div className="relative">
-            <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center">
-              <User className="w-6 h-6 text-gray-400" />
+            <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center overflow-hidden border border-gray-200">
+              {avatarPreview ? (
+                <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <User className="w-6 h-6 text-gray-400" />
+              )}
             </div>
+            
+            {/* Input file ẩn */}
+            <input 
+              type="file" 
+              accept="image/*" 
+              ref={fileInputRef} 
+              onChange={handleImageChange} 
+              className="hidden" 
+            />
+
             <button
               type="button"
+              onClick={handleTriggerFileInput}
               className="absolute -bottom-2 -right-2 w-7 h-7 bg-[#0052CC] text-white rounded-full flex items-center justify-center shadow-md hover:bg-[#0747A6] transition-colors"
             >
               <Camera className="w-3.5 h-3.5" />
@@ -71,6 +117,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
             </p>
             <button
               type="button"
+              onClick={handleTriggerFileInput}
               className="h-8 px-4 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors"
             >
               Change Photo

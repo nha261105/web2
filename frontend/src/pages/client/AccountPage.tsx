@@ -10,20 +10,22 @@ import SettingsPage from "./Account/SettingsPage";
 import OrdersPage from "./Account/OrdersPage";
 import AddressPage from "./Account/AddressPage";
 import { toast } from "react-hot-toast";
+import NotificationsPage from "./Account/NotificationPage";
+import { Bell } from "lucide-react";
+import { API_BASE_URL } from "@/config/api";
 
 interface AuthUser {
   id: number;
   full_name: string;
   email: string;
   phone: string;
+  avatar?: string;
 }
 
 export default function AccountPage() {
   const [searchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
   const navigate = useNavigate();
-
-  // ─── Auth state ───────────────────────────────────────────────────────────
   const [authUser, setAuthUser] = useState<AuthUser | null>(() => {
     try {
       const saved = localStorage.getItem("auth_user");
@@ -31,9 +33,25 @@ export default function AccountPage() {
     } catch { /* ignore */ }
     return null;
   });
-  const [isLoggedIn, setIsLoggedIn] = useState(!!authUser);
+  useEffect(() => {
+    const handleAuthChange = () => {
+      try {
+        const saved = localStorage.getItem("auth_user");
+        if (saved && saved !== "undefined") {
+          setAuthUser(JSON.parse(saved));
+        }
+      } catch {
+        // ignore
+      }
+    };
 
-  // ─── Preloaded rentals ────────────────────────────────────────────────────
+    window.addEventListener("auth_changed", handleAuthChange);
+    return () => window.removeEventListener("auth_changed", handleAuthChange);
+  }, []);
+  const [isLoggedIn, setIsLoggedIn] = useState(!!authUser);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const navigator = useNavigate();
+
   const [rentals, setRentals] = useState<Rental[]>([]);
   const [rentalsLoading, setRentalsLoading] = useState(true);
 
@@ -91,6 +109,7 @@ export default function AccountPage() {
       case "orders": return "Lịch sử đơn";
       case "settings": return "Cài đặt";
       case "addresses": return "Địa chỉ";
+      case "notifications": return "Thông báo";
       default: return "Hồ sơ";
     }
   };
@@ -100,6 +119,7 @@ export default function AccountPage() {
       case "Lịch sử đơn": return "orders";
       case "Cài đặt": return "settings";
       case "Địa chỉ": return "addresses";
+      case "Thông báo": return "notifications";
       default: return "profile";
     }
   };
@@ -110,22 +130,19 @@ export default function AccountPage() {
     { label: "Hồ sơ", icon: User },
     { label: "Địa chỉ", icon: MapPin },
     { label: "Lịch sử đơn", icon: Package },
+    { label: "Thông báo", icon: Bell },
     { label: "Cài đặt", icon: Settings },
   ];
 
   // ─── Logout ───────────────────────────────────────────────────────────────
   const handleLogout = async () => {
     await signout();
-
-    localStorage.removeItem("token");
     localStorage.removeItem("auth_user");
-
-    setIsLoggedIn(false);
+    localStorage.removeItem("token");
     setAuthUser(null);
-    setRentals([]);
-    setRentalsLoading(false);
-
-    navigate("/");
+    setIsAccountOpen(false);
+    window.dispatchEvent(new Event("auth_changed"));
+    navigator("/");
   };
 
   return (
@@ -155,15 +172,25 @@ export default function AccountPage() {
             <aside className="w-56 shrink-0 hidden sm:block">
               <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
                 <div className="p-5 border-b border-gray-100 bg-gradient-to-br from-[#0052CC] to-[#0747A6]">
-                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-3">
-                    <User className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-3 overflow-hidden border border-white/30">
+                    {authUser.avatar ? (
+                      <img
+                        src={(authUser.avatar.startsWith("http") || authUser.avatar.startsWith("data:"))
+                          ? authUser.avatar
+                          : `${API_BASE_URL}/${authUser.avatar}`}
+                        alt="Avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-6 h-6 text-white" />
+                    )}
                   </div>
                   <p className="text-white font-semibold text-sm truncate">
                     {authUser.full_name}
                   </p>
-                  <p className="text-blue-200 text-xs truncate">
-                    {authUser.email}
-                  </p>
+                    <p className="text-blue-200 text-xs truncate">
+                      {authUser.email}
+                    </p>
                 </div>
 
                 <nav className="p-2">
@@ -226,7 +253,9 @@ export default function AccountPage() {
                   initialLoading={rentalsLoading}
                 />
               </div>
-
+              <div className={accountPage === "Thông báo" ? "block" : "hidden"}>
+                <NotificationsPage />
+              </div>
               <div className={accountPage === "Cài đặt" ? "block" : "hidden"}>
                 <SettingsPage />
               </div>

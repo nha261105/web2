@@ -24,6 +24,26 @@ export interface Rental {
   updated_at: string;
 }
 
+export interface RentalDetail extends Rental {
+  items?: Array<{
+    id: number;
+    product_id: number;
+    name?: string;
+    product_name?: string;
+    product_image?: string;
+    quantity: number;
+    price_at_rental: number;
+  }>;
+  address?: {
+    id: number;
+    street: string;
+    ward: string;
+    city: string;
+    receive_name: string;
+    receive_phone: string;
+  };
+}
+
 interface RentalParams {
   status?: string;
   page?: number;
@@ -67,6 +87,46 @@ export async function cancelMyRental(id: number) {
         error.response?.data || {
           success: false,
           message: "Lỗi kết nối server",
+        }
+      );
+    }
+    return { success: false, message: "Đã xảy ra lỗi không xác định" };
+  }
+}
+
+export async function getRentalDetail(id: number) {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/rentals/${id}`, {
+      headers: getAuthHeader(),
+    });
+    return response.data;
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      return (
+        error.response?.data || {
+          success: false,
+          message: "Không thể tải chi tiết đơn hàng",
+        }
+      );
+    }
+    return { success: false, message: "Đã xảy ra lỗi không xác định" };
+  }
+}
+
+export async function rentAgain(rentalId: number) {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}/api/rentals/${rentalId}/rent-again`,
+      {},
+      { headers: getAuthHeader() }
+    );
+    return response.data;
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      return (
+        error.response?.data || {
+          success: false,
+          message: "Không thể tạo đơn thuê lại",
         }
       );
     }

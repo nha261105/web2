@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getProducts } from "@/services/catalogService";
 import { signout } from "@/services/usersService";
+import { API_BASE_URL } from "@/config/api";
+import { getNotifications, markAsRead, markAllRead } from "@/services/notificationService";
 import {
   Search,
   Heart,
@@ -13,6 +15,8 @@ import {
   Package,
   LogOut,
   LayoutDashboard,
+  Bell,
+  Loader2,
 } from "lucide-react";
 import { getMyCart } from "@/services/cartService";
 
@@ -103,6 +107,7 @@ interface AuthUser {
   email: string;
   phone: string;
   roles?: Array<{ id: number; name: string }>;
+  avatar?: string;
 }
 
 export default function Header() {
@@ -125,8 +130,9 @@ export default function Header() {
   const megaAreaRef = useRef<HTMLLIElement | null>(null);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const searchBoxRef = useRef<HTMLDivElement | null>(null);
+  const notifRef = useRef<HTMLDivElement | null>(null);
 
-  // ─── AUTH STATE (từ feature của bạn) ───────────────────────────────────────
+  // ─── AUTH STATE  ───────────────────────────────────────
   const [authUser, setAuthUser] = useState<AuthUser | null>(() => {
     try {
       const saved = localStorage.getItem("auth_user");
@@ -135,10 +141,23 @@ export default function Header() {
       return null;
     }
   });
-  
+
+  // ─── NOTIFICATION STATE ─────────────────────────────────────────────────────
+  const [notifications, setNotifications] = useState<Array<{
+    id: number;
+    title: string;
+    content: string;
+    type: string;
+    is_read: boolean;
+    created_at: string;
+  }>>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [notifLoading, setNotifLoading] = useState(false);
+
   const [cartCount, setCartCount] = useState(0);
 
-  // ─── Load device sections (từ dev) ─────────────────────────────────────────
+  // ─── Load device sections ─────────────────────────────────────────
   useEffect(() => {
     async function loadDeviceSections() {
       try {
@@ -160,7 +179,7 @@ export default function Header() {
     void loadDeviceSections();
   }, []);
 
-  // ─── Auth storage listener (từ feature) ────────────────────────────────────
+  // ─── Auth storage listener ────────────────────────────────────
   useEffect(() => {
     const handleStorageChange = () => {
       try {
@@ -178,6 +197,65 @@ export default function Header() {
       window.removeEventListener("auth_changed", handleStorageChange);
     };
   }, []);
+
+  // Fetch notifications
+  const fetchNotifications = async () => {
+    if (!authUser) return;
+    setNotifLoading(true);
+    try {
+      const res = await getNotifications(1, 10);
+      if (res.success) {
+        setNotifications(res.data ?? []);
+        setUnreadCount(res.meta?.unread_count ?? 0);
+      }
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    } finally {
+      setNotifLoading(false);
+    }
+  };
+
+  // Mark as read
+  const handleMarkAsRead = async (id: number) => {
+    const res = await markAsRead(id);
+    if (res.success) {
+      setNotifications(prev =>
+        prev.map(n => n.id === id ? { ...n, is_read: true } : n)
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    }
+  };
+
+  // Mark all as read
+  const handleMarkAllRead = async () => {
+    const res = await markAllRead();
+    if (res.success) {
+      setNotifications(prev =>
+        prev.map(n => ({ ...n, is_read: true }))
+      );
+      setUnreadCount(0);
+    }
+  };
+
+  useEffect(() => {
+    if (!isNotificationOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setIsNotificationOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [isNotificationOpen]);
+
+  useEffect(() => {
+    if (authUser) {
+      fetchNotifications();
+    } else {
+      setNotifications([]);
+      setUnreadCount(0);
+    }
+  }, [authUser]);
 
   // ─── Listen for cart changes ──────────────────────────────────────────
   useEffect(() => {
@@ -283,9 +361,16 @@ export default function Header() {
     setIsAccountOpen((p) => !p);
   };
 
-  const avatarUrl = authUser
-    ? `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser.full_name)}&background=2563eb&color=ffffff&size=128`
-    : "";
+  //load avt
+  const avatarUrl = useMemo(() => {
+    if (authUser?.avatar) {
+      if (authUser.avatar.startsWith("data:") || authUser.avatar.startsWith("http")) {
+        return authUser.avatar;
+      }
+      return `${API_BASE_URL}/${authUser.avatar}`;
+    }
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser?.full_name || "User")}&background=2563eb&color=ffffff`;
+  }, [authUser]);
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 text-slate-900 shadow-sm backdrop-blur supports-backdrop-filter:bg-white/85">
@@ -416,6 +501,96 @@ export default function Header() {
             <Heart size={24} />
           </button>
 
+          {/* Notifications */}
+          <div ref={notifRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+              className="h-10 w-10 rounded-full grid place-items-center text-slate-600 hover:text-blue-600 hover:bg-slate-100 transition-colors relative"
+              aria-label="Thông báo"
+            >
+              <Bell size={22} />
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-5 h-5 rounded-full bg-red-500 text-white text-xs px-1 flex items-center justify-center font-semibold">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </button>
+
+            {isNotificationOpen && (
+              <div className="absolute right-0 top-full mt-3 w-96 max-h-125 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5 z-50">
+                <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 bg-slate-50">
+                  <h3 className="text-sm font-semibold text-slate-900">Thông báo</h3>
+                  {unreadCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleMarkAllRead}
+                      className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      Đánh dấu tất cả đã đọc
+                    </button>
+                  )}
+                </div>
+
+                <div className="max-h-100 overflow-y-auto">
+                  {notifLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+                    </div>
+                  ) : notifications.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500">
+                      <Bell className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                      <p className="text-sm">Chưa có thông báo nào</p>
+                    </div>
+                  ) : (
+                    notifications.map((notif) => (
+                      <div
+                        key={notif.id}
+                        className={`border-b border-slate-100 last:border-0 cursor-pointer transition-colors hover:bg-slate-50 ${!notif.is_read ? 'bg-blue-50/30' : ''
+                          }`}
+                        onClick={() => !notif.is_read && handleMarkAsRead(notif.id)}
+                      >
+                        <div className="px-4 py-3">
+                          <div className="flex items-start gap-3">
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm font-medium ${!notif.is_read ? 'text-slate-900' : 'text-slate-600'}`}>
+                                {notif.title}
+                              </p>
+                              <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                                {notif.content}
+                              </p>
+                              <p className="text-xs text-slate-400 mt-1.5">
+                                {new Date(notif.created_at).toLocaleString('vi-VN')}
+                              </p>
+                            </div>
+                            {!notif.is_read && (
+                              <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0 mt-1" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {notifications.length > 0 && (
+                  <div className="border-t border-slate-100 p-2 text-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsNotificationOpen(false);
+                        navigator("/account?tab=notifications");
+                      }}
+                      className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      Xem tất cả thông báo
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Account */}
           <div ref={accountMenuRef} className="relative">
             <button
@@ -426,7 +601,9 @@ export default function Header() {
               {authUser ? (
                 <img
                   src={avatarUrl}
-                  alt={authUser.full_name}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser?.full_name || "U")}`;
+                  }}
                   className="h-8 w-8 rounded-full object-cover"
                 />
               ) : (
@@ -481,7 +658,7 @@ export default function Header() {
                         Cài đặt
                       </button>
                     </div>
-                    {/* Admin Panel - từ feature của bạn */}
+                    {/* Admin Panel  */}
                     {authUser.roles?.some((role) => role.name === "ADMIN") && (
                       <Link
                         to="/admin/dashboard"

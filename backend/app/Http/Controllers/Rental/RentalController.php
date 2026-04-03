@@ -10,6 +10,8 @@ use App\Services\Rental\RentalService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class RentalController extends Controller
 {
@@ -47,7 +49,7 @@ class RentalController extends Controller
     public function show(int $id): JsonResponse
     {
         $rental = $this->service->findById($id);
-
+    
         return ApiResponse::success([
             'rental' => new RentalResource($rental),
         ]);
@@ -70,7 +72,7 @@ class RentalController extends Controller
             'Rental updated',
         );
     }
-
+ 
     public function cancel(Request $request, int $id): JsonResponse
     {
         $authUser = $request->attributes->get('auth_user');
@@ -91,5 +93,40 @@ class RentalController extends Controller
         return ApiResponse::success([
             'rental' => new RentalResource($rental),
         ], 'Đã hủy đơn thành công');
+    }
+
+    /**
+     * POST /api/rentals/{id}/rent-again
+     */
+    public function rentAgain(int $id): JsonResponse
+    {
+        $user = request()->attributes->get('auth_user');
+        
+        try {
+            $oldRental = $this->service->findById($id);
+            
+            if (!$oldRental || (int) $oldRental->user_id !== (int) $user->id) {
+                return ApiResponse::notFound('Không tìm thấy đơn hàng');
+            }
+            
+            if ($oldRental->status !== 'COMPLETED') {
+                return ApiResponse::error('Chỉ có thể thuê lại đơn đã hoàn thành', 'INVALID_STATUS', 400);
+            }
+            
+            $oldRental->load('details');
+            
+            DB::beginTransaction();
+            $newRental = $this->service->createFromExisting($oldRental);
+            DB::commit();
+            
+            return ApiResponse::success(
+                ['rental' => new RentalResource($newRental)],
+                'Đã tạo đơn thuê lại thành công',
+                201
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ApiResponse::internalError('Không thể tạo đơn thuê lại: ' . $e->getMessage());
+        }
     }
 }

@@ -34,11 +34,16 @@ class Rental extends Model
 
     public $timestamps = true;
 
-    public function details(): HasMany
+    public function details()
     {
         return $this->hasMany(RentalDetail::class, 'rental_id');
     }
-    
+
+    public function address()
+    {
+        return $this->belongsTo(Address::class, 'address_id');
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
