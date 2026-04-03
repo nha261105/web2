@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { Package, Eye, RotateCcw, Loader2, X } from "lucide-react";
-import { getMyRentals, cancelMyRental, type Rental } from "@/services/rentalService";
+import { getMyRentals, cancelMyRental, type Rental, rentAgain } from "@/services/rentalService";
 import toast from "react-hot-toast";
 
 const STATUS_STYLES: Record<string, string> = {
-  PENDING:   "bg-yellow-50 text-yellow-700 border-yellow-200",
-  APPROVED:  "bg-purple-50 text-purple-700 border-purple-200",
+  PENDING: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  APPROVED: "bg-purple-50 text-purple-700 border-purple-200",
   DEPOSITED: "bg-indigo-50 text-indigo-700 border-indigo-200",
   PICKED_UP: "bg-blue-50 text-blue-700 border-blue-200",
   COMPLETED: "bg-green-50 text-green-700 border-green-200",
@@ -22,8 +22,8 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const FILTERS = [
-  { id: "all",       label: "Tất cả" },
-  { id: "PENDING",   label: "Chờ xác nhận" },
+  { id: "all", label: "Tất cả" },
+  { id: "PENDING", label: "Chờ xác nhận" },
   { id: "PICKED_UP", label: "Đang thuê" },
   { id: "COMPLETED", label: "Hoàn thành" },
   { id: "CANCELLED", label: "Đã hủy" },
@@ -39,9 +39,16 @@ export default function OrdersPage({ initialRentals, initialLoading }: Props) {
   const [filteredRentals, setFilteredRentals] = useState<Rental[] | null>(null);
   const [filteredLoading, setFilteredLoading] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Rental | null>(null);
+
   const [cancellingId, setCancellingId] = useState<number | null>(null);
 
-  const displayRentals = activeFilter === "all" ? initialRentals : (filteredRentals ?? []);
+  const [localRentals, setLocalRentals] = useState<Rental[]>(initialRentals);
+
+  useEffect(() => {
+    setLocalRentals(initialRentals);
+  }, [initialRentals]);
+
+  const displayRentals = activeFilter === "all" ? localRentals : (filteredRentals ?? []);
   const displayLoading = activeFilter === "all" ? initialLoading : filteredLoading;
 
   const handleCancelOrder = async (orderId: number) => {
@@ -86,6 +93,26 @@ export default function OrdersPage({ initialRentals, initialLoading }: Props) {
     }
   };
 
+  const handleRentAgainAction = async (id: number) => {
+    const loadingToast = toast.loading("Đang tạo đơn thuê lại...");
+    const res = await rentAgain(id);
+    toast.dismiss(loadingToast);
+
+    if (res.success) {
+      toast.success("Đã tạo đơn thuê mới từ lịch sử!");
+
+      const refreshRes = await getMyRentals({ status: "all" }); 
+      if (refreshRes.success) {
+        setLocalRentals(refreshRes.data?.items ?? refreshRes.data ?? []);
+      }
+      setActiveFilter("all");
+      setSelectedOrder(null);
+      window.dispatchEvent(new Event("notification_changed"));
+    } else {
+      toast.error(res.message || "Không thể thuê lại");
+    }
+  };
+
   return (
     <>
       <div className="space-y-5">
@@ -97,11 +124,10 @@ export default function OrdersPage({ initialRentals, initialLoading }: Props) {
                 <button
                   key={f.id}
                   onClick={() => handleFilterChange(f.id)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                    activeFilter === f.id
-                      ? "bg-white text-gray-900 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${activeFilter === f.id
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                    }`}
                 >
                   {f.label}
                 </button>
@@ -139,9 +165,8 @@ export default function OrdersPage({ initialRentals, initialLoading }: Props) {
                           #{order.code}
                         </span>
                         <span
-                          className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${
-                            STATUS_STYLES[order.status] ?? "bg-gray-50 text-gray-600 border-gray-200"
-                          }`}
+                          className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${STATUS_STYLES[order.status] ?? "bg-gray-50 text-gray-600 border-gray-200"
+                            }`}
                         >
                           {STATUS_LABELS[order.status] || order.status}
                         </span>
@@ -185,6 +210,8 @@ export default function OrdersPage({ initialRentals, initialLoading }: Props) {
                       <Eye className="w-3.5 h-3.5" />
                       Xem chi tiết
                     </button>
+
+                    {/* cancel */}
                     {["PENDING", "APPROVED", "DEPOSITED"].includes(order.status) && (
                       <button
                         type="button"
@@ -196,13 +223,15 @@ export default function OrdersPage({ initialRentals, initialLoading }: Props) {
                         Hủy đơn
                       </button>
                     )}
+
+                    {/* rent again */}
                     {order.status === "COMPLETED" && (
                       <button
                         type="button"
-                        className="flex items-center gap-1.5 h-8 px-3 bg-blue-50 text-[#0052CC] rounded-lg text-xs font-medium hover:bg-blue-100 transition-colors"
+                        onClick={() => handleRentAgainAction(order.id)}
+                        className="flex items-center gap-1.5 h-8 px-3 bg-blue-50 text-[#0052CC] rounded-lg text-xs font-medium hover:bg-blue-100 transition-colors cursor-pointer"
                       >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        Thuê lại
+                        <RotateCcw className="w-3.5 h-3.5" /> Thuê lại
                       </button>
                     )}
                   </div>
@@ -230,7 +259,7 @@ export default function OrdersPage({ initialRentals, initialLoading }: Props) {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             <div className="p-5 overflow-y-auto flex-1">
               <div className="flex justify-between items-center mb-6">
                 <div>
@@ -259,10 +288,12 @@ export default function OrdersPage({ initialRentals, initialLoading }: Props) {
                   (selectedOrder as any).products.map((prod: any) => (
                     <div key={prod.id} className="flex justify-between items-start pb-3 border-b border-gray-100 last:border-0 last:pb-0">
                       <div className="flex gap-3">
-                        <img 
-                            src={prod.images?.[0] ? `https://rmzmpdofcrdxrtubvvqy.supabase.co/storage/v1/object/public/rentgear/${prod.images[0]}` : '/placeholder.jpg'} 
-                            alt={prod.name} 
-                            className="w-12 h-12 object-cover rounded-lg border border-gray-200"
+                        <img
+                          src={prod.images?.[0] ? `https://rmzmpdofcrdxrtubvvqy.supabase.co/storage/v1/object/public/rentgear/${prod.images[0]}` : '/placeholder.jpg'}
+                          alt={prod.name}
+                          className="w-12 h-12 object-cover rounded-lg border border-gray-200"
+                          loading="lazy"
+                          decoding="async"
                         />
                         <div>
                           <div className="font-medium text-sm text-gray-900">{prod.name}</div>

@@ -10,6 +10,8 @@ import SettingsPage from "./Account/SettingsPage";
 import OrdersPage from "./Account/OrdersPage";
 import AddressPage from "./Account/AddressPage";
 import { toast } from "react-hot-toast";
+import NotificationsPage from "./Account/NotificationPage";
+import { Bell } from "lucide-react";
 
 interface AuthUser {
   id: number;
@@ -32,6 +34,11 @@ export default function AccountPage() {
     return null;
   });
   const [isLoggedIn, setIsLoggedIn] = useState(!!authUser);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const navigator = useNavigate();
+
+
 
   // ─── Preloaded rentals ────────────────────────────────────────────────────
   const [rentals, setRentals] = useState<Rental[]>([]);
@@ -91,6 +98,7 @@ export default function AccountPage() {
       case "orders": return "Lịch sử đơn";
       case "settings": return "Cài đặt";
       case "addresses": return "Địa chỉ";
+      case "notifications": return "Thông báo";
       default: return "Hồ sơ";
     }
   };
@@ -100,6 +108,7 @@ export default function AccountPage() {
       case "Lịch sử đơn": return "orders";
       case "Cài đặt": return "settings";
       case "Địa chỉ": return "addresses";
+      case "Thông báo": return "notifications";
       default: return "profile";
     }
   };
@@ -110,22 +119,19 @@ export default function AccountPage() {
     { label: "Hồ sơ", icon: User },
     { label: "Địa chỉ", icon: MapPin },
     { label: "Lịch sử đơn", icon: Package },
+    { label: "Thông báo", icon: Bell },
     { label: "Cài đặt", icon: Settings },
   ];
 
   // ─── Logout ───────────────────────────────────────────────────────────────
   const handleLogout = async () => {
     await signout();
-
-    localStorage.removeItem("token");
     localStorage.removeItem("auth_user");
-
-    setIsLoggedIn(false);
+    localStorage.removeItem("token");
     setAuthUser(null);
-    setRentals([]);
-    setRentalsLoading(false);
-
-    navigate("/");
+    setIsAccountOpen(false);
+    window.dispatchEvent(new Event("auth_changed"));
+    navigator("/");
   };
 
   return (
@@ -226,7 +232,9 @@ export default function AccountPage() {
                   initialLoading={rentalsLoading}
                 />
               </div>
-
+              <div className={accountPage === "Thông báo" ? "block" : "hidden"}>
+                <NotificationsPage />
+              </div>
               <div className={accountPage === "Cài đặt" ? "block" : "hidden"}>
                 <SettingsPage />
               </div>

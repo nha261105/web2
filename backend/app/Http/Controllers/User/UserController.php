@@ -11,14 +11,19 @@ use Illuminate\Http\Request;
 use App\Http\Requests\User\UpdateUserRequest;
 use App\Support\ApiResponse;
 use App\Http\Requests\User\UpdateUserStatusRequest;
+use App\Services\Notification\NotificationService;
 
 class UserController extends Controller
 {
     protected UserService $userService;
+    protected NotificationService $notificationService;
 
-    public function __construct(UserService $userService)
-    {
+    public function __construct(
+        UserService $userService,
+        NotificationService $notificationService
+    ) {
         $this->userService = $userService;
+        $this->notificationService = $notificationService;
     }
 
     /**
@@ -29,6 +34,13 @@ class UserController extends Controller
     {
         try {
             $user = $this->userService->createUser($request->validated());
+
+            $this->notificationService->create(
+                $user->id,
+                'Đăng ký thành công',
+                "Chào mừng {$user->full_name}! Tài khoản của bạn đã được tạo thành công.",
+                'SYSTEM'
+            );
 
             return ApiResponse::success(
                 [
@@ -106,6 +118,7 @@ class UserController extends Controller
         }
     }
 
+
     /**
      * PATCH /api/users/me/password
      */
@@ -172,7 +185,7 @@ class UserController extends Controller
         $user = $this->userService->getUserById($id);
 
         if (!$user) {
-            return ApiResponse::notFound('User not found');
+            return ApiResponse::error('User not found', 'NOT_FOUND', 404);
         }
 
         $user->load(['roles', 'userInfo']);
