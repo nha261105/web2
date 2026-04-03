@@ -26,6 +26,7 @@ class Product extends Model
     protected $casts = [
         'daily_price' => 'decimal:2',
         'deposit_price' => 'decimal:2',
+        'stock' => 'integer',
     ];
 
     public $timestamps = true;

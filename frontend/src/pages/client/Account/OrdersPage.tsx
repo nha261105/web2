@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Package, Eye, RotateCcw, Loader2, X } from "lucide-react";
-import { getMyRentals, type Rental } from "@/services/rentalService";
+import { getMyRentals, cancelMyRental, type Rental } from "@/services/rentalService";
 import toast from "react-hot-toast";
 
 const STATUS_STYLES: Record<string, string> = {
@@ -39,9 +39,23 @@ export default function OrdersPage({ initialRentals, initialLoading }: Props) {
   const [filteredRentals, setFilteredRentals] = useState<Rental[] | null>(null);
   const [filteredLoading, setFilteredLoading] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Rental | null>(null);
+  const [cancellingId, setCancellingId] = useState<number | null>(null);
 
   const displayRentals = activeFilter === "all" ? initialRentals : (filteredRentals ?? []);
   const displayLoading = activeFilter === "all" ? initialLoading : filteredLoading;
+
+  const handleCancelOrder = async (orderId: number) => {
+    if (!window.confirm("Bạn có chắc chắn muốn hủy đơn thuê này không?")) return;
+    setCancellingId(orderId);
+    const res = await cancelMyRental(orderId);
+    setCancellingId(null);
+    if (res.success) {
+      toast.success("Hủy đơn thành công");
+      window.location.reload();
+    } else {
+      toast.error(res.message || "Không thể hủy đơn");
+    }
+  };
 
   useEffect(() => {
     if (activeFilter === "all") return;
@@ -171,6 +185,17 @@ export default function OrdersPage({ initialRentals, initialLoading }: Props) {
                       <Eye className="w-3.5 h-3.5" />
                       Xem chi tiết
                     </button>
+                    {["PENDING", "APPROVED", "DEPOSITED"].includes(order.status) && (
+                      <button
+                        type="button"
+                        onClick={() => handleCancelOrder(order.id)}
+                        disabled={cancellingId === order.id}
+                        className="flex items-center gap-1.5 h-8 px-3 bg-red-50 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        {cancellingId === order.id ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <X className="w-3.5 h-3.5" />}
+                        Hủy đơn
+                      </button>
+                    )}
                     {order.status === "COMPLETED" && (
                       <button
                         type="button"

@@ -71,27 +71,29 @@ class RentalService
 
         $rental->fill($data)->save();
 
-        // Khi APPROVED: trừ stock
-        if ($oldStatus === 'PENDING' && $rental->status === 'APPROVED') {
-            foreach ($rental->details as $detail) {
-                if ($detail->product) {
-                    $detail->product->decrement('stock', $detail->quantity);
-                    $detail->product->refresh(); // Refresh model sau decrement
-                    if ($detail->product->stock < 1) {
-                        $detail->product->update(['status' => 'INACTIVE']);
-                    }
-                }
-            }
-        }
+        // Lấy lại rental với relationship cần thiết cho combo
+        $rental = Rental::with(['details.product', 'details.combo.comboDetails.product'])->findOrFail($id);
 
-        // Khi CANCELLED: hoàn lại stock nếu đã approve trước đó
-        if ($rental->status === 'CANCELLED' && in_array($oldStatus, ['APPROVED', 'DEPOSITED', 'READY_FOR_PICKUP'])) {
+        // Khi APPROVED: không trừ stock nữa vì đã trừ lúc Checkout (PENDING).
+
+        // Khi CANCELLED: hoàn lại stock nếu đã pending/approve trước đó
+        if ($rental->status === 'CANCELLED' && in_array($oldStatus, ['PENDING', 'APPROVED', 'DEPOSITED', 'READY_FOR_PICKUP'])) {
             foreach ($rental->details as $detail) {
                 if ($detail->product) {
                     $detail->product->increment('stock', $detail->quantity);
                     $detail->product->refresh(); // Refresh model sau increment
                     if ($detail->product->stock > 0 && $detail->product->status === 'INACTIVE') {
                         $detail->product->update(['status' => 'ACTIVE']);
+                    }
+                } elseif ($detail->combo) {
+                    foreach ($detail->combo->comboDetails as $comboDetail) {
+                        $product = $comboDetail->product;
+                        $qty = $detail->quantity * $comboDetail->quantity;
+                        $product->increment('stock', $qty);
+                        $product->refresh();
+                        if ($product->stock > 0 && $product->status === 'INACTIVE') {
+                            $product->update(['status' => 'ACTIVE']);
+                        }
                     }
                 }
             }

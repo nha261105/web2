@@ -25,6 +25,7 @@ class ProductResource extends JsonResource
             'deposit_price' => $this->deposit_price,
             'description' => $this->description,
             'status' => $this->status,
+            'stock' => $this->stock,
             'category' => new CategoryResource($this->whenLoaded('category')),
             'brand' => new BrandResource($this->whenLoaded('brand')),
             'images' => $this->whenLoaded(

@@ -601,6 +601,11 @@ export default function Header() {
                 Trang chủ
               </Link>
             </li>
+            <li>
+              <Link to="/combos" className="hover:text-blue-600 transition-colors">
+                Gói Combo
+              </Link>
+            </li>
             <li
               ref={megaAreaRef}
               onMouseEnter={() => setIsMegaOpen(true)}

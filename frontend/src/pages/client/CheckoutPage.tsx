@@ -180,9 +180,9 @@ export default function CheckoutPage() {
                           </div>
                         </div>
                         <div className="text-xs font-bold">
-                          {new Intl.NumberFormat("en-US", {
+                          {new Intl.NumberFormat("vi-VN", {
                             style: "currency",
-                            currency: "USD",
+                            currency: "VND",
                           }).format(itemTotal)}
                         </div>
                       </div>
@@ -196,9 +196,9 @@ export default function CheckoutPage() {
               <div className="flex flex-row justify-between items-center">
                 <div className="text-sm text-gray-500">Subtotal</div>
                 <div className="text-sm font-semibold">
-                  {new Intl.NumberFormat("en-US", {
+                  {new Intl.NumberFormat("vi-VN", {
                     style: "currency",
-                    currency: "USD",
+                    currency: "VND",
                   }).format(subtotal)}
                 </div>
               </div>
@@ -211,9 +211,9 @@ export default function CheckoutPage() {
             <div className="flex flex-row justify-between items-center">
               <div className="text-lg font-medium">Total</div>
               <div className="text-lg font-semibold">
-                {new Intl.NumberFormat("en-US", {
+                {new Intl.NumberFormat("vi-VN", {
                   style: "currency",
-                  currency: "USD",
+                  currency: "VND",
                 }).format(subtotal)}
               </div>
             </div>
