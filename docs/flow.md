@@ -51,7 +51,7 @@ Hệ thống Quản lý Cho Thuê Thiết Bị xoay quanh các vòng lặp nghi�
 - Chuyển vào _Đơn hàng của tôi_ -> **Kỳ vọng**: Đơn hàng nằm ở Trạng thái `PENDING`, tiền thuê = `Tổng giá ngày * 7` và tiền cọc có giá trị đúng. Ở trang xem User ở ngoài Cửa hàng, Stock (số lượng) của sản phẩm VẪN CHƯA BỊ TRỪ.
 
 ### Kịch bản 3: Luồng Admin Xét duyệt & Stock Control
-- Truy cập bằng tài khoản `admin@demo.com` (`admin123`).
+- Truy cập bằng tài khoản `admin@rentgear.vn` (`password123`).
 - Vào màn Quản lý Đơn (Admin Rentals), mở cái Đơn vừa lập.
 - **Duyệt đơn**: Chuyển trạng thái từ `PENDING` thành `APPROVED` (chú ý: tại lúc này, Backend chính thức gọt trừ rớt số lượng `available` trong bảng `Products`). 
 - Hãy sang trang Client kiểm tra -> Món đồ lúc nãy sẽ báo hụt đi số lượng. Nếu `available = 0`, nút "Thêm vào giỏ" sẽ bị Block mờ đi!

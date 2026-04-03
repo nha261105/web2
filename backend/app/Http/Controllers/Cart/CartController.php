@@ -221,10 +221,13 @@ class CartController extends Controller
         // Check stock
         if ($detail->product_id) {
             $product = $detail->product;
-            if ($product && $payload['quantity'] > $product->stock) {
-                return ApiResponse::validation([
-                    'quantity' => ["Số lượng vượt quá tồn kho hiện tại (Tồn: {$product->stock})"],
-                ]);
+            if ($product) {
+                $stockAvailable = $product->stock ?? 10;
+                if ($payload['quantity'] > $stockAvailable) {
+                    return ApiResponse::validation([
+                        'quantity' => ["Số lượng vượt quá tồn kho hiện tại (Tồn: {$stockAvailable})"],
+                    ]);
+                }
             }
         }
 
@@ -311,31 +314,6 @@ class CartController extends Controller
         $product = null;
         $combo = null;
 
-        if ($productId) {
-            $product = Product::find($productId);
-            if (!$product) {
-                return null;
-            }
-
-            // Check stock if adding more
-            $query = RentalDetail::where('rental_id', $cart->id ?? 0)
-                ->where('product_id', $productId)
-                ->whereNull('combo_id');
-            $detail = $query->first();
-
-            $totalRequested = ($detail ? $detail->quantity : 0) + $quantity;
-            if ($totalRequested > $product->stock) {
-                throw new \Exception("Vượt quá số lượng tồn kho (Tồn: {$product->stock})");
-            }
-        }
-
-        if ($comboId) {
-            $combo = Combo::find($comboId);
-            if (!$combo) {
-                return null;
-            }
-        }
-
         $addressId = $this->resolveCartAddressId($user);
 
         $cart = Rental::firstOrCreate(
@@ -355,6 +333,32 @@ class CartController extends Controller
                 'note' => null,
             ],
         );
+
+        if ($productId) {
+            $product = Product::find($productId);
+            if (!$product) {
+                return null;
+            }
+
+            // Check stock if adding more
+            $query = RentalDetail::where('rental_id', $cart->id ?? 0)
+                ->where('product_id', $productId)
+                ->whereNull('combo_id');
+            $detail = $query->first();
+
+            $totalRequested = ($detail ? $detail->quantity : 0) + $quantity;
+            $stockAvailable = $product->stock ?? 10;
+            if ($totalRequested > $stockAvailable) {
+                throw new \Exception("Vượt quá số lượng tồn kho (Tồn: {$stockAvailable})");
+            }
+        }
+
+        if ($comboId) {
+            $combo = Combo::find($comboId);
+            if (!$combo) {
+                return null;
+            }
+        }
 
         if ($addressId && $cart->address_id !== $addressId) {
             $cart->address_id = $addressId;

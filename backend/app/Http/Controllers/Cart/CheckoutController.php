@@ -25,7 +25,7 @@ class CheckoutController extends Controller
         ]);
 
         // Find user's CART
-        $cart = Rental::with('details')
+        $cart = Rental::with('details.product')
             ->where('user_id', $user->id)
             ->where('status', 'CART')
             ->first();
@@ -34,34 +34,46 @@ class CheckoutController extends Controller
             return ApiResponse::error('Cart is empty', 'CART_EMPTY', 400);
         }
 
+        // Bug fix 5: Set default dates nếu chưa có
+        if (!$cart->start_date || !$cart->end_date) {
+            $cart->start_date = Carbon::now()->startOfDay();
+            $cart->end_date = Carbon::now()->startOfDay()->addDay();
+            $cart->save();
+        }
+
+        // Bug fix 4: Kiểm tra stock trước khi checkout
+        foreach ($cart->details as $detail) {
+            if ($detail->product) {
+                $stockAvailable = $detail->product->stock ?? 10;
+                if ($detail->quantity > $stockAvailable) {
+                    return ApiResponse::validation([
+                        'stock' => [
+                            "Sản phẩm \"{$detail->product->name}\" chỉ còn {$stockAvailable} trong kho, bạn đang đặt {$detail->quantity}."
+                        ],
+                    ]);
+                }
+            }
+        }
+
         // Calculation
         $totalPrice = 0;
         $depositAmount = 0;
 
-        $rentalDays = 1;
-        if ($cart->start_date && $cart->end_date) {
-            $start = Carbon::parse($cart->start_date);
-            $end = Carbon::parse($cart->end_date);
-            $rentalDays = max(1, $start->diffInDays($end) + 1);
-        }
+        $start = Carbon::parse($cart->start_date);
+        $end = Carbon::parse($cart->end_date);
+        $rentalDays = max(1, $start->diffInDays($end) + 1);
 
         /** @var \App\Models\RentalDetail $detail */
         foreach ($cart->details as $detail) {
             $totalPrice += $detail->price_at_rental * $detail->quantity * $rentalDays;
             
-            // Collect deposit if it was a product. (We assume product's deposit_price is not stored in rental_details right now, so we need to eager load it if needed. 
-            // For now we'll fetch product directly to calculate deposit)
             if ($detail->product) {
-                // If the product belongs to the detail, calculate:
-                $depositAmount += $detail->product->deposit_price * $detail->quantity;
-            } else if ($detail->combo) {
-                // We assume combo does not have deposit structure right now, or maybe it does? 
-                // Wait, checking the DB schema, combos might not have deposit_price.
+                $depositAmount += ($detail->product->deposit_price ?? 0) * $detail->quantity;
             }
         }
 
         $cart->update([
-            'address_id' => $validated['address_id'] ?? null,
+            'address_id' => $validated['address_id'] ?? $cart->address_id,
             'note' => $validated['note'] ?? null,
             'total_price' => $totalPrice,
             'deposit_amount' => $depositAmount,

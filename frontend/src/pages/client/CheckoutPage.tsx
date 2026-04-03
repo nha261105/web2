@@ -21,7 +21,8 @@ export default function CheckoutPage() {
   const [stepCheckOut, setStepCheckOut] = useState(1);
   const [success, setSuccess] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [defaultAddress, setDefaultAddress] = useState<Address | null>(null);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
   const [newAddressData, setNewAddressData] = useState<CreateAddressPayload | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
@@ -45,12 +46,16 @@ export default function CheckoutPage() {
       }
 
       const addressesResponse = await getAddresses();
-      const addresses =
-        addressesResponse.data?.addresses || addressesResponse.data || [];
-      const selectedAddress = Array.isArray(addresses)
-        ? (addresses.find((address) => address.is_default) ?? addresses[0])
-        : null;
-      setDefaultAddress(selectedAddress);
+      const fetchedAddresses =
+        addressesResponse.data?.items || addressesResponse.data?.addresses || addressesResponse.data || [];
+      if (Array.isArray(fetchedAddresses) && fetchedAddresses.length > 0) {
+        setAddresses(fetchedAddresses);
+        const selectedAddress =
+            fetchedAddresses.find((address: Address) => address.is_default) ?? fetchedAddresses[0];
+        if (selectedAddress) {
+          setSelectedAddressId(selectedAddress.id);
+        }
+      }
 
       setIsLoading(false);
     };
@@ -61,12 +66,16 @@ export default function CheckoutPage() {
   const handleSubmitOrder = async () => {
     setIsLoading(true);
 
-    let addressId = defaultAddress?.id;
+    let finalAddressId = selectedAddressId;
 
-    if (!addressId && newAddressData) {
+    if (newAddressData) {
       const addrRes = await createAddress(newAddressData);
-      if (addrRes.success && addrRes.data?.address) {
-        addressId = addrRes.data.address.id;
+      if (addrRes.success && addrRes.data) {
+        // Backend returns either data.address or directly the object depending on your API structure. Adjust as needed.
+        const createdAddressId = addrRes.data.id || addrRes.data.address?.id;
+        if (createdAddressId) {
+            finalAddressId = createdAddressId;
+        }
       } else {
         toast.error("Không thể tạo địa chỉ mới!");
         setIsLoading(false);
@@ -75,7 +84,7 @@ export default function CheckoutPage() {
     }
 
     const res = await submitCheckout({
-      address_id: addressId,
+      address_id: finalAddressId,
       note: "Customer order",
     });
     setIsLoading(false);
@@ -128,7 +137,9 @@ export default function CheckoutPage() {
           {stepCheckOut == 1 && (
             <ShippingStep 
               onChange={setStepCheckOut} 
-              address={defaultAddress} 
+              addresses={addresses} 
+              selectedAddressId={selectedAddressId}
+              onSelectAddress={setSelectedAddressId}
               onNewAddressData={setNewAddressData} 
             />
           )}

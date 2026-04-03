@@ -152,7 +152,7 @@ export default function AdminReports() {
                         key={data.month}
                         className="flex-1 bg-linear-to-t from-blue-500 to-blue-400 rounded-t-lg hover:opacity-80 transition-opacity group relative"
                         style={{ height: `${Math.max(height, 10)}%` }}
-                        title={`${data.month}: $${data.amount.toLocaleString()}`}
+                        title={`${data.month}: ${new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(data.amount)}`}
                       >
                         <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-center opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
                           <span className="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded shadow-sm border border-gray-200">

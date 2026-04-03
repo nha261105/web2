@@ -55,7 +55,13 @@ class RentalController extends Controller
 
     public function update(UpdateRentalRequest $request, int $id): JsonResponse
     {
-        $rental = $this->service->update($id, $request->validated());
+        try {
+            $rental = $this->service->update($id, $request->validated());
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::validation([
+                'status' => [$e->getMessage()],
+            ]);
+        }
 
         return ApiResponse::success(
             [

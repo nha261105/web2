@@ -60,7 +60,7 @@ export default function SignUpPage() {
 
   const textLeftPanel = [
     "500+ products",
-    "Free delivery $200+",
+    "Miễn phí vận chuyển đơn từ 500.000₫",
     "Hỗ trợ 24/7",
     "4.9★ Rating",
   ];

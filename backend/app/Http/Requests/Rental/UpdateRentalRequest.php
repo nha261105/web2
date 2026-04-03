@@ -21,7 +21,7 @@ class UpdateRentalRequest extends FormRequest
             'deposit_amount' => ['sometimes', 'numeric', 'min:0'],
             'status' => [
                 'sometimes',
-                'in:PENDING,APPROVED,DEPOSITED,PICKED_UP,COMPLETED,CANCELLED',
+                'in:PENDING,APPROVED,DEPOSITED,READY_FOR_PICKUP,PICKED_UP,COMPLETED,CANCELLED',
             ],
             'note' => ['sometimes', 'nullable', 'string'],
         ];

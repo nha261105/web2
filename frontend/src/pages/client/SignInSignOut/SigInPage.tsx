@@ -125,7 +125,7 @@ export default function SignInPage() {
   const textLeftPanel = [
     "500+ professional tech products",
     "Flexible daily, weekly & monthly plans",
-    "Free delivery on orders over $200",
+    "Miễn phí vận chuyển đơn từ 500.000₫",
     "24/7 expert support",
   ];
 
