@@ -1,12 +1,19 @@
-FROM php:8.2-apache
+FROM php:8.2-cli
 
-RUN rm -f /etc/apache2/mods-enabled/mpm_*.load
+WORKDIR /app
 
-RUN a2enmod mpm_prefork
+# Install extensions
+RUN docker-php-ext-install pdo pdo_mysql
 
-RUN a2enmod rewrite
+# Copy code
+COPY . .
 
-RUN docker-php-ext-install mysqli pdo pdo_mysql
+# Install composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+RUN composer install --no-dev --optimize-autoloader
 
-COPY . /var/www/html/
-WORKDIR /var/www/html/
+# Expose port
+EXPOSE 8000
+
+# Run Laravel
+CMD php artisan serve --host=0.0.0.0 --port=$PORT
