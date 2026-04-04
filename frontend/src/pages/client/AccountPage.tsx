@@ -49,7 +49,7 @@ export default function AccountPage() {
     return () => window.removeEventListener("auth_changed", handleAuthChange);
   }, []);
   const [isLoggedIn, setIsLoggedIn] = useState(!!authUser);
-  const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [_isAccountOpen, setIsAccountOpen] = useState(false);
   const navigator = useNavigate();
 
   const [rentals, setRentals] = useState<Rental[]>([]);

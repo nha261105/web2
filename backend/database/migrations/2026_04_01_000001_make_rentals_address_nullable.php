@@ -35,8 +35,8 @@ return new class extends Migration {
         }
 
         Schema::table('rentals', function (Blueprint $table) {
-            if (Schema::hasColumn('rentals', 'address_id')) {
-                $table->dropForeign(['address_id']);
+            if (!Schema::hasColumn('rentals', 'address_id')) {
+                $table->integer('address_id')->nullable();
             }
         });
 

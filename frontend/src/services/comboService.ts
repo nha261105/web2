@@ -1,6 +1,5 @@
 import axios from "axios";
 import { API_BASE_URL } from "@/config/api";
-import type { Product } from "@/pages/client/data";
 
 export interface ComboDetail {
   id: number;
