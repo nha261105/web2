@@ -2,14 +2,19 @@ FROM php:8.2-cli
 
 WORKDIR /app
 
-# Install extensions
-RUN docker-php-ext-install pdo pdo_mysql
+RUN apt-get update && apt-get install -y \
+    git \
+    unzip \
+    zip \
+    && docker-php-ext-install zip pdo pdo_mysql
 
 # Copy code
 COPY . .
 
 # Install composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Install dependencies
 RUN composer install --no-dev --optimize-autoloader
 
 # Expose port
